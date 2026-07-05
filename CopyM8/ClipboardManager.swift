@@ -72,11 +72,20 @@ class ClipboardManager: ObservableObject {
                 
                 DispatchQueue.main.async {
                     self.history.insert(item, at: 0)
-                    if self.history.count > 25 {
-                        self.history.removeLast()
-                    }
+                    self.truncateHistory(to: self.maxHistoryCount)
                 }
             }
+        }
+    }
+    
+    var maxHistoryCount: Int {
+        let val = UserDefaults.standard.integer(forKey: "maxHistoryCount")
+        return val == 0 ? 25 : val
+    }
+    
+    func truncateHistory(to limit: Int) {
+        if history.count > limit {
+            history.removeLast(history.count - limit)
         }
     }
     

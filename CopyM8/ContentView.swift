@@ -12,6 +12,8 @@ struct ContentView: View {
     @State private var showingClearAlert = false
     @State private var showingEmptyToast = false
     @State private var expandedItemIndex: Int? = nil
+    @State private var showingSettings = false
+    @State private var draftHistoryCount: Int = 25
     
     // UI State
     @AppStorage("activeColorName") private var activeColorName: String = "Glacier"
@@ -19,6 +21,7 @@ struct ContentView: View {
     @AppStorage("dockEdgeRaw") private var dockEdgeRaw: String = "right"
     @AppStorage("windowWidth") private var windowWidth: Double = 320
     @AppStorage("windowHeight") private var windowHeight: Double = 420
+    @AppStorage("maxHistoryCount") private var maxHistoryCount: Int = 25
     
     // Derived UI State
     private var dockEdge: DockEdge {
@@ -72,16 +75,19 @@ struct ContentView: View {
         .background(Color.clear)
         .animation(.spring(response: 0.4, dampingFraction: 0.75), value: shortcut.isExpanded)
         .animation(.spring(response: 0.4, dampingFraction: 0.75), value: shortcut.isExpanded)
-        .onChange(of: shortcut.isExpanded) { expanded in
+        .onChange(of: shortcut.isExpanded) { _, expanded in
             adjustWindowFrame(expanded: expanded, animate: true)
             if expanded {
                 previousApp = NSWorkspace.shared.frontmostApplication
-                NSApp.activate(ignoringOtherApps: true)
+                NSApp.activate()
                 NSApp.windows.first?.makeKeyAndOrderFront(nil)
                 setupKeyboardMonitor()
             } else {
                 teardownKeyboardMonitor()
             }
+        }
+        .onChange(of: maxHistoryCount) { _, newValue in
+            clipboard.truncateHistory(to: newValue)
         }
     }
     
@@ -178,6 +184,49 @@ struct ContentView: View {
             
             Divider().frame(height: 12).background(Color.white.opacity(0.2))
             
+            // Settings Button
+            Button(action: {
+                showingSettings.toggle()
+            }) {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 11))
+                    .foregroundColor(.white.opacity(0.6))
+            }
+            .buttonStyle(PlainButtonStyle())
+            .onHover { hover in
+                if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+            }
+            .popover(isPresented: $showingSettings, arrowEdge: .bottom) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Settings")
+                        .font(.headline)
+                    HStack {
+                        Text("History Limit:")
+                            .font(.system(size: 12))
+                        TextField("", value: $draftHistoryCount, format: .number)
+                            .frame(width: 40)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .onSubmit {
+                                maxHistoryCount = max(5, draftHistoryCount)
+                                showingSettings = false
+                            }
+                        Stepper("", value: $draftHistoryCount, in: 5...500)
+                            .labelsHidden()
+                    }
+                }
+                .padding()
+                .frame(width: 220)
+            }
+            .onChange(of: showingSettings) { _, isShowing in
+                if isShowing {
+                    draftHistoryCount = maxHistoryCount
+                } else {
+                    maxHistoryCount = max(5, draftHistoryCount)
+                }
+            }
+            
+            Divider().frame(height: 12).background(Color.white.opacity(0.2))
+            
             // Reset Size Button
             Button(action: {
                 withAnimation(.spring()) {
@@ -213,6 +262,51 @@ struct ContentView: View {
     }
     
     // MARK: - Expanded View
+    private var emptyStateView: some View {
+        VStack {
+            Spacer()
+            Image(systemName: "doc.on.clipboard")
+                .font(.system(size: 24))
+                .foregroundColor(.white.opacity(0.3))
+                .padding(.bottom, 4)
+            Text("Your clipboard is empty.\nStart copying to see items here!")
+                .font(.system(size: 12))
+                .foregroundColor(.white.opacity(0.5))
+                .multilineTextAlignment(.center)
+            Spacer()
+        }
+    }
+    
+    private var clipboardListView: some View {
+        ScrollView {
+            LazyVStack(spacing: isDense ? 2 : 12) {
+                ForEach(Array(clipboard.history.enumerated()), id: \.element.id) { (index: Int, item: ClipboardItem) in
+                    ClipboardItemView(
+                        index: index,
+                        item: item,
+                        isSelected: index == selectedIndex,
+                        isExpanded: index == expandedItemIndex,
+                        isDense: isDense,
+                        activeColor: activeColorName == "Black" ? .white : activeColor,
+                        onPaste: {
+                            pasteItem(index: index)
+                        },
+                        onExpandToggle: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                if expandedItemIndex == index {
+                                    expandedItemIndex = nil
+                                } else {
+                                    expandedItemIndex = index
+                                }
+                            }
+                        }
+                    )
+                }
+            }
+            .padding(8)
+        }
+    }
+
     private var expandedView: some View {
         ZStack {
             NativeDragView(
@@ -225,46 +319,9 @@ struct ContentView: View {
                 headerView
                 
                 if clipboard.history.isEmpty {
-                    VStack {
-                        Spacer()
-                        Image(systemName: "doc.on.clipboard")
-                            .font(.system(size: 24))
-                            .foregroundColor(.white.opacity(0.3))
-                            .padding(.bottom, 4)
-                        Text("Your clipboard is empty.\nStart copying to see items here!")
-                            .font(.system(size: 12))
-                            .foregroundColor(.white.opacity(0.5))
-                            .multilineTextAlignment(.center)
-                        Spacer()
-                    }
+                    emptyStateView
                 } else {
-                    ScrollView {
-                        LazyVStack(spacing: isDense ? 2 : 12) {
-                            ForEach(Array(clipboard.history.enumerated()), id: \.element.id) { (index: Int, item: ClipboardItem) in
-                                ClipboardItemView(
-                                    index: index,
-                                    item: item,
-                                    isSelected: index == selectedIndex,
-                                    isExpanded: index == expandedItemIndex,
-                                    isDense: isDense,
-                                    activeColor: activeColorName == "Black" ? .white : activeColor,
-                                    onPaste: {
-                                        pasteItem(index: index)
-                                    },
-                                    onExpandToggle: {
-                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                            if expandedItemIndex == index {
-                                                expandedItemIndex = nil
-                                            } else {
-                                                expandedItemIndex = index
-                                            }
-                                        }
-                                    }
-                                )
-                            }
-                        }
-                        .padding(8)
-                    }
+                    clipboardListView
                 }
             }
         }
@@ -385,7 +442,6 @@ struct ContentView: View {
         // Find closest edge
         let minEdge = min(distLeft, distRight, distTop)
         
-        var targetEdge: DockEdge = .right
         var targetX = windowRect.origin.x
         var targetY = windowRect.origin.y
         
@@ -464,6 +520,7 @@ struct ContentView: View {
         selectedIndex = 0
         expandedItemIndex = nil
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if showingSettings { return event }
             switch event.keyCode {
             case 125: // Down arrow
                 selectedIndex = min(selectedIndex + 1, clipboard.history.count - 1)
@@ -517,7 +574,7 @@ struct ContentView: View {
         }
         
         // 3. Reactivate the previous app
-        previousApp?.activate(options: .activateIgnoringOtherApps)
+        previousApp?.activate(options: [])
         
         // 4. Wait for focus transfer, then trigger the paste keystroke
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
