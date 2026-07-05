@@ -96,8 +96,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
-				TargetAttributes = {
-				};
 			};
 			buildConfigurationList = F8F2D4294CA80586499DFC75 /* Build configuration list for PBXProject "CopyM8" */;
 			developmentRegion = en;

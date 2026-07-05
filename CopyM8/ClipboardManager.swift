@@ -72,7 +72,7 @@ class ClipboardManager: ObservableObject {
                 
                 DispatchQueue.main.async {
                     self.history.insert(item, at: 0)
-                    if self.history.count > 50 {
+                    if self.history.count > 25 {
                         self.history.removeLast()
                     }
                 }
@@ -80,20 +80,24 @@ class ClipboardManager: ObservableObject {
         }
     }
     
-    func pasteItem(_ item: ClipboardItem) {
+    func prepareForPaste(_ item: ClipboardItem) {
         ignoreNextChange = true
         pasteboard.clearContents()
         pasteboard.setString(item.text, forType: .string)
+        // Ensure our internal state ignores this exact change we just made
+        lastChangeCount = pasteboard.changeCount
+    }
+    
+    func triggerPasteKeystroke() {
+        let src = CGEventSource(stateID: .combinedSessionState)
         
-        // Use AppleScript to simulate Cmd+V in the previously active app
-        let scriptSource = """
-        tell application "System Events"
-            keystroke "v" using command down
-        end tell
-        """
-        if let script = NSAppleScript(source: scriptSource) {
-            var error: NSDictionary?
-            script.executeAndReturnError(&error)
-        }
+        // Key code 0x09 is 'v'
+        let vDown = CGEvent(keyboardEventSource: src, virtualKey: 0x09, keyDown: true)
+        vDown?.flags = .maskCommand
+        vDown?.post(tap: .cgAnnotatedSessionEventTap)
+        
+        let vUp = CGEvent(keyboardEventSource: src, virtualKey: 0x09, keyDown: false)
+        vUp?.flags = .maskCommand
+        vUp?.post(tap: .cgAnnotatedSessionEventTap)
     }
 }

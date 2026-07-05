@@ -53,7 +53,10 @@ struct ContentView: View {
         ("Lavender", Color(red: 0.7, green: 0.5, blue: 0.8)),
         ("Mint", Color(red: 0.4, green: 0.8, blue: 0.6)),
         ("Lemon", Color(red: 0.9, green: 0.8, blue: 0.4)),
-        ("Bubblegum", Color(red: 0.9, green: 0.4, blue: 0.6))
+        ("Bubblegum", Color(red: 0.9, green: 0.4, blue: 0.6)),
+        ("White", Color.white),
+        ("Grey", Color.gray),
+        ("Black", Color.black)
     ]
     
     var body: some View {
@@ -68,8 +71,9 @@ struct ContentView: View {
         }
         .background(Color.clear)
         .animation(.spring(response: 0.4, dampingFraction: 0.75), value: shortcut.isExpanded)
+        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: shortcut.isExpanded)
         .onChange(of: shortcut.isExpanded) { expanded in
-            adjustWindowFrame(expanded: expanded)
+            adjustWindowFrame(expanded: expanded, animate: true)
             if expanded {
                 previousApp = NSWorkspace.shared.frontmostApplication
                 NSApp.activate(ignoringOtherApps: true)
@@ -81,185 +85,188 @@ struct ContentView: View {
         }
     }
     
+    private var headerView: some View {
+        HStack(spacing: 8) {
+            // Close button (Mac style traffic light)
+            ZStack {
+                Circle()
+                    .fill(Color.red)
+                    .frame(width: 12, height: 12)
+                
+                if isHoveringClose {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 7, weight: .black))
+                        .foregroundColor(.black.opacity(0.6))
+                }
+            }
+            .onHover { hover in
+                isHoveringClose = hover
+                if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+            }
+            .onTapGesture {
+                NSApplication.shared.terminate(nil)
+            }
+            
+            // Clear All Button
+            Button(action: {
+                if clipboard.history.isEmpty {
+                    withAnimation { showingEmptyToast = true }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        withAnimation { showingEmptyToast = false }
+                    }
+                } else {
+                    showingClearAlert = true
+                }
+            }) {
+                Image(systemName: "trash")
+                    .font(.system(size: 11))
+                    .foregroundColor(.white.opacity(0.6))
+            }
+            .buttonStyle(PlainButtonStyle())
+            .onHover { hover in
+                if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+            }
+            .alert("Clear all copied items?", isPresented: $showingClearAlert) {
+                Button("Cancel", role: .cancel) { }
+                Button("Clear", role: .destructive) { clipboard.clearAll() }
+            }
+            
+            Spacer()
+            
+            // Spacing toggle
+            HStack(spacing: 0) {
+                Text(windowWidth < 360 ? "D..." : "Dense")
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .font(.system(size: 9, weight: isDense ? .bold : .regular))
+                    .foregroundColor(isDense ? .white : .white.opacity(0.5))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(isDense ? Color.white.opacity(0.15) : Color.clear)
+                    .cornerRadius(4)
+                    .onTapGesture { isDense = true }
+                
+                Text(windowWidth < 360 ? "S..." : "Spaced")
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .font(.system(size: 9, weight: !isDense ? .bold : .regular))
+                    .foregroundColor(!isDense ? .white : .white.opacity(0.5))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(!isDense ? Color.white.opacity(0.15) : Color.clear)
+                    .cornerRadius(4)
+                    .onTapGesture { isDense = false }
+            }
+            .background(Color.black.opacity(0.2))
+            .cornerRadius(4)
+            
+            Divider().frame(height: 12).background(Color.white.opacity(0.2))
+            
+            // Color Palette
+            HStack(spacing: windowWidth < 360 ? 4 : 6) {
+                ForEach(colors, id: \.name) { c in
+                    Circle()
+                        .fill(c.name == "Clear" ? Color.white.opacity(0.1) : c.color)
+                        .frame(width: windowWidth < 360 ? 8 : 10, height: windowWidth < 360 ? 8 : 10)
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white, lineWidth: activeColorName == c.name ? 2 : 0)
+                        )
+                        .onTapGesture { activeColorName = c.name }
+                }
+            }
+            
+            Divider().frame(height: 12).background(Color.white.opacity(0.2))
+            
+            // Reset Size Button
+            Button(action: {
+                withAnimation(.spring()) {
+                    windowWidth = 340
+                    windowHeight = 420
+                    adjustWindowFrame(expanded: true, animate: true)
+                }
+            }) {
+                Image(systemName: "arrow.up.left.and.down.right.and.arrow.up.right.and.down.left")
+                    .font(.system(size: 10))
+                    .foregroundColor(.white.opacity(0.7))
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(VisualEffectView(material: .popover, blendingMode: .behindWindow).opacity(0.5))
+        .overlay(
+            Group {
+                if showingEmptyToast {
+                    Text("Nothing to delete")
+                        .font(.system(size: 11, weight: .medium))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.black.opacity(0.8))
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                        .offset(y: 10)
+                }
+            }, alignment: .top
+        )
+    }
+    
     // MARK: - Expanded View
     private var expandedView: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack(spacing: 8) {
-                // Close button (Mac style traffic light)
-                ZStack {
-                    Circle()
-                        .fill(Color.red)
-                        .frame(width: 12, height: 12)
-                    
-                    if isHoveringClose {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 7, weight: .black))
-                            .foregroundColor(.black.opacity(0.6))
-                    }
-                }
-                .onHover { hover in
-                    isHoveringClose = hover
-                    if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() }
-                }
-                .onTapGesture {
-                    NSApplication.shared.terminate(nil)
-                }
-                
-                // Clear All Button
-                Button(action: {
-                    if clipboard.history.isEmpty {
-                        withAnimation { showingEmptyToast = true }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                            withAnimation { showingEmptyToast = false }
-                        }
-                    } else {
-                        showingClearAlert = true
-                    }
-                }) {
-                    Image(systemName: "trash")
-                        .font(.system(size: 11))
-                        .foregroundColor(.white.opacity(0.6))
-                }
-                .buttonStyle(PlainButtonStyle())
-                .onHover { hover in
-                    if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() }
-                }
-                .alert("Clear all copied items?", isPresented: $showingClearAlert) {
-                    Button("Cancel", role: .cancel) { }
-                    Button("Clear", role: .destructive) { clipboard.clearAll() }
-                }
-                
-                Spacer()
-                
-                // Spacing toggle
-                HStack(spacing: 0) {
-                    Text("Dense")
-                        .font(.system(size: 9, weight: isDense ? .bold : .regular))
-                        .foregroundColor(isDense ? .white : .white.opacity(0.5))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background(isDense ? Color.white.opacity(0.15) : Color.clear)
-                        .cornerRadius(4)
-                        .onTapGesture { isDense = true }
-                    
-                    Text("Spaced")
-                        .font(.system(size: 9, weight: !isDense ? .bold : .regular))
-                        .foregroundColor(!isDense ? .white : .white.opacity(0.5))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background(!isDense ? Color.white.opacity(0.15) : Color.clear)
-                        .cornerRadius(4)
-                        .onTapGesture { isDense = false }
-                }
-                .background(Color.black.opacity(0.2))
-                .cornerRadius(4)
-                
-                Divider().frame(height: 12).background(Color.white.opacity(0.2))
-                
-                // Color Palette
-                HStack(spacing: 6) {
-                    ForEach(colors, id: \.name) { c in
-                        Circle()
-                            .fill(c.name == "Clear" ? Color.white.opacity(0.1) : c.color)
-                            .frame(width: 10, height: 10)
-                            .overlay(
-                                Circle()
-                                    .stroke(Color.white, lineWidth: activeColorName == c.name ? 2 : 0)
-                            )
-                            .onTapGesture { activeColorName = c.name }
-                    }
-                }
-                
-                Divider().frame(height: 12).background(Color.white.opacity(0.2))
-                
-                // Reset Size Button
-                Button(action: {
-                    withAnimation(.spring()) {
-                        windowWidth = 320
-                        windowHeight = 420
-                        adjustWindowFrame(expanded: true)
-                    }
-                }) {
-                    Image(systemName: "arrow.up.left.and.down.right.and.arrow.up.right.and.down.left")
-                        .font(.system(size: 10))
-                        .foregroundColor(.white.opacity(0.7))
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(VisualEffectView(material: .popover, blendingMode: .behindWindow).opacity(0.5))
-            
-            .overlay(
-                Group {
-                    if showingEmptyToast {
-                        Text("Nothing to delete")
-                            .font(.system(size: 11, weight: .medium))
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .background(Color.black.opacity(0.8))
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                            .transition(.opacity.combined(with: .move(edge: .top)))
-                            .offset(y: 10)
-                    }
-                }, alignment: .top
+        ZStack {
+            NativeDragView(
+                onDragEnded: { snapToEdge() },
+                onTap: {}
             )
-            if clipboard.history.isEmpty {
-                VStack {
-                    Spacer()
-                    Image(systemName: "doc.on.clipboard")
-                        .font(.system(size: 24))
-                        .foregroundColor(.white.opacity(0.3))
-                        .padding(.bottom, 4)
-                    Text("Your clipboard is empty.\nStart copying to see items here!")
-                        .font(.system(size: 12))
-                        .foregroundColor(.white.opacity(0.5))
-                        .multilineTextAlignment(.center)
-                    Spacer()
-                }
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: isDense ? 2 : 12) {
-                        ForEach(Array(clipboard.history.enumerated()), id: \.element.id) { (index: Int, item: ClipboardItem) in
-                            ClipboardItemView(
-                                index: index,
-                                item: item,
-                                isSelected: index == selectedIndex,
-                                isExpanded: index == expandedItemIndex,
-                                isDense: isDense,
-                                activeColor: activeColor,
-                                onPaste: {
-                                    pasteItem(index: index)
-                                },
-                                onExpandToggle: {
-                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                        if expandedItemIndex == index {
-                                            expandedItemIndex = nil
-                                        } else {
-                                            expandedItemIndex = index
+            
+            VStack(spacing: 0) {
+                // Header
+                headerView
+                
+                if clipboard.history.isEmpty {
+                    VStack {
+                        Spacer()
+                        Image(systemName: "doc.on.clipboard")
+                            .font(.system(size: 24))
+                            .foregroundColor(.white.opacity(0.3))
+                            .padding(.bottom, 4)
+                        Text("Your clipboard is empty.\nStart copying to see items here!")
+                            .font(.system(size: 12))
+                            .foregroundColor(.white.opacity(0.5))
+                            .multilineTextAlignment(.center)
+                        Spacer()
+                    }
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: isDense ? 2 : 12) {
+                            ForEach(Array(clipboard.history.enumerated()), id: \.element.id) { (index: Int, item: ClipboardItem) in
+                                ClipboardItemView(
+                                    index: index,
+                                    item: item,
+                                    isSelected: index == selectedIndex,
+                                    isExpanded: index == expandedItemIndex,
+                                    isDense: isDense,
+                                    activeColor: activeColorName == "Black" ? .white : activeColor,
+                                    onPaste: {
+                                        pasteItem(index: index)
+                                    },
+                                    onExpandToggle: {
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                            if expandedItemIndex == index {
+                                                expandedItemIndex = nil
+                                            } else {
+                                                expandedItemIndex = index
+                                            }
                                         }
                                     }
-                                }
-                            )
+                                )
+                            }
                         }
+                        .padding(8)
                     }
-                    .padding(8)
                 }
             }
-            
-            // Native Drag Area in empty space
-            Color.clear
-                .contentShape(Rectangle())
-                .frame(maxHeight: .infinity)
-                .overlay(
-                    NativeDragView(
-                        onDragBegan: {},
-                        onDragEnded: { snapToEdge() },
-                        onTap: {}
-                    )
-                )
         }
         .frame(width: getDynamicWindowSize().width, height: getDynamicWindowSize().height)
         .background(
@@ -273,7 +280,6 @@ struct ContentView: View {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(Color.white.opacity(0.2), lineWidth: 1)
         )
-        // Add custom Resize Edges view back
         .overlay(
             ResizeEdgesView(
                 windowWidth: $windowWidth,
@@ -281,7 +287,7 @@ struct ContentView: View {
                 isResizing: $isResizing,
                 resizeStartMouse: $resizeStartMouse,
                 resizeStartSize: $resizeStartSize,
-                adjustWindowFrame: { adjustWindowFrame(expanded: true) }
+                adjustWindowFrame: { adjustWindowFrame(expanded: true, animate: false) }
             )
         )
         .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
@@ -290,39 +296,48 @@ struct ContentView: View {
     // MARK: - Pill View
     private var pillView: some View {
         let isTop = dockEdge == .top
-        let width: CGFloat = isTop ? 72 : 28
-        let height: CGFloat = isTop ? 28 : 72
+        let width: CGFloat = isTop ? 60 : 28
+        let height: CGFloat = isTop ? 28 : 60
+        let hoverLogoColor = activeColorName == "Black" ? Color.white : activeColor
+        let logoColor = isHovering ? hoverLogoColor : Color.primary.opacity(0.4)
         
         return RoundedRectangle(cornerRadius: 24)
             .fill(Color.clear)
             .background(
-                ZStack {
-                    VisualEffectView(material: .popover, blendingMode: .behindWindow)
-                    activeColor.opacity(isHovering ? 0.3 : 0.1)
-                    NativeDragView(
-                        onDragBegan: {},
-                        onDragEnded: { snapToEdge() },
-                        onTap: {
-                            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-                                shortcut.isExpanded = true
-                            }
-                        }
-                    )
-                }
+                VisualEffectView(material: .popover, blendingMode: .behindWindow)
             )
             .clipShape(RoundedRectangle(cornerRadius: 24))
             .frame(width: width, height: height)
             .overlay(
-                RoundedRectangle(cornerRadius: 24)
-                    .stroke(Color.white.opacity(isHovering ? 0.5 : 0.25), lineWidth: 1)
+                ZStack {
+                    // Glowing pill outline
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(logoColor, lineWidth: 2.5)
+                        .shadow(color: isHovering ? logoColor.opacity(0.5) : .clear, radius: 3, x: 0, y: 0)
+                    
+                    // Infinity symbol in between
+                    Image(systemName: "infinity")
+                        .resizable()
+                        .scaledToFit()
+                        .font(Font.system(size: 10, weight: .medium))
+                        .foregroundColor(logoColor)
+                        .shadow(color: isHovering ? logoColor : .clear, radius: 4, x: 0, y: 0)
+                        .opacity(isHovering ? 1.0 : 0.8)
+                        .frame(width: 36, height: 16)
+                        .frame(width: 60, height: 60) // Unclipped container before rotation
+                        .rotationEffect(.degrees(isTop ? 0 : (dockEdge == .left ? -90 : 90)))
+                }
             )
-            .shadow(color: activeColor.opacity(0.3), radius: 10, x: 0, y: 5)
+            .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
             .overlay(
-                Text("CM8")
-                    .font(.system(size: 20, weight: .black, design: .rounded))
-                    .foregroundColor(activeColor)
-                    .opacity(0.5)
-                    .rotationEffect(.degrees(isTop ? 0 : (dockEdge == .left ? -90 : 90)))
+                NativeDragView(
+                    onDragEnded: { snapToEdge() },
+                    onTap: {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                            shortcut.isExpanded = true
+                        }
+                    }
+                )
             )
             .onHover { hovering in
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
@@ -344,7 +359,14 @@ struct ContentView: View {
         let totalItemsHeight = CGFloat(clipboard.history.count) * itemHeight + 20
         let calculatedHeight = min(windowHeight, headerHeight + totalItemsHeight)
         
-        return CGSize(width: windowWidth, height: calculatedHeight)
+        var finalWidth = max(340, windowWidth)
+        var finalHeight = calculatedHeight
+        if let screenRect = NSApp.windows.first?.screen?.visibleFrame {
+            finalWidth = min(finalWidth, screenRect.width)
+            finalHeight = min(finalHeight, screenRect.height)
+        }
+        
+        return CGSize(width: finalWidth, height: finalHeight)
     }
     
     // MARK: - Magnetic Dragging
@@ -381,8 +403,8 @@ struct ContentView: View {
         // If it's closed, we need to adjust size based on orientation change
         if !shortcut.isExpanded {
             let isTop = dockEdgeRaw == "top"
-            let width: CGFloat = isTop ? 72 : 28
-            let height: CGFloat = isTop ? 28 : 72
+            let width: CGFloat = isTop ? 60 : 28
+            let height: CGFloat = isTop ? 28 : 60
             window.setContentSize(NSSize(width: width, height: height))
             
             // Recalculate snap position with new size
@@ -398,12 +420,12 @@ struct ContentView: View {
         }
     }
     
-    private func adjustWindowFrame(expanded: Bool) {
+    private func adjustWindowFrame(expanded: Bool, animate: Bool = true) {
         guard let window = NSApp.windows.first else { return }
         
         let isTop = dockEdge == .top
-        let pillWidth: CGFloat = isTop ? 72 : 28
-        let pillHeight: CGFloat = isTop ? 28 : 72
+        let pillWidth: CGFloat = isTop ? 60 : 28
+        let pillHeight: CGFloat = isTop ? 28 : 60
         
         let newSize = expanded ? getDynamicWindowSize() : NSSize(width: pillWidth, height: pillHeight)
         var frame = window.frame
@@ -424,7 +446,14 @@ struct ContentView: View {
         }
         
         frame.size = newSize
-        window.setFrame(frame, display: true, animate: true)
+        
+        // Strictly constrain to screen bounds so macOS doesn't silently clamp and break relative math
+        if let screenRect = window.screen?.visibleFrame {
+            frame.origin.x = max(screenRect.minX, min(frame.origin.x, screenRect.maxX - frame.width))
+            frame.origin.y = max(screenRect.minY, min(frame.origin.y, screenRect.maxY - frame.height))
+        }
+        
+        window.setFrame(frame, display: true, animate: animate)
     }
     
     // MARK: - Keyboard Monitor
@@ -479,14 +508,20 @@ struct ContentView: View {
         guard index >= 0 && index < clipboard.history.count else { return }
         let item = clipboard.history[index]
         
+        // 1. Set the clipboard immediately
+        clipboard.prepareForPaste(item)
+        
+        // 2. Dismiss the window
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             shortcut.isExpanded = false
         }
         
+        // 3. Reactivate the previous app
         previousApp?.activate(options: .activateIgnoringOtherApps)
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            clipboard.pasteItem(item)
+        // 4. Wait for focus transfer, then trigger the paste keystroke
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            clipboard.triggerPasteKeystroke()
         }
     }
 }
@@ -507,7 +542,7 @@ struct ClipboardItemView: View {
     var body: some View {
         Button(action: onPaste) {
             HStack(spacing: 12) {
-                let shortcutText = index == 9 ? "0" : (index < 9 ? "\(index + 1)" : "-")
+                let shortcutText = index == 9 ? "0" : "\(index + 1)"
                 Text(shortcutText)
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .foregroundColor(activeColor)
@@ -540,7 +575,6 @@ struct ClipboardItemView: View {
 
 // MARK: - Native Drag View
 struct NativeDragView: NSViewRepresentable {
-    var onDragBegan: () -> Void
     var onDragEnded: () -> Void
     var onTap: () -> Void
 
@@ -551,7 +585,6 @@ struct NativeDragView: NSViewRepresentable {
 
     func updateNSView(_ nsView: NSView, context: Context) {
         if let view = nsView as? DragTrackingView {
-            view.onDragBegan = onDragBegan
             view.onDragEnded = onDragEnded
             view.onTap = onTap
         }
@@ -559,50 +592,53 @@ struct NativeDragView: NSViewRepresentable {
 }
 
 class DragTrackingView: NSView {
-    var onDragBegan: (() -> Void)?
     var onDragEnded: (() -> Void)?
     var onTap: (() -> Void)?
-    private var isDragging = false
-    private var mouseDownLocation: NSPoint?
-    private var windowStartOrigin: NSPoint?
 
     override var acceptsFirstResponder: Bool { true }
     
     override func mouseDown(with event: NSEvent) {
         guard let window = self.window else { return }
-        mouseDownLocation = event.locationInWindow
-        windowStartOrigin = window.frame.origin
-        isDragging = false
-        onDragBegan?()
-    }
-    
-    override func mouseDragged(with event: NSEvent) {
-        guard let window = self.window, let startLocation = mouseDownLocation, let startOrigin = windowStartOrigin else { return }
-        let currentLocation = event.locationInWindow
-        let dx = currentLocation.x - startLocation.x
-        let dy = currentLocation.y - startLocation.y
+        let startLocation = NSEvent.mouseLocation
+        let startOrigin = window.frame.origin
+        var isDragging = false
         
-        // Threshold to distinguish click vs drag
-        if abs(dx) > 3 || abs(dy) > 3 {
-            isDragging = true
+        // Modal event loop for zero-lag drag that respects screen boundaries
+        var keepOn = true
+        while keepOn {
+            guard let nextEvent = window.nextEvent(matching: [.leftMouseUp, .leftMouseDragged], until: .distantFuture, inMode: .eventTracking, dequeue: true) else { continue }
+            
+            switch nextEvent.type {
+            case .leftMouseDragged:
+                let currentLocation = NSEvent.mouseLocation
+                let dx = currentLocation.x - startLocation.x
+                let dy = currentLocation.y - startLocation.y
+                
+                if !isDragging && (abs(dx) > 3 || abs(dy) > 3) {
+                    isDragging = true
+                }
+                
+                if isDragging {
+                    let screenRect = window.screen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 10000, height: 10000)
+                    var newOrigin = NSPoint(x: startOrigin.x + dx, y: startOrigin.y + dy)
+                    // Strictly constrain to screen
+                    newOrigin.x = max(screenRect.minX, min(newOrigin.x, screenRect.maxX - window.frame.width))
+                    newOrigin.y = max(screenRect.minY, min(newOrigin.y, screenRect.maxY - window.frame.height))
+                    window.setFrameOrigin(newOrigin)
+                }
+                
+            case .leftMouseUp:
+                keepOn = false
+                if !isDragging {
+                    onTap?()
+                } else {
+                    onDragEnded?()
+                }
+                
+            default:
+                break
+            }
         }
-        
-        if isDragging {
-            let screenRect = window.screen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 10000, height: 10000)
-            var newOrigin = NSPoint(x: window.frame.origin.x + dx, y: window.frame.origin.y + dy)
-            newOrigin.x = max(screenRect.minX, min(newOrigin.x, screenRect.maxX - window.frame.width))
-            newOrigin.y = max(screenRect.minY, min(newOrigin.y, screenRect.maxY - window.frame.height))
-            window.setFrameOrigin(newOrigin)
-        }
-    }
-    
-    override func mouseUp(with event: NSEvent) {
-        if !isDragging {
-            onTap?()
-        } else {
-            onDragEnded?()
-        }
-        isDragging = false
     }
 }
 
@@ -671,24 +707,28 @@ struct ResizeEdgesView: View {
                     resizeStartMouse = NSEvent.mouseLocation
                     resizeStartSize = NSSize(width: windowWidth, height: windowHeight)
                 }
-                guard let startMouse = resizeStartMouse, let startSize = resizeStartSize else { return }
+                guard let startMouse = resizeStartMouse, let startSize = resizeStartSize,
+                      let window = NSApp.windows.first, let screenRect = window.screen?.visibleFrame else { return }
                 
                 let currentMouse = NSEvent.mouseLocation
                 let dx = currentMouse.x - startMouse.x
                 let dy = currentMouse.y - startMouse.y
                 
+                let maxWidth = screenRect.width
+                let maxHeight = screenRect.height
+                
                 switch edge {
                 case .right:
-                    windowWidth = max(280, startSize.width + dx)
+                    windowWidth = min(maxWidth, max(340, startSize.width + dx))
                 case .left:
-                    windowWidth = max(280, startSize.width - dx)
+                    windowWidth = min(maxWidth, max(340, startSize.width - dx))
                 case .bottom:
-                    windowHeight = max(300, startSize.height - dy) // y is inverted on screen vs window
+                    windowHeight = min(maxHeight, max(300, startSize.height - dy)) // y is inverted on screen vs window
                 case .top:
-                    windowHeight = max(300, startSize.height + dy)
+                    windowHeight = min(maxHeight, max(300, startSize.height + dy))
                 case .bottomRight:
-                    windowWidth = max(280, startSize.width + dx)
-                    windowHeight = max(300, startSize.height - dy)
+                    windowWidth = min(maxWidth, max(340, startSize.width + dx))
+                    windowHeight = min(maxHeight, max(300, startSize.height - dy))
                 }
                 
                 adjustWindowFrame()
