@@ -1,0 +1,332 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1B478EB92B0DF60A53A17BF1 /* CopyM8App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9870C57343C9C60F93714D9C /* CopyM8App.swift */; };
+		79A9E8EB1B0B35A7555E4DFD /* ShortcutManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1618755D3C4A1DBB5CA9C33B /* ShortcutManager.swift */; };
+		9567EBA87F926482E84BFF5C /* ClipboardManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 288D2FCD5D67DDA11FBF95F9 /* ClipboardManager.swift */; };
+		9A7DBBB05A39B362B9E45472 /* VisualEffectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3486ED9F9756BC5D247DDD19 /* VisualEffectView.swift */; };
+		B2A562F1FDD17E7871E29E32 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D8932979B40E81239B375C /* ContentView.swift */; };
+		CA40AFA4228C788A17B0A573 /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = 31812D29A5E97C4DE23A3775 /* HotKey */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		1618755D3C4A1DBB5CA9C33B /* ShortcutManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutManager.swift; sourceTree = "<group>"; };
+		288D2FCD5D67DDA11FBF95F9 /* ClipboardManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardManager.swift; sourceTree = "<group>"; };
+		2ECAA114012F5CBBBF5EC6AB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		3486ED9F9756BC5D247DDD19 /* VisualEffectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualEffectView.swift; sourceTree = "<group>"; };
+		8162541FBF9AAEDBC6767D29 /* CopyM8.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CopyM8.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9870C57343C9C60F93714D9C /* CopyM8App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopyM8App.swift; sourceTree = "<group>"; };
+		A1D8932979B40E81239B375C /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		4B9DA49D213F820A1A4DE2AB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CA40AFA4228C788A17B0A573 /* HotKey in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		6F4A19739433DAD2D5E7BC8F = {
+			isa = PBXGroup;
+			children = (
+				AF8B5A3326A0D3B725AC6559 /* CopyM8 */,
+				B7BDB12CB8D1D67DB962ED41 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AF8B5A3326A0D3B725AC6559 /* CopyM8 */ = {
+			isa = PBXGroup;
+			children = (
+				288D2FCD5D67DDA11FBF95F9 /* ClipboardManager.swift */,
+				A1D8932979B40E81239B375C /* ContentView.swift */,
+				9870C57343C9C60F93714D9C /* CopyM8App.swift */,
+				2ECAA114012F5CBBBF5EC6AB /* Info.plist */,
+				1618755D3C4A1DBB5CA9C33B /* ShortcutManager.swift */,
+				3486ED9F9756BC5D247DDD19 /* VisualEffectView.swift */,
+			);
+			path = CopyM8;
+			sourceTree = "<group>";
+		};
+		B7BDB12CB8D1D67DB962ED41 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8162541FBF9AAEDBC6767D29 /* CopyM8.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E058DAEA7A5D2799C1BC4786 /* CopyM8 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EFDA662514B92A8826CDA782 /* Build configuration list for PBXNativeTarget "CopyM8" */;
+			buildPhases = (
+				5250B8E0E4326CBDC1A37FD2 /* Sources */,
+				4B9DA49D213F820A1A4DE2AB /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CopyM8;
+			packageProductDependencies = (
+				31812D29A5E97C4DE23A3775 /* HotKey */,
+			);
+			productName = CopyM8;
+			productReference = 8162541FBF9AAEDBC6767D29 /* CopyM8.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B996032CD557D5DFABF3A020 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = F8F2D4294CA80586499DFC75 /* Build configuration list for PBXProject "CopyM8" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 6F4A19739433DAD2D5E7BC8F;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				E0790B16542B4FFDBB0E3581 /* XCRemoteSwiftPackageReference "HotKey" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = B7BDB12CB8D1D67DB962ED41 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				E058DAEA7A5D2799C1BC4786 /* CopyM8 */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		5250B8E0E4326CBDC1A37FD2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9567EBA87F926482E84BFF5C /* ClipboardManager.swift in Sources */,
+				B2A562F1FDD17E7871E29E32 /* ContentView.swift in Sources */,
+				1B478EB92B0DF60A53A17BF1 /* CopyM8App.swift in Sources */,
+				79A9E8EB1B0B35A7555E4DFD /* ShortcutManager.swift in Sources */,
+				9A7DBBB05A39B362B9E45472 /* VisualEffectView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		168277065CCD92F9F7872F81 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		994FD51507E64C814C650700 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = CopyM8/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.vatsa.CopyM8;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		A609E5F3FAA9461A33D21159 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		BCA1A47E31F124A716AD3A90 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = CopyM8/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.vatsa.CopyM8;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		EFDA662514B92A8826CDA782 /* Build configuration list for PBXNativeTarget "CopyM8" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				994FD51507E64C814C650700 /* Debug */,
+				BCA1A47E31F124A716AD3A90 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F8F2D4294CA80586499DFC75 /* Build configuration list for PBXProject "CopyM8" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A609E5F3FAA9461A33D21159 /* Debug */,
+				168277065CCD92F9F7872F81 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		E0790B16542B4FFDBB0E3581 /* XCRemoteSwiftPackageReference "HotKey" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/soffes/HotKey.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.1.3;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		31812D29A5E97C4DE23A3775 /* HotKey */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E0790B16542B4FFDBB0E3581 /* XCRemoteSwiftPackageReference "HotKey" */;
+			productName = HotKey;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = B996032CD557D5DFABF3A020 /* Project object */;
+}
