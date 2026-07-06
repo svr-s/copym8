@@ -5,15 +5,37 @@ enum DockEdge {
     case left, right, top
 }
 
+let colors: [(name: String, color: Color)] = [
+    ("Ocean", Color(red: 0.2, green: 0.6, blue: 0.8)),
+    ("Peach", Color(red: 0.9, green: 0.6, blue: 0.5)),
+    ("Lavender", Color(red: 0.7, green: 0.5, blue: 0.8)),
+    ("Mint", Color(red: 0.4, green: 0.8, blue: 0.6)),
+    ("Lemon", Color(red: 0.9, green: 0.8, blue: 0.4)),
+    ("Bubblegum", Color(red: 0.9, green: 0.4, blue: 0.6)),
+    ("White", Color.white),
+    ("Grey", Color.gray),
+    ("Black", Color.black)
+]
+
 struct ContentView: View {
     @StateObject private var clipboard = ClipboardManager()
     @StateObject private var shortcut = ShortcutManager()
     @State private var isHovering = false
     @State private var showingClearAlert = false
+    @State private var showingDeleteSelectedAlert = false
     @State private var showingEmptyToast = false
     @State private var expandedItemIndex: Int? = nil
     @State private var showingSettings = false
     @State private var draftHistoryCount: Int = 25
+    @State private var searchText: String = ""
+    @FocusState private var isSearchFocused: Bool
+    
+    // Edit Mode State
+    @State private var isEditMode: Bool = false
+    @State private var selectedItemsForDeletion: Set<UUID> = []
+    
+    // Tab State
+    @State private var activeTab: String = "All"
     
     // UI State
     @AppStorage("activeColorName") private var activeColorName: String = "Glacier"
@@ -36,6 +58,34 @@ struct ContentView: View {
         colors.first(where: { $0.name == activeColorName })?.color ?? .cyan
     }
     
+    private var filteredHistory: [ClipboardItem] {
+        var results = clipboard.history
+        
+        switch activeTab {
+        case "Pinned":
+            results = results.filter { $0.isPinned }
+        case "Text":
+            results = results.filter { $0.itemType == .text }
+        case "Links":
+            results = results.filter { $0.itemType == .link }
+        case "Images":
+            results = results.filter { $0.itemType == .image }
+        case "Files":
+            results = results.filter { $0.itemType == .file }
+        default:
+            break
+        }
+        
+        if !searchText.isEmpty {
+            results = results.filter { item in
+                item.text.localizedCaseInsensitiveContains(searchText) ||
+                (item.sourceApp?.localizedCaseInsensitiveContains(searchText) == true)
+            }
+        }
+        
+        return results
+    }
+    
     // Drag State
     @State private var dragOffset: CGSize = .zero
     @State private var initialWindowPosition: NSPoint? = nil
@@ -50,18 +100,14 @@ struct ContentView: View {
     // Hover State for Close
     @State private var isHoveringClose = false
     
-    let colors: [(name: String, color: Color)] = [
-        ("Ocean", Color(red: 0.2, green: 0.6, blue: 0.8)),
-        ("Peach", Color(red: 0.9, green: 0.6, blue: 0.5)),
-        ("Lavender", Color(red: 0.7, green: 0.5, blue: 0.8)),
-        ("Mint", Color(red: 0.4, green: 0.8, blue: 0.6)),
-        ("Lemon", Color(red: 0.9, green: 0.8, blue: 0.4)),
-        ("Bubblegum", Color(red: 0.9, green: 0.4, blue: 0.6)),
-        ("White", Color.white),
-        ("Grey", Color.gray),
-        ("Black", Color.black)
-    ]
+    private func cycleColor() {
+        if let idx = colors.firstIndex(where: { $0.name == activeColorName }) {
+            let nextIdx = (idx + 1) % colors.count
+            activeColorName = colors[nextIdx].name
+        }
+    }
     
+    // MARK: - Body
     var body: some View {
         ZStack {
             if shortcut.isExpanded {
@@ -81,6 +127,7 @@ struct ContentView: View {
                 previousApp = NSWorkspace.shared.frontmostApplication
                 NSApp.activate()
                 NSApp.windows.first?.makeKeyAndOrderFront(nil)
+                searchText = ""
                 setupKeyboardMonitor()
             } else {
                 teardownKeyboardMonitor()
@@ -88,6 +135,10 @@ struct ContentView: View {
         }
         .onChange(of: maxHistoryCount) { _, newValue in
             clipboard.truncateHistory(to: newValue)
+        }
+        .onChange(of: searchText) { _, _ in
+            selectedIndex = 0
+            expandedItemIndex = nil
         }
     }
     
@@ -111,6 +162,24 @@ struct ContentView: View {
             }
             .onTapGesture {
                 NSApplication.shared.terminate(nil)
+            }
+            
+            // Edit Mode Button
+            Button(action: {
+                withAnimation {
+                    isEditMode.toggle()
+                    if !isEditMode {
+                        selectedItemsForDeletion.removeAll()
+                    }
+                }
+            }) {
+                Image(systemName: isEditMode ? "checkmark.circle.fill" : "checklist")
+                    .font(.system(size: 11))
+                    .foregroundColor(isEditMode ? activeColor : .white.opacity(0.6))
+            }
+            .buttonStyle(PlainButtonStyle())
+            .onHover { hover in
+                if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() }
             }
             
             // Clear All Button
@@ -137,6 +206,12 @@ struct ContentView: View {
                 Button("Clear", role: .destructive) { clipboard.clearAll() }
             }
             
+            Spacer()
+            
+            Image(systemName: "infinity")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(.white)
+                
             Spacer()
             
             // Spacing toggle
@@ -166,23 +241,7 @@ struct ContentView: View {
             .background(Color.black.opacity(0.2))
             .cornerRadius(4)
             
-            Divider().frame(height: 12).background(Color.white.opacity(0.2))
-            
-            // Color Palette
-            HStack(spacing: windowWidth < 360 ? 4 : 6) {
-                ForEach(colors, id: \.name) { c in
-                    Circle()
-                        .fill(c.name == "Clear" ? Color.white.opacity(0.1) : c.color)
-                        .frame(width: windowWidth < 360 ? 8 : 10, height: windowWidth < 360 ? 8 : 10)
-                        .overlay(
-                            Circle()
-                                .stroke(Color.white, lineWidth: activeColorName == c.name ? 2 : 0)
-                        )
-                        .onTapGesture { activeColorName = c.name }
-                }
-            }
-            
-            Divider().frame(height: 12).background(Color.white.opacity(0.2))
+            // Colors moved to Settings
             
             // Settings Button
             Button(action: {
@@ -197,25 +256,7 @@ struct ContentView: View {
                 if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() }
             }
             .popover(isPresented: $showingSettings, arrowEdge: .bottom) {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Settings")
-                        .font(.headline)
-                    HStack {
-                        Text("History Limit:")
-                            .font(.system(size: 12))
-                        TextField("", value: $draftHistoryCount, format: .number)
-                            .frame(width: 40)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .onSubmit {
-                                maxHistoryCount = max(5, draftHistoryCount)
-                                showingSettings = false
-                            }
-                        Stepper("", value: $draftHistoryCount, in: 5...500)
-                            .labelsHidden()
-                    }
-                }
-                .padding()
-                .frame(width: 220)
+                SettingsView(draftHistoryCount: $draftHistoryCount, maxHistoryCount: $maxHistoryCount)
             }
             .onChange(of: showingSettings) { _, isShowing in
                 if isShowing {
@@ -244,6 +285,21 @@ struct ContentView: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background(VisualEffectView(material: .popover, blendingMode: .behindWindow).opacity(0.5))
+        .background(
+            Group {
+                Button("") { isSearchFocused = true }.keyboardShortcut("f", modifiers: .command)
+                Button("") { isDense.toggle() }.keyboardShortcut("d", modifiers: .command)
+                Button("") { cycleColor() }.keyboardShortcut("k", modifiers: .command)
+                Button("") { showingSettings.toggle() }.keyboardShortcut(",", modifiers: .command)
+                Button("") { 
+                    withAnimation { 
+                        isEditMode.toggle() 
+                        if !isEditMode { selectedItemsForDeletion.removeAll() }
+                    }
+                }.keyboardShortcut("e", modifiers: .command)
+            }
+            .hidden()
+        )
         .overlay(
             Group {
                 if showingEmptyToast {
@@ -260,36 +316,213 @@ struct ContentView: View {
             }, alignment: .top
         )
     }
+    private var tabBarView: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(["All", "Pinned", "Text", "Links", "Images", "Files"], id: \.self) { tab in
+                    if shouldShowTab(tab) {
+                        Button(action: {
+                            withAnimation {
+                                activeTab = tab
+                                selectedIndex = 0
+                            }
+                        }) {
+                            let isBlack = activeColorName == "Black"
+                            let isActive = activeTab == tab
+                            
+                            Text(tab)
+                                .font(.system(size: 11, weight: isActive ? .bold : .regular))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .foregroundColor(isActive ? (isBlack ? .white : activeColor) : .white.opacity(0.6))
+                                .background(
+                                    isActive 
+                                    ? (isBlack ? Color.white.opacity(0.2) : activeColor.opacity(0.15)) 
+                                    : Color.white.opacity(0.05)
+                                )
+                                .cornerRadius(12)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .onHover { hover in
+                            if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.bottom, 8)
+        }
+    }
     
-    // MARK: - Expanded View
+    private func shouldShowTab(_ tab: String) -> Bool {
+        switch tab {
+        case "All", "Pinned": return true
+        case "Text": return UserDefaults.standard.object(forKey: "saveText") as? Bool ?? true
+        case "Links": return UserDefaults.standard.object(forKey: "saveLinks") as? Bool ?? true
+        case "Images": return UserDefaults.standard.object(forKey: "saveImages") as? Bool ?? true
+        case "Files": return UserDefaults.standard.object(forKey: "saveFiles") as? Bool ?? true
+        default: return false
+        }
+    }
+
+    private var emptyStateMessage: String {
+        if !searchText.isEmpty {
+            return "No results found."
+        } else if activeTab == "Pinned" {
+            return "You don't have any pinned items.\nPin important items to keep them here!"
+        } else {
+            return "Your clipboard is empty.\nStart copying to see items here!"
+        }
+    }
+
     private var emptyStateView: some View {
-        VStack {
+        VStack(spacing: 12) {
             Spacer()
-            Image(systemName: "doc.on.clipboard")
-                .font(.system(size: 24))
+            Image(systemName: "clipboard")
+                .font(.system(size: 32))
                 .foregroundColor(.white.opacity(0.3))
-                .padding(.bottom, 4)
-            Text("Your clipboard is empty.\nStart copying to see items here!")
+            Text(emptyStateMessage)
                 .font(.system(size: 12))
                 .foregroundColor(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
             Spacer()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
+    private var editModeFooter: some View {
+        HStack {
+            Button(action: {
+                if selectedItemsForDeletion.count == clipboard.history.count {
+                    selectedItemsForDeletion.removeAll()
+                } else {
+                    selectedItemsForDeletion = Set(clipboard.history.map { $0.id })
+                }
+            }) {
+                Text(selectedItemsForDeletion.count == clipboard.history.count ? "Deselect All" : "Select All")
+                    .font(.system(size: 11))
+                    .foregroundColor(.white.opacity(0.6))
+            }
+            .buttonStyle(PlainButtonStyle())
+            .onHover { hover in
+                if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+            }
+            
+            Spacer()
+            
+            Button(action: {
+                for id in selectedItemsForDeletion {
+                    clipboard.togglePin(for: id)
+                }
+                selectedItemsForDeletion.removeAll()
+                isEditMode = false
+            }) {
+                Text("Pin Selected")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(activeColor)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(activeColor.opacity(0.1))
+                    .cornerRadius(6)
+            }
+            .buttonStyle(PlainButtonStyle())
+            .onHover { hover in
+                if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+            }
+            
+            Button(action: {
+                if !selectedItemsForDeletion.isEmpty {
+                    showingDeleteSelectedAlert = true
+                }
+            }) {
+                Text("Delete Selected (\(selectedItemsForDeletion.count))")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(selectedItemsForDeletion.isEmpty ? .white.opacity(0.4) : .white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(selectedItemsForDeletion.isEmpty ? Color.white.opacity(0.1) : Color.red.opacity(0.8))
+                    .cornerRadius(6)
+            }
+            .buttonStyle(PlainButtonStyle())
+            .disabled(selectedItemsForDeletion.isEmpty)
+            .onHover { hover in
+                if !selectedItemsForDeletion.isEmpty {
+                    if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+                }
+            }
+            .alert("Delete selected items?", isPresented: $showingDeleteSelectedAlert) {
+                Button("Cancel", role: .cancel) { }
+                Button("Delete", role: .destructive) {
+                    clipboard.history.removeAll { selectedItemsForDeletion.contains($0.id) }
+                    selectedItemsForDeletion.removeAll()
+                    isEditMode = false
+                }
+            } message: {
+                Text("Are you sure you want to delete \(selectedItemsForDeletion.count) items? This action cannot be undone.")
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 12)
+        .background(Color.black.opacity(0.2))
+    }
+    
+    private var searchBarView: some View {
+        HStack {
+            HStack(spacing: 4) {
+                Text("CopyM8")
+                    .font(.system(size: 13, weight: .black, design: .rounded))
+                    .foregroundColor(.white)
+            }
+            .padding(.trailing, 4)
+            
+            Image(systemName: "magnifyingglass")
+                .foregroundColor(.white.opacity(0.5))
+                .font(.system(size: 12))
+            TextField("Search copied items or source apps...", text: $searchText)
+                .textFieldStyle(PlainTextFieldStyle())
+                .foregroundColor(.white)
+                .focused($isSearchFocused)
+                .font(.system(size: 12))
+            if !searchText.isEmpty {
+                Button(action: { searchText = "" }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.white.opacity(0.5))
+                        .font(.system(size: 12))
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
+        .padding(8)
+        .background(Color.black.opacity(0.2))
+        .cornerRadius(8)
+        .padding(.horizontal, 10)
+        .padding(.bottom, 4)
     }
     
     private var clipboardListView: some View {
         ScrollView {
             LazyVStack(spacing: isDense ? 2 : 12) {
-                ForEach(Array(clipboard.history.enumerated()), id: \.element.id) { (index: Int, item: ClipboardItem) in
+                ForEach(Array(filteredHistory.enumerated()), id: \.element.id) { (index: Int, item: ClipboardItem) in
                     ClipboardItemView(
                         index: index,
                         item: item,
-                        isSelected: index == selectedIndex,
+                        isSelected: index == selectedIndex && !isEditMode,
                         isExpanded: index == expandedItemIndex,
                         isDense: isDense,
                         activeColor: activeColorName == "Black" ? .white : activeColor,
+                        isEditMode: isEditMode,
+                        isChecked: selectedItemsForDeletion.contains(item.id),
                         onPaste: {
-                            pasteItem(index: index)
+                            if isEditMode {
+                                if selectedItemsForDeletion.contains(item.id) {
+                                    selectedItemsForDeletion.remove(item.id)
+                                } else {
+                                    selectedItemsForDeletion.insert(item.id)
+                                }
+                            } else {
+                                let isCmd = NSEvent.modifierFlags.contains(.command)
+                                pasteItem(index: index, isFormatted: isCmd)
+                            }
                         },
                         onExpandToggle: {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
@@ -301,6 +534,14 @@ struct ContentView: View {
                             }
                         }
                     )
+                    .contextMenu {
+                        Button(item.isPinned ? "Unpin" : "Pin") {
+                            clipboard.togglePin(for: item.id)
+                        }
+                        Button("Delete") {
+                            clipboard.history.removeAll { $0.id == item.id }
+                        }
+                    }
                 }
             }
             .padding(8)
@@ -318,10 +559,17 @@ struct ContentView: View {
                 // Header
                 headerView
                 
-                if clipboard.history.isEmpty {
+                searchBarView
+                tabBarView
+                
+                if filteredHistory.isEmpty {
                     emptyStateView
                 } else {
                     clipboardListView
+                }
+                
+                if isEditMode {
+                    editModeFooter
                 }
             }
         }
@@ -406,15 +654,8 @@ struct ContentView: View {
     
     // MARK: - Dynamic Size
     private func getDynamicWindowSize() -> CGSize {
-        // If empty, return a small size
-        if clipboard.history.isEmpty {
-            return CGSize(width: windowWidth, height: 150)
-        }
-        
-        let headerHeight: CGFloat = 40
-        let itemHeight: CGFloat = isDense ? 28 : 44
-        let totalItemsHeight = CGFloat(clipboard.history.count) * itemHeight + 20
-        let calculatedHeight = min(windowHeight, headerHeight + totalItemsHeight)
+        // Remove the min() clamp so the user has full manual control over the window height
+        let calculatedHeight = windowHeight
         
         var finalWidth = max(340, windowWidth)
         var finalHeight = calculatedHeight
@@ -522,31 +763,89 @@ struct ContentView: View {
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if showingSettings { return event }
             switch event.keyCode {
+            case 53: // Esc
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    shortcut.isExpanded = false
+                }
+                return nil
             case 125: // Down arrow
-                selectedIndex = min(selectedIndex + 1, clipboard.history.count - 1)
-                expandedItemIndex = nil
+                let maxIndex = max(0, self.filteredHistory.count - 1)
+                self.selectedIndex = min(self.selectedIndex + 1, maxIndex)
+                self.expandedItemIndex = nil
+                return nil
+
+            case 35: // P
+                if self.isEditMode {
+                    if !self.selectedItemsForDeletion.isEmpty {
+                        for id in self.selectedItemsForDeletion {
+                            self.clipboard.togglePin(for: id)
+                        }
+                        self.selectedItemsForDeletion.removeAll()
+                        withAnimation { self.isEditMode = false }
+                    }
+                } else if self.selectedIndex >= 0 && self.selectedIndex < self.filteredHistory.count {
+                    let id = self.filteredHistory[self.selectedIndex].id
+                    self.clipboard.togglePin(for: id)
+                }
                 return nil
             case 126: // Up arrow
-                selectedIndex = max(selectedIndex - 1, 0)
-                expandedItemIndex = nil
+                self.selectedIndex = max(self.selectedIndex - 1, 0)
+                self.expandedItemIndex = nil
                 return nil
             case 36: // Enter
-                pasteItem(index: selectedIndex)
+                let isCmd = event.modifierFlags.contains(.command)
+                self.pasteItem(index: self.selectedIndex, isFormatted: isCmd)
                 return nil
             case 124: // Right arrow
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    expandedItemIndex = (expandedItemIndex == selectedIndex) ? nil : selectedIndex
+                    self.expandedItemIndex = (self.expandedItemIndex == self.selectedIndex) ? nil : self.selectedIndex
                 }
                 return nil
             case 123: // Left arrow
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    expandedItemIndex = nil
+                    self.expandedItemIndex = (self.expandedItemIndex == self.selectedIndex) ? nil : self.selectedIndex
                 }
                 return nil
+            case 49: // Space
+                if self.isEditMode {
+                    if self.selectedIndex >= 0 && self.selectedIndex < self.filteredHistory.count {
+                        let id = self.filteredHistory[self.selectedIndex].id
+                        if self.selectedItemsForDeletion.contains(id) {
+                            self.selectedItemsForDeletion.remove(id)
+                        } else {
+                            self.selectedItemsForDeletion.insert(id)
+                        }
+                    }
+                    return nil
+                }
+                return event
+            case 0: // A
+                if event.modifierFlags.contains(.command) && self.isEditMode {
+                    if self.selectedItemsForDeletion.count == self.filteredHistory.count {
+                        self.selectedItemsForDeletion.removeAll()
+                    } else {
+                        self.selectedItemsForDeletion = Set(self.filteredHistory.map { $0.id })
+                    }
+                    return nil
+                }
+                return event
             default:
                 if let chars = event.charactersIgnoringModifiers, let number = Int(chars) {
+                    if event.modifierFlags.contains(.option) {
+                        let tabs = ["All", "Pinned", "Text", "Links", "Images", "Files"]
+                        let visibleTabs = tabs.filter { self.shouldShowTab($0) }
+                        if number >= 1 && number <= visibleTabs.count {
+                            withAnimation {
+                                self.activeTab = visibleTabs[number - 1]
+                                self.selectedIndex = 0
+                            }
+                        }
+                        return nil
+                    }
+                    
+                    let isCmd = event.modifierFlags.contains(.command)
                     let targetIndex = number == 0 ? 9 : number - 1
-                    pasteItem(index: targetIndex)
+                    self.pasteItem(index: targetIndex, isFormatted: isCmd)
                     return nil
                 }
                 return event
@@ -561,12 +860,14 @@ struct ContentView: View {
         }
     }
     
-    private func pasteItem(index: Int) {
-        guard index >= 0 && index < clipboard.history.count else { return }
-        let item = clipboard.history[index]
+    private func pasteItem(index: Int, isFormatted: Bool = false) {
+        if isEditMode { return }
+        let history = self.filteredHistory
+        guard index >= 0 && index < history.count else { return }
+        let item = history[index]
         
         // 1. Set the clipboard immediately
-        clipboard.prepareForPaste(item)
+        clipboard.prepareForPaste(item, isFormatted: isFormatted)
         
         // 2. Dismiss the window
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
@@ -591,6 +892,8 @@ struct ClipboardItemView: View {
     let isExpanded: Bool
     let isDense: Bool
     let activeColor: Color
+    let isEditMode: Bool
+    let isChecked: Bool
     let onPaste: () -> Void
     let onExpandToggle: () -> Void
     
@@ -599,17 +902,50 @@ struct ClipboardItemView: View {
     var body: some View {
         Button(action: onPaste) {
             HStack(spacing: 12) {
-                let shortcutText = index == 9 ? "0" : "\(index + 1)"
-                Text(shortcutText)
-                    .font(.system(size: 11, weight: .bold, design: .monospaced))
-                    .foregroundColor(activeColor)
-                    .frame(width: 16, alignment: .leading)
+                if isEditMode {
+                    Image(systemName: isChecked ? "checkmark.circle.fill" : "circle")
+                        .foregroundColor(isChecked ? activeColor : .white.opacity(0.3))
+                        .font(.system(size: 14))
+                } else {
+                    let shortcutText = index == 9 ? "0" : "\(index + 1)"
+                    Text(shortcutText)
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundColor(activeColor)
+                        .frame(width: 16, alignment: .leading)
+                }
                 
-                Text(item.text)
-                    .lineLimit(isExpanded ? nil : 1)
-                    .font(.system(size: 13, weight: .regular))
-                    .foregroundColor(.white.opacity(0.95))
-                    .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: 4) {
+                    if item.itemType == .image, let nsImage = LocalImageStore.shared.loadImage(id: item.id) {
+                        Image(nsImage: nsImage)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxHeight: isExpanded ? 200 : 40)
+                            .cornerRadius(4)
+                    } else if item.itemType == .file, let path = item.fileURL {
+                        HStack(spacing: 6) {
+                            Image(nsImage: NSWorkspace.shared.icon(forFile: path))
+                                .resizable()
+                                .frame(width: 16, height: 16)
+                            Text(item.text)
+                                .lineLimit(isExpanded ? nil : 1)
+                                .font(.system(size: 13, weight: .regular))
+                                .foregroundColor(.white.opacity(0.95))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    } else {
+                        Text(item.text)
+                            .lineLimit(isExpanded ? nil : 1)
+                            .font(.system(size: 13, weight: .regular))
+                            .foregroundColor(.white.opacity(0.95))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    
+                    if !isDense, let app = item.sourceApp {
+                        Text("\(app) • \(item.timestamp.formatted(date: .omitted, time: .shortened))")
+                            .font(.system(size: 9))
+                            .foregroundColor(.white.opacity(0.4))
+                    }
+                }
                 
                 Spacer()
             }
@@ -706,6 +1042,7 @@ struct ResizeEdgesView: View {
     @Binding var isResizing: Bool
     @Binding var resizeStartMouse: NSPoint?
     @Binding var resizeStartSize: NSSize?
+    @State private var resizeStartFrame: NSRect?
     var adjustWindowFrame: () -> Void
     
     let resizeThickness: CGFloat = 8
@@ -763,8 +1100,12 @@ struct ResizeEdgesView: View {
                     isResizing = true
                     resizeStartMouse = NSEvent.mouseLocation
                     resizeStartSize = NSSize(width: windowWidth, height: windowHeight)
+                    if let win = NSApp.windows.first {
+                        resizeStartFrame = win.frame
+                    }
                 }
                 guard let startMouse = resizeStartMouse, let startSize = resizeStartSize,
+                      let startFrame = resizeStartFrame,
                       let window = NSApp.windows.first, let screenRect = window.screen?.visibleFrame else { return }
                 
                 let currentMouse = NSEvent.mouseLocation
@@ -774,29 +1115,209 @@ struct ResizeEdgesView: View {
                 let maxWidth = screenRect.width
                 let maxHeight = screenRect.height
                 
+                var newFrame = startFrame
+                
                 switch edge {
                 case .right:
                     windowWidth = min(maxWidth, max(340, startSize.width + dx))
+                    newFrame.size.width = windowWidth
                 case .left:
                     windowWidth = min(maxWidth, max(340, startSize.width - dx))
+                    newFrame.size.width = windowWidth
+                    newFrame.origin.x = startFrame.maxX - windowWidth
                 case .bottom:
-                    windowHeight = min(maxHeight, max(300, startSize.height - dy)) // y is inverted on screen vs window
+                    windowHeight = min(maxHeight, max(300, startSize.height - dy)) 
+                    newFrame.size.height = windowHeight
+                    newFrame.origin.y = startFrame.maxY - windowHeight
                 case .top:
                     windowHeight = min(maxHeight, max(300, startSize.height + dy))
+                    newFrame.size.height = windowHeight
+                    // Origin y stays the same (bottom edge fixed)
                 case .bottomRight:
                     windowWidth = min(maxWidth, max(340, startSize.width + dx))
                     windowHeight = min(maxHeight, max(300, startSize.height - dy))
+                    newFrame.size.width = windowWidth
+                    newFrame.size.height = windowHeight
+                    newFrame.origin.y = startFrame.maxY - windowHeight
                 }
                 
-                adjustWindowFrame()
+                window.setFrame(newFrame, display: true, animate: false)
             }
             .onEnded { _ in
                 isResizing = false
                 resizeStartMouse = nil
                 resizeStartSize = nil
+                resizeStartFrame = nil
                 NSCursor.pop()
             }
     }
 }
 
-
+// MARK: - Settings View
+struct SettingsView: View {
+    @Binding var draftHistoryCount: Int
+    @Binding var maxHistoryCount: Int
+    
+    @AppStorage("maxItemSizeMB") private var maxItemSizeMB: Int = 10
+    @AppStorage("maxTotalStorageMB") private var maxTotalStorageMB: Int = 50
+    
+    @AppStorage("saveText") private var saveText: Bool = true
+    @AppStorage("saveLinks") private var saveLinks: Bool = true
+    @AppStorage("saveImages") private var saveImages: Bool = true
+    @AppStorage("saveFiles") private var saveFiles: Bool = true
+    
+    @State private var selectedTab = "General"
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            Picker("", selection: $selectedTab) {
+                Text("General").tag("General")
+                Text("Types").tag("Types")
+                Text("Shortcuts").tag("Shortcuts")
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            .padding()
+            
+            Divider()
+            
+            ScrollView {
+                Group {
+                    switch selectedTab {
+                    case "General":
+                        generalTab
+                    case "Types":
+                        typesTab
+                    case "Shortcuts":
+                        shortcutsTab
+                    default:
+                        EmptyView()
+                    }
+                }
+                .padding()
+            }
+            .frame(height: 280)
+        }
+        .frame(width: 300)
+    }
+    
+    private var generalTab: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("History Limit:")
+                    .font(.system(size: 13))
+                Spacer()
+                TextField("", value: $draftHistoryCount, format: .number)
+                    .frame(width: 50)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .onSubmit {
+                        maxHistoryCount = max(5, draftHistoryCount)
+                    }
+                Stepper("", value: $draftHistoryCount, in: 5...500)
+                    .labelsHidden()
+            }
+            Text("Maximum number of items to keep in history.")
+                .font(.system(size: 11))
+                .foregroundColor(.white.opacity(0.5))
+            
+            Divider()
+            
+            Text("Accent Color:")
+                .font(.system(size: 13))
+            
+            HStack(spacing: 8) {
+                ForEach(colors, id: \.name) { c in
+                    Circle()
+                        .fill(c.name == "Clear" ? Color.white.opacity(0.1) : c.color)
+                        .frame(width: 14, height: 14)
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white, lineWidth: UserDefaults.standard.string(forKey: "activeColorName") ?? "Ocean" == c.name ? 2 : 0)
+                        )
+                        .onTapGesture { 
+                            UserDefaults.standard.set(c.name, forKey: "activeColorName") 
+                        }
+                }
+            }
+            
+            Divider()
+            
+            HStack {
+                Text("Max Item Size (MB):")
+                    .font(.system(size: 13))
+                Spacer()
+                TextField("", value: $maxItemSizeMB, format: .number)
+                    .frame(width: 50)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .onChange(of: maxItemSizeMB) { newValue in
+                        if newValue > 20 { maxItemSizeMB = 20 }
+                        else if newValue < 1 { maxItemSizeMB = 1 }
+                    }
+                Stepper("", value: $maxItemSizeMB, in: 1...20)
+                    .labelsHidden()
+            }
+            
+            HStack {
+                Text("Total Storage Cap (MB):")
+                    .font(.system(size: 13))
+                Spacer()
+                TextField("", value: $maxTotalStorageMB, format: .number)
+                    .frame(width: 50)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .onChange(of: maxTotalStorageMB) { newValue in
+                        if newValue > 100 { maxTotalStorageMB = 100 }
+                        else if newValue < 1 { maxTotalStorageMB = 1 }
+                    }
+                Stepper("", value: $maxTotalStorageMB, in: 1...100)
+                    .labelsHidden()
+            }
+            
+            Spacer()
+        }
+    }
+    
+    private var typesTab: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Select which types of content to save.")
+                .font(.system(size: 11))
+                .foregroundColor(.white.opacity(0.6))
+            
+            Toggle("Save Text", isOn: $saveText)
+            Toggle("Save Links", isOn: $saveLinks)
+            Toggle("Save Images", isOn: $saveImages)
+            Toggle("Save Files", isOn: $saveFiles)
+            
+            Spacer()
+        }
+    }
+    
+    private var shortcutsTab: some View {
+        ScrollView {
+            VStack(spacing: 8) {
+                shortcutRow(action: "Open Search", key: "Cmd + F")
+                shortcutRow(action: "Toggle Layout", key: "Cmd + D")
+                shortcutRow(action: "Cycle Colors", key: "Cmd + K")
+                shortcutRow(action: "Settings", key: "Cmd + ,")
+                shortcutRow(action: "Edit Mode", key: "Cmd + E")
+                shortcutRow(action: "Switch Tabs", key: "Opt + 1-6")
+                shortcutRow(action: "Pin Item", key: "P")
+                shortcutRow(action: "Select All (Edit)", key: "Cmd + A")
+                shortcutRow(action: "Toggle Selection (Edit)", key: "Space")
+                shortcutRow(action: "Close Window", key: "Esc")
+            }
+            .padding(.trailing, 12)
+        }
+    }
+    
+    private func shortcutRow(action: String, key: String) -> some View {
+        HStack {
+            Text(action).font(.system(size: 12))
+            Spacer()
+            Text(key)
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.white.opacity(0.1))
+                .cornerRadius(4)
+        }
+    }
+}
