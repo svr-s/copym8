@@ -353,8 +353,8 @@ struct ContentView: View {
     // MARK: - Pill View
     private var pillView: some View {
         let isTop = dockEdge == .top
-        let width: CGFloat = isTop ? 60 : 28
-        let height: CGFloat = isTop ? 28 : 60
+        let width: CGFloat = isTop ? 40 : 28
+        let height: CGFloat = isTop ? 28 : 40
         let hoverLogoColor = activeColorName == "Black" ? Color.white : activeColor
         let logoColor = isHovering ? hoverLogoColor : Color.primary.opacity(0.4)
         
@@ -459,8 +459,8 @@ struct ContentView: View {
         // If it's closed, we need to adjust size based on orientation change
         if !shortcut.isExpanded {
             let isTop = dockEdgeRaw == "top"
-            let width: CGFloat = isTop ? 60 : 28
-            let height: CGFloat = isTop ? 28 : 60
+            let width: CGFloat = isTop ? 40 : 28
+            let height: CGFloat = isTop ? 28 : 40
             window.setContentSize(NSSize(width: width, height: height))
             
             // Recalculate snap position with new size
@@ -480,8 +480,8 @@ struct ContentView: View {
         guard let window = NSApp.windows.first else { return }
         
         let isTop = dockEdge == .top
-        let pillWidth: CGFloat = isTop ? 60 : 28
-        let pillHeight: CGFloat = isTop ? 28 : 60
+        let pillWidth: CGFloat = isTop ? 40 : 28
+        let pillHeight: CGFloat = isTop ? 28 : 40
         
         let newSize = expanded ? getDynamicWindowSize() : NSSize(width: pillWidth, height: pillHeight)
         var frame = window.frame
