@@ -336,9 +336,12 @@ struct ContentView: View {
                 return event
             case 48: // Tab
                 if event.modifierFlags.contains(.option) {
+                    let isShift = event.modifierFlags.contains(.shift)
                     let visibleTabs = getVisibleTabs()
                     if let currentIndex = visibleTabs.firstIndex(of: self.activeTab) {
-                        let nextIndex = (currentIndex + 1) % visibleTabs.count
+                        let nextIndex = isShift 
+                            ? (currentIndex - 1 + visibleTabs.count) % visibleTabs.count 
+                            : (currentIndex + 1) % visibleTabs.count
                         withAnimation {
                             self.activeTab = visibleTabs[nextIndex]
                             self.selectedIndex = 0
