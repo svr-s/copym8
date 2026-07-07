@@ -71,8 +71,8 @@ struct HeaderView: View {
             Spacer()
             
             Picker("", selection: $isDense) {
-                Image(systemName: "list.bullet").tag(true)
-                Image(systemName: "list.dash").tag(false)
+                Image(systemName: "rectangle.grid.1x3").tag(true)
+                Image(systemName: "rectangle.grid.1x2").tag(false)
             }
             .pickerStyle(.segmented)
             .frame(width: 60)
