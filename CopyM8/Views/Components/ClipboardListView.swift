@@ -1,0 +1,53 @@
+import SwiftUI
+
+struct ClipboardListView: View {
+    @EnvironmentObject var clipboard: ClipboardManager
+    var filteredHistory: [ClipboardItem]
+    var isDense: Bool
+    @Binding var selectedIndex: Int
+    @Binding var expandedItemIndex: Int?
+    var activeColorName: String
+    var activeColor: Color
+    var isEditMode: Bool
+    @Binding var selectedItemsForDeletion: Set<UUID>
+    var pasteItem: (Int, Bool) -> Void
+    
+    var body: some View {
+        ScrollView {
+            LazyVStack(spacing: isDense ? 2 : 12) {
+                ForEach(Array(filteredHistory.enumerated()), id: \.element.id) { index, item in
+                    ClipboardItemView(
+                        index: index,
+                        item: item,
+                        isSelected: index == selectedIndex && !isEditMode,
+                        isExpanded: index == expandedItemIndex,
+                        isDense: isDense,
+                        activeColor: activeColorName == "Black" ? .primary : activeColor,
+                        isEditMode: isEditMode,
+                        isChecked: selectedItemsForDeletion.contains(item.id),
+                        onPaste: {
+                            if isEditMode {
+                                if selectedItemsForDeletion.contains(item.id) { selectedItemsForDeletion.remove(item.id) }
+                                else { selectedItemsForDeletion.insert(item.id) }
+                            } else {
+                                let isCmd = NSEvent.modifierFlags.contains(.command)
+                                pasteItem(index, isCmd)
+                            }
+                        },
+                        onExpandToggle: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                if expandedItemIndex == index { expandedItemIndex = nil }
+                                else { expandedItemIndex = index }
+                            }
+                        }
+                    )
+                    .contextMenu {
+                        Button(item.isPinned ? "Unpin" : "Pin") { clipboard.togglePin(for: item.id) }
+                        Button("Delete") { clipboard.history.removeAll { $0.id == item.id } }
+                    }
+                }
+            }
+            .padding(8)
+        }
+    }
+}

@@ -7,6 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		758F617403854531B9C107BA /* HeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB563E6B45E483A996B7B09 /* HeaderView.swift */; };
+		CEEBC3F8383C4548A7A2D045 /* TabBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BA781002D2B4ED880AE8A13 /* TabBarView.swift */; };
+		C5F4121F83FD454D8C274338 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A7404ABC5EE433FA787FDCD /* EmptyStateView.swift */; };
+		89C5AFF0AB50452CB670F2A4 /* EditModeFooterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A2F4E39F584846B58C83AC /* EditModeFooterView.swift */; };
+		8AB5D28EE56340269C17683B /* PillView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F21A4106C56434693922642 /* PillView.swift */; };
+		7C4CCA65EFA440D786FD74F6 /* SearchBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73803AE6B6674E679ECF6474 /* SearchBarView.swift */; };
+		7C2914BAC9E8423E9EB5CC96 /* ExpandedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 934FE6C60DD34D1E89208C85 /* ExpandedView.swift */; };
+		B77DFF34323F4E6B8A494A59 /* ClipboardListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24AB431B02264F44BE743B71 /* ClipboardListView.swift */; };
 		4040DDE1536F428E9CD10EA8 /* ClipboardItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 594382BF22D34FE680F6A563 /* ClipboardItemView.swift */; };
 		6DB5030A661743F9845DFD00 /* NativeDragView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9B02BE535344B798B5C6710 /* NativeDragView.swift */; };
 		535FE200EA3547C79D4F2433 /* ResizeEdgesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25F83C11B71346809E1473FB /* ResizeEdgesView.swift */; };
@@ -20,6 +28,14 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4BB563E6B45E483A996B7B09 /* HeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Components/HeaderView.swift; sourceTree = "<group>"; };
+		4BA781002D2B4ED880AE8A13 /* TabBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Components/TabBarView.swift; sourceTree = "<group>"; };
+		0A7404ABC5EE433FA787FDCD /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Components/EmptyStateView.swift; sourceTree = "<group>"; };
+		A0A2F4E39F584846B58C83AC /* EditModeFooterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Components/EditModeFooterView.swift; sourceTree = "<group>"; };
+		8F21A4106C56434693922642 /* PillView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Components/PillView.swift; sourceTree = "<group>"; };
+		73803AE6B6674E679ECF6474 /* SearchBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Components/SearchBarView.swift; sourceTree = "<group>"; };
+		934FE6C60DD34D1E89208C85 /* ExpandedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Components/ExpandedView.swift; sourceTree = "<group>"; };
+		24AB431B02264F44BE743B71 /* ClipboardListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Components/ClipboardListView.swift; sourceTree = "<group>"; };
 		594382BF22D34FE680F6A563 /* ClipboardItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Components/ClipboardItemView.swift; sourceTree = "<group>"; };
 		D9B02BE535344B798B5C6710 /* NativeDragView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Modifiers/NativeDragView.swift; sourceTree = "<group>"; };
 		25F83C11B71346809E1473FB /* ResizeEdgesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Modifiers/ResizeEdgesView.swift; sourceTree = "<group>"; };
@@ -56,6 +72,14 @@
 		AF8B5A3326A0D3B725AC6559 /* CopyM8 */ = {
 			isa = PBXGroup;
 			children = (
+				4BB563E6B45E483A996B7B09 /* HeaderView.swift */,
+				4BA781002D2B4ED880AE8A13 /* TabBarView.swift */,
+				0A7404ABC5EE433FA787FDCD /* EmptyStateView.swift */,
+				A0A2F4E39F584846B58C83AC /* EditModeFooterView.swift */,
+				8F21A4106C56434693922642 /* PillView.swift */,
+				73803AE6B6674E679ECF6474 /* SearchBarView.swift */,
+				934FE6C60DD34D1E89208C85 /* ExpandedView.swift */,
+				24AB431B02264F44BE743B71 /* ClipboardListView.swift */,
 				594382BF22D34FE680F6A563 /* ClipboardItemView.swift */,
 				D9B02BE535344B798B5C6710 /* NativeDragView.swift */,
 				25F83C11B71346809E1473FB /* ResizeEdgesView.swift */,
@@ -136,6 +160,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				758F617403854531B9C107BA /* HeaderView.swift in Sources */,
+				CEEBC3F8383C4548A7A2D045 /* TabBarView.swift in Sources */,
+				C5F4121F83FD454D8C274338 /* EmptyStateView.swift in Sources */,
+				89C5AFF0AB50452CB670F2A4 /* EditModeFooterView.swift in Sources */,
+				8AB5D28EE56340269C17683B /* PillView.swift in Sources */,
+				7C4CCA65EFA440D786FD74F6 /* SearchBarView.swift in Sources */,
+				7C2914BAC9E8423E9EB5CC96 /* ExpandedView.swift in Sources */,
+				B77DFF34323F4E6B8A494A59 /* ClipboardListView.swift in Sources */,
 				4040DDE1536F428E9CD10EA8 /* ClipboardItemView.swift in Sources */,
 				6DB5030A661743F9845DFD00 /* NativeDragView.swift in Sources */,
 				535FE200EA3547C79D4F2433 /* ResizeEdgesView.swift in Sources */,
