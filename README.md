@@ -13,9 +13,10 @@ CopyM8 is a modern, buttery-smooth, and lightweight clipboard manager built nati
 - **Context Capture**: Captures the source application (e.g., Safari, Xcode) and exact timestamp of every copy.
 - **Live Search & Re-indexing**: Search by text *or* source application. The `1-0` quick-paste keyboard shortcuts dynamically re-index to map perfectly to your filtered search results.
 - **Pinning**: Press `P` or right-click to pin items to save them forever.
-- **Multi-Select Edit Mode**: Press `Cmd + E` to enter Edit Mode with checkboxes to bulk delete or bulk pin multiple items at once.
+- **Full Keyboard Navigation**: Never touch the mouse. Use Arrow keys to navigate, `Cmd + E` to toggle Edit mode, `Spacebar` to select items, `Opt + Tab` and `Opt + Shift + Tab` to cycle through tabs, and `Enter` to paste.
+- **Advanced Bulk Edit Mode**: Press `Cmd + E` to enter a Finder-style selection mode. Use checkboxes or the spacebar to select items. Features context-aware "Select All" (`Cmd + A`) that perfectly respects your active filters, allowing you to bulk pin or bulk delete with ease.
 - **Password Security**: Actively listens for `ConcealedType` metadata from 1Password, Keychain, and Safari to silently ignore and protect your passwords.
-- **Customizable Themes & Settings**: Personalize the glowing aesthetic (`Cmd + K`), set clipboard limits, toggle specific data types, and enforce maximum storage caps.
+- **Customizable Themes & Settings**: Personalize the glowing aesthetic (`Cmd + K`), set unpinned clipboard limits, toggle specific data types, enforce maximum storage caps, and monitor real-time Storage Statistics (Total Items, Pinned Items, Memory Usage).
 
 
 ## 🚀 Getting Started
