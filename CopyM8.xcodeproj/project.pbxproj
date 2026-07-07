@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4040DDE1536F428E9CD10EA8 /* ClipboardItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 594382BF22D34FE680F6A563 /* ClipboardItemView.swift */; };
+		6DB5030A661743F9845DFD00 /* NativeDragView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9B02BE535344B798B5C6710 /* NativeDragView.swift */; };
+		535FE200EA3547C79D4F2433 /* ResizeEdgesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25F83C11B71346809E1473FB /* ResizeEdgesView.swift */; };
+		57CF215A9EDB4FCAB9AD0D2E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D119612B2F4F49ACB588BC27 /* SettingsView.swift */; };
 		1B478EB92B0DF60A53A17BF1 /* CopyM8App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9870C57343C9C60F93714D9C /* CopyM8App.swift */; };
 		79A9E8EB1B0B35A7555E4DFD /* ShortcutManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1618755D3C4A1DBB5CA9C33B /* ShortcutManager.swift */; };
 		9567EBA87F926482E84BFF5C /* ClipboardManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 288D2FCD5D67DDA11FBF95F9 /* ClipboardManager.swift */; };
@@ -16,6 +20,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		594382BF22D34FE680F6A563 /* ClipboardItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Components/ClipboardItemView.swift; sourceTree = "<group>"; };
+		D9B02BE535344B798B5C6710 /* NativeDragView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Modifiers/NativeDragView.swift; sourceTree = "<group>"; };
+		25F83C11B71346809E1473FB /* ResizeEdgesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Modifiers/ResizeEdgesView.swift; sourceTree = "<group>"; };
+		D119612B2F4F49ACB588BC27 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Settings/SettingsView.swift; sourceTree = "<group>"; };
 		1618755D3C4A1DBB5CA9C33B /* ShortcutManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutManager.swift; sourceTree = "<group>"; };
 		288D2FCD5D67DDA11FBF95F9 /* ClipboardManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardManager.swift; sourceTree = "<group>"; };
 		2ECAA114012F5CBBBF5EC6AB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -48,6 +56,10 @@
 		AF8B5A3326A0D3B725AC6559 /* CopyM8 */ = {
 			isa = PBXGroup;
 			children = (
+				594382BF22D34FE680F6A563 /* ClipboardItemView.swift */,
+				D9B02BE535344B798B5C6710 /* NativeDragView.swift */,
+				25F83C11B71346809E1473FB /* ResizeEdgesView.swift */,
+				D119612B2F4F49ACB588BC27 /* SettingsView.swift */,
 				288D2FCD5D67DDA11FBF95F9 /* ClipboardManager.swift */,
 				A1D8932979B40E81239B375C /* ContentView.swift */,
 				9870C57343C9C60F93714D9C /* CopyM8App.swift */,
@@ -124,6 +136,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4040DDE1536F428E9CD10EA8 /* ClipboardItemView.swift in Sources */,
+				6DB5030A661743F9845DFD00 /* NativeDragView.swift in Sources */,
+				535FE200EA3547C79D4F2433 /* ResizeEdgesView.swift in Sources */,
+				57CF215A9EDB4FCAB9AD0D2E /* SettingsView.swift in Sources */,
 				9567EBA87F926482E84BFF5C /* ClipboardManager.swift in Sources */,
 				B2A562F1FDD17E7871E29E32 /* ContentView.swift in Sources */,
 				1B478EB92B0DF60A53A17BF1 /* CopyM8App.swift in Sources */,
