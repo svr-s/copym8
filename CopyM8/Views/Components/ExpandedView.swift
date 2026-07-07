@@ -5,8 +5,6 @@ struct ExpandedView: View {
     @Binding var isHoveringClose: Bool
     @Binding var isEditMode: Bool
     @Binding var selectedItemsForDeletion: Set<UUID>
-    @Binding var showingEmptyToast: Bool
-    @Binding var showingClearAlert: Bool
     @Binding var isDense: Bool
     @Binding var windowWidth: Double
     @Binding var windowHeight: Double
@@ -41,8 +39,6 @@ struct ExpandedView: View {
                     isHoveringClose: $isHoveringClose,
                     isEditMode: $isEditMode,
                     selectedItemsForDeletion: $selectedItemsForDeletion,
-                    showingEmptyToast: $showingEmptyToast,
-                    showingClearAlert: $showingClearAlert,
                     isDense: $isDense,
                     windowWidth: $windowWidth,
                     windowHeight: $windowHeight,
@@ -77,7 +73,8 @@ struct ExpandedView: View {
                     EditModeFooterView(
                         selectedItemsForDeletion: $selectedItemsForDeletion,
                         isEditMode: $isEditMode,
-                        showingDeleteSelectedAlert: $showingDeleteSelectedAlert
+                        showingDeleteSelectedAlert: $showingDeleteSelectedAlert,
+                        filteredHistory: filteredHistory
                     )
                 }
             }

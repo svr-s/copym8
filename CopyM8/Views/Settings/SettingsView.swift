@@ -2,8 +2,11 @@ import SwiftUI
 import AppKit
 
 struct SettingsView: View {
+    @EnvironmentObject var clipboard: ClipboardManager
     @Binding var draftHistoryCount: Int
     @Binding var maxHistoryCount: Int
+    
+    @State private var showingClearAlert = false
     
     @AppStorage("maxItemSizeMB") private var maxItemSizeMB: Int = 10
     @AppStorage("maxTotalStorageMB") private var maxTotalStorageMB: Int = 50
@@ -137,6 +140,25 @@ struct SettingsView: View {
             }
             
             Spacer()
+            
+            Divider()
+            
+            Button(action: { showingClearAlert = true }) {
+                HStack {
+                    Image(systemName: "trash")
+                    Text("Clear All History")
+                }
+                .foregroundColor(.red)
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.plain)
+            .padding(.vertical, 4)
+            .alert("Clear all copied items?", isPresented: $showingClearAlert) {
+                Button("Cancel", role: .cancel) { }
+                Button("Clear", role: .destructive) { clipboard.clearAll() }
+            } message: {
+                Text("This action cannot be undone.")
+            }
         }
     }
     
@@ -164,8 +186,9 @@ struct SettingsView: View {
                 shortcutRow(action: "Settings", key: "Cmd + ,")
                 shortcutRow(action: "Edit Mode", key: "Cmd + E")
                 shortcutRow(action: "Switch Tabs", key: "Opt + 1-6")
-                shortcutRow(action: "Pin Item", key: "P")
-                shortcutRow(action: "Select All (Edit)", key: "Cmd + A")
+                shortcutRow(action: "Pin Selected (Edit)", key: "P")
+                shortcutRow(action: "Delete Selected (Edit)", key: "⌫ Delete")
+                shortcutRow(action: "Select All (Current Tab)", key: "Cmd + A")
                 shortcutRow(action: "Toggle Selection (Edit)", key: "Space")
                 shortcutRow(action: "Close Window", key: "Esc")
             }

@@ -21,9 +21,7 @@ struct ContentView: View {
     @StateObject private var clipboard = ClipboardManager()
     @StateObject private var shortcut = ShortcutManager()
     @State private var isHovering = false
-    @State private var showingClearAlert = false
     @State private var showingDeleteSelectedAlert = false
-    @State private var showingEmptyToast = false
     @State private var expandedItemIndex: Int? = nil
     @State private var showingSettings = false
     @State private var draftHistoryCount: Int = 25
@@ -99,8 +97,6 @@ struct ContentView: View {
                     isHoveringClose: $isHoveringClose,
                     isEditMode: $isEditMode,
                     selectedItemsForDeletion: $selectedItemsForDeletion,
-                    showingEmptyToast: $showingEmptyToast,
-                    showingClearAlert: $showingClearAlert,
                     isDense: $isDense,
                     windowWidth: $windowWidth,
                     windowHeight: $windowHeight,
@@ -259,6 +255,21 @@ struct ContentView: View {
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if showingSettings { return event }
             switch event.keyCode {
+            case 14: // E
+                if event.modifierFlags.contains(.command) {
+                    withAnimation {
+                        self.isEditMode.toggle()
+                        if !self.isEditMode { self.selectedItemsForDeletion.removeAll() }
+                    }
+                    return nil
+                }
+                return event
+            case 51: // Backspace/Delete
+                if self.isEditMode && !self.selectedItemsForDeletion.isEmpty {
+                    self.showingDeleteSelectedAlert = true
+                    return nil
+                }
+                return event
             case 53: // Esc
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { shortcut.isExpanded = false }
                 return nil

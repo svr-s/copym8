@@ -6,8 +6,6 @@ struct HeaderView: View {
     @Binding var isHoveringClose: Bool
     @Binding var isEditMode: Bool
     @Binding var selectedItemsForDeletion: Set<UUID>
-    @Binding var showingEmptyToast: Bool
-    @Binding var showingClearAlert: Bool
     @Binding var isDense: Bool
     @Binding var windowWidth: Double
     @Binding var windowHeight: Double
@@ -44,22 +42,7 @@ struct HeaderView: View {
             .buttonStyle(PlainButtonStyle())
             .onHover { hover in if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() } }
             
-            Button(action: {
-                if clipboard.history.isEmpty {
-                    withAnimation { showingEmptyToast = true }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { withAnimation { showingEmptyToast = false } }
-                } else {
-                    showingClearAlert = true
-                }
-            }) {
-                Image(systemName: "trash").font(.system(size: 11)).foregroundColor(.primary.opacity(0.6))
-            }
-            .buttonStyle(PlainButtonStyle())
-            .onHover { hover in if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() } }
-            .alert("Clear all copied items?", isPresented: $showingClearAlert) {
-                Button("Cancel", role: .cancel) { }
-                Button("Clear", role: .destructive) { clipboard.clearAll() }
-            }
+
             
             Spacer()
             

@@ -20,6 +20,6 @@ Here is a comprehensive list of all keyboard shortcuts available in CopyM8.
 | **Toggle Edit Mode** | `Cmd + E` | Toggles Edit Mode to show checkboxes for bulk actions. |
 | **Switch Tabs** | `Option + 1-6` | Instantly switches between tabs (All, Pinned, Text, Links, Images, Files). |
 | **Toggle Pin** | `P` | Instantly pins/unpins the currently highlighted item (or selected items in Edit Mode). |
-| **Delete Item** | `Backspace` | Instantly deletes the currently highlighted item (or selected items in Edit Mode). |
+| **Delete Item** | `Backspace` | Instantly deletes the currently highlighted item. In Edit Mode, triggers "Delete Selected". |
 | **Toggle Selection (Edit Mode)** | `Space` | Selects or deselects the currently highlighted item when in Edit Mode. |
-| **Select All (Edit Mode)** | `Cmd + A` | Selects or deselects all visible items when in Edit Mode. |
+| **Select All (Edit Mode)** | `Cmd + A` | Selects or deselects all visible items in the current tab when in Edit Mode. |

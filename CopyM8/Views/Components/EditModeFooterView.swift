@@ -5,18 +5,25 @@ struct EditModeFooterView: View {
     @Binding var selectedItemsForDeletion: Set<UUID>
     @Binding var isEditMode: Bool
     @Binding var showingDeleteSelectedAlert: Bool
+    var filteredHistory: [ClipboardItem]
     
     var body: some View {
         HStack {
             Button(action: {
-                if selectedItemsForDeletion.count == clipboard.history.count { selectedItemsForDeletion.removeAll() }
-                else { selectedItemsForDeletion = Set(clipboard.history.map { $0.id }) }
+                if selectedItemsForDeletion.count == filteredHistory.count { selectedItemsForDeletion.removeAll() }
+                else { selectedItemsForDeletion = Set(filteredHistory.map { $0.id }) }
             }) {
-                Text(selectedItemsForDeletion.count == clipboard.history.count ? "Deselect All" : "Select All")
+                Text(selectedItemsForDeletion.count == filteredHistory.count && !filteredHistory.isEmpty ? "Deselect All" : "Select All")
                     .font(.system(size: 11)).foregroundColor(.primary.opacity(0.6))
             }.buttonStyle(PlainButtonStyle())
             .onHover { hover in if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() } }
             
+            Spacer()
+            
+            Text("\(selectedItemsForDeletion.count) Items Selected")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.primary)
+                
             Spacer()
             
             Button(action: {
@@ -24,22 +31,28 @@ struct EditModeFooterView: View {
                 selectedItemsForDeletion.removeAll()
                 isEditMode = false
             }) {
-                Text("Pin Selected")
-                    .font(.system(size: 11, weight: .bold)).foregroundColor(.primary)
-                    .padding(.horizontal, 10).padding(.vertical, 6)
-                    .background(Color.primary.opacity(0.1)).cornerRadius(6)
+                HStack(spacing: 4) {
+                    Image(systemName: "pin.fill")
+                    Text("Pin")
+                }
+                .font(.system(size: 11, weight: .bold)).foregroundColor(.primary)
+                .padding(.horizontal, 10).padding(.vertical, 6)
+                .background(Color.primary.opacity(0.1)).cornerRadius(6)
             }.buttonStyle(PlainButtonStyle())
             .onHover { hover in if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() } }
             
             Button(action: {
                 if !selectedItemsForDeletion.isEmpty { showingDeleteSelectedAlert = true }
             }) {
-                Text("Delete Selected (\(selectedItemsForDeletion.count))")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(selectedItemsForDeletion.isEmpty ? .primary.opacity(0.4) : .white)
-                    .padding(.horizontal, 12).padding(.vertical, 6)
-                    .background(selectedItemsForDeletion.isEmpty ? Color.primary.opacity(0.1) : Color.red.opacity(0.8))
-                    .cornerRadius(6)
+                HStack(spacing: 4) {
+                    Image(systemName: "trash.fill")
+                    Text("Delete")
+                }
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(selectedItemsForDeletion.isEmpty ? .primary.opacity(0.4) : .white)
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .background(selectedItemsForDeletion.isEmpty ? Color.primary.opacity(0.1) : Color.red.opacity(0.8))
+                .cornerRadius(6)
             }.buttonStyle(PlainButtonStyle())
             .disabled(selectedItemsForDeletion.isEmpty)
             .onHover { hover in
