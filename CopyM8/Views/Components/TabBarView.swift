@@ -18,7 +18,6 @@ struct TabBarView: View {
                                 selectedIndex = 0
                             }
                         }) {
-                            let isBlack = activeColorName == "Black"
                             let isActive = activeTab == tab
                             
                             Text(tab)
@@ -28,7 +27,7 @@ struct TabBarView: View {
                                 .foregroundColor(isActive ? .primary : .primary.opacity(0.6))
                                 .background(
                                     isActive 
-                                    ? (isBlack ? Color.primary.opacity(0.2) : activeColor.opacity(0.15)) 
+                                    ? Color.primary.opacity(0.15) 
                                     : Color.primary.opacity(0.05)
                                 )
                                 .cornerRadius(12)
