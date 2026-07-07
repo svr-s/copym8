@@ -10,6 +10,9 @@ struct CopyM8App: App {
         Settings {
             EmptyView()
         }
+        .commands {
+            CommandGroup(replacing: .appSettings) { }
+        }
     }
 }
 

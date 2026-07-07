@@ -19,7 +19,7 @@ struct ClipboardListView: View {
                     ClipboardItemView(
                         index: index,
                         item: item,
-                        isSelected: index == selectedIndex && !isEditMode,
+                        isSelected: index == selectedIndex,
                         isExpanded: index == expandedItemIndex,
                         isDense: isDense,
                         activeColor: activeColorName == "Black" ? .primary : activeColor,

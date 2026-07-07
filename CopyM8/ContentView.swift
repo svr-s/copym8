@@ -253,8 +253,14 @@ struct ContentView: View {
         selectedIndex = 0
         expandedItemIndex = nil
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            if showingSettings { return event }
+            if showingSettings || showingDeleteSelectedAlert { return event }
             switch event.keyCode {
+            case 43: // ,
+                if event.modifierFlags.contains(.command) {
+                    self.showingSettings.toggle()
+                    return nil
+                }
+                return event
             case 14: // E
                 if event.modifierFlags.contains(.command) {
                     withAnimation {
@@ -328,20 +334,23 @@ struct ContentView: View {
                     return nil
                 }
                 return event
+            case 48: // Tab
+                if event.modifierFlags.contains(.option) {
+                    let visibleTabs = getVisibleTabs()
+                    if let currentIndex = visibleTabs.firstIndex(of: self.activeTab) {
+                        let nextIndex = (currentIndex + 1) % visibleTabs.count
+                        withAnimation {
+                            self.activeTab = visibleTabs[nextIndex]
+                            self.selectedIndex = 0
+                        }
+                    }
+                    return nil
+                }
+                return event
             default:
                 if let chars = event.charactersIgnoringModifiers, let number = Int(chars) {
                     if event.modifierFlags.contains(.option) {
-                        let tabs = ["All", "Pinned", "Text", "Links", "Images", "Files"]
-                        let visibleTabs = tabs.filter { t in
-                            switch t {
-                            case "All", "Pinned": return true
-                            case "Text": return UserDefaults.standard.object(forKey: "saveText") as? Bool ?? true
-                            case "Links": return UserDefaults.standard.object(forKey: "saveLinks") as? Bool ?? true
-                            case "Images": return UserDefaults.standard.object(forKey: "saveImages") as? Bool ?? true
-                            case "Files": return UserDefaults.standard.object(forKey: "saveFiles") as? Bool ?? true
-                            default: return false
-                            }
-                        }
+                        let visibleTabs = getVisibleTabs()
                         if number >= 1 && number <= visibleTabs.count {
                             withAnimation {
                                 self.activeTab = visibleTabs[number - 1]
@@ -377,5 +386,19 @@ struct ContentView: View {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { shortcut.isExpanded = false }
         previousApp?.activate(options: [])
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { clipboard.triggerPasteKeystroke() }
+    }
+    
+    private func getVisibleTabs() -> [String] {
+        let tabs = ["All", "Pinned", "Text", "Links", "Images", "Files"]
+        return tabs.filter { t in
+            switch t {
+            case "All", "Pinned": return true
+            case "Text": return UserDefaults.standard.object(forKey: "saveText") as? Bool ?? true
+            case "Links": return UserDefaults.standard.object(forKey: "saveLinks") as? Bool ?? true
+            case "Images": return UserDefaults.standard.object(forKey: "saveImages") as? Bool ?? true
+            case "Files": return UserDefaults.standard.object(forKey: "saveFiles") as? Bool ?? true
+            default: return false
+            }
+        }
     }
 }
