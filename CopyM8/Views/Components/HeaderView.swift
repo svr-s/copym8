@@ -39,7 +39,7 @@ struct HeaderView: View {
             }) {
                 Image(systemName: isEditMode ? "checkmark.circle.fill" : "checklist")
                     .font(.system(size: 11))
-                    .foregroundColor(isEditMode ? Color.accentColor : .primary.opacity(0.6))
+                    .foregroundColor(isEditMode ? .primary : .primary.opacity(0.6))
             }
             .buttonStyle(PlainButtonStyle())
             .onHover { hover in if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() } }

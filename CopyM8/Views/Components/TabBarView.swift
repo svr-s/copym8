@@ -25,7 +25,7 @@ struct TabBarView: View {
                                 .font(.system(size: 11, weight: isActive ? .bold : .regular))
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 4)
-                                .foregroundColor(isActive ? Color.accentColor : .primary.opacity(0.6))
+                                .foregroundColor(isActive ? .primary : .primary.opacity(0.6))
                                 .background(
                                     isActive 
                                     ? (isBlack ? Color.primary.opacity(0.2) : activeColor.opacity(0.15)) 

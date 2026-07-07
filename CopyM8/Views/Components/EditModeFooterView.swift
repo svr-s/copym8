@@ -25,9 +25,9 @@ struct EditModeFooterView: View {
                 isEditMode = false
             }) {
                 Text("Pin Selected")
-                    .font(.system(size: 11, weight: .bold)).foregroundColor(Color.accentColor)
-                    .padding(.horizontal, 10).padding(.vertical, 4)
-                    .background(Color.accentColor.opacity(0.1)).cornerRadius(6)
+                    .font(.system(size: 11, weight: .bold)).foregroundColor(.primary)
+                    .padding(.horizontal, 10).padding(.vertical, 6)
+                    .background(Color.primary.opacity(0.1)).cornerRadius(6)
             }.buttonStyle(PlainButtonStyle())
             .onHover { hover in if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() } }
             

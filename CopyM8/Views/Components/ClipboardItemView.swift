@@ -33,7 +33,7 @@ struct ClipboardItemView: View {
             HStack(spacing: 12) {
                 if isEditMode {
                     Image(systemName: isChecked ? "checkmark.circle.fill" : "circle")
-                        .foregroundColor(isChecked ? Color.accentColor : .primary.opacity(0.3))
+                        .foregroundColor(isChecked ? .primary : .primary.opacity(0.3))
                         .font(.system(size: 14))
                 } else {
                     let shortcutText = index == 9 ? "0" : "\(index + 1)"
@@ -82,7 +82,7 @@ struct ClipboardItemView: View {
             .padding(.horizontal, 12)
             .background(
                 isSelected 
-                ? (isWindowActive ? Color.accentColor : Color(nsColor: .unemphasizedSelectedContentBackgroundColor)) 
+                ? (isWindowActive ? Color(nsColor: .selectedContentBackgroundColor) : Color(nsColor: .unemphasizedSelectedContentBackgroundColor)) 
                 : (hover ? Color.primary.opacity(0.05) : Color.clear)
             )
             .cornerRadius(6)
