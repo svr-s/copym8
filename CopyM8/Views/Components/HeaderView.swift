@@ -70,10 +70,12 @@ struct HeaderView: View {
                 
             Spacer()
             
-            Toggle("", isOn: $isDense)
-                .toggleStyle(.switch)
-                .scaleEffect(0.8)
-                .help(isDense ? "Dense" : "Spaced")
+            Picker("", selection: $isDense) {
+                Image(systemName: "list.bullet").tag(true)
+                Image(systemName: "list.dash").tag(false)
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 60)
 
             
             Button(action: { showingSettings.toggle() }) {
