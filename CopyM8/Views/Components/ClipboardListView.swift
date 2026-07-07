@@ -14,40 +14,48 @@ struct ClipboardListView: View {
     
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: isDense ? 2 : 12) {
-                ForEach(Array(filteredHistory.enumerated()), id: \.element.id) { index, item in
-                    ClipboardItemView(
-                        index: index,
-                        item: item,
-                        isSelected: index == selectedIndex,
-                        isExpanded: index == expandedItemIndex,
-                        isDense: isDense,
-                        activeColor: activeColorName == "Black" ? .primary : activeColor,
-                        isEditMode: isEditMode,
-                        isChecked: selectedItemsForDeletion.contains(item.id),
-                        onPaste: {
-                            if isEditMode {
-                                if selectedItemsForDeletion.contains(item.id) { selectedItemsForDeletion.remove(item.id) }
-                                else { selectedItemsForDeletion.insert(item.id) }
-                            } else {
-                                let isCmd = NSEvent.modifierFlags.contains(.command)
-                                pasteItem(index, isCmd)
+            ScrollViewReader { proxy in
+                LazyVStack(spacing: isDense ? 2 : 12) {
+                    ForEach(Array(filteredHistory.enumerated()), id: \.element.id) { index, item in
+                        ClipboardItemView(
+                            index: index,
+                            item: item,
+                            isSelected: index == selectedIndex,
+                            isExpanded: index == expandedItemIndex,
+                            isDense: isDense,
+                            activeColor: activeColorName == "Black" ? .primary : activeColor,
+                            isEditMode: isEditMode,
+                            isChecked: selectedItemsForDeletion.contains(item.id),
+                            onPaste: {
+                                if isEditMode {
+                                    if selectedItemsForDeletion.contains(item.id) { selectedItemsForDeletion.remove(item.id) }
+                                    else { selectedItemsForDeletion.insert(item.id) }
+                                } else {
+                                    let isCmd = NSEvent.modifierFlags.contains(.command)
+                                    pasteItem(index, isCmd)
+                                }
+                            },
+                            onExpandToggle: {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    if expandedItemIndex == index { expandedItemIndex = nil }
+                                    else { expandedItemIndex = index }
+                                }
                             }
-                        },
-                        onExpandToggle: {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                if expandedItemIndex == index { expandedItemIndex = nil }
-                                else { expandedItemIndex = index }
-                            }
+                        )
+                        .contextMenu {
+                            Button(item.isPinned ? "Unpin" : "Pin") { clipboard.togglePin(for: item.id) }
+                            Button("Delete") { clipboard.history.removeAll { $0.id == item.id } }
                         }
-                    )
-                    .contextMenu {
-                        Button(item.isPinned ? "Unpin" : "Pin") { clipboard.togglePin(for: item.id) }
-                        Button("Delete") { clipboard.history.removeAll { $0.id == item.id } }
+                        .id(index)
+                    }
+                }
+                .padding(8)
+                .onChange(of: selectedIndex) { _, newIndex in
+                    withAnimation(.easeOut(duration: 0.15)) {
+                        proxy.scrollTo(newIndex, anchor: nil)
                     }
                 }
             }
-            .padding(8)
         }
     }
 }
