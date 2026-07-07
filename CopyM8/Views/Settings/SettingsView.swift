@@ -48,32 +48,13 @@ struct SettingsView: View {
                 }
                 .padding()
             }
-            .frame(height: 280)
+            .frame(height: 380)
         }
         .frame(width: 300)
     }
     
     private var generalTab: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("History Limit:")
-                    .font(.system(size: 13))
-                Spacer()
-                TextField("", value: $draftHistoryCount, format: .number)
-                    .frame(width: 50)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .onSubmit {
-                        maxHistoryCount = max(5, draftHistoryCount)
-                    }
-                Stepper("", value: $draftHistoryCount, in: 5...500)
-                    .labelsHidden()
-            }
-            Text("Maximum number of items to keep in history.")
-                .font(.system(size: 11))
-                .foregroundColor(.primary.opacity(0.5))
-            
-            Divider()
-            
             HStack {
                 Text("Theme:")
                     .font(.system(size: 13))
@@ -110,6 +91,23 @@ struct SettingsView: View {
             Divider()
             
             HStack {
+                Text("History Limit:")
+                    .font(.system(size: 13))
+                Spacer()
+                TextField("", value: $draftHistoryCount, format: .number)
+                    .frame(width: 50)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .onSubmit {
+                        maxHistoryCount = max(5, draftHistoryCount)
+                    }
+                Stepper("", value: $draftHistoryCount, in: 5...500)
+                    .labelsHidden()
+            }
+            Text("Maximum number of unpinned items to keep in history.")
+                .font(.system(size: 11))
+                .foregroundColor(.primary.opacity(0.5))
+            
+            HStack {
                 Text("Max Item Size (MB):")
                     .font(.system(size: 13))
                 Spacer()
@@ -140,6 +138,41 @@ struct SettingsView: View {
             }
             
             Spacer()
+            
+            Divider()
+            
+            VStack(alignment: .leading, spacing: 6) {
+                Text("📊 Storage Statistics")
+                    .font(.system(size: 13, weight: .semibold))
+                    .padding(.bottom, 2)
+                
+                HStack {
+                    Text("Total Items:")
+                        .font(.system(size: 12))
+                    Spacer()
+                    Text("\(clipboard.history.count)")
+                        .font(.system(size: 12, weight: .medium))
+                }
+                
+                HStack {
+                    Text("Pinned Items:")
+                        .font(.system(size: 12))
+                    Spacer()
+                    Text("\(clipboard.history.filter { $0.isPinned }.count)")
+                        .font(.system(size: 12, weight: .medium))
+                }
+                
+                HStack {
+                    Text("Image Storage:")
+                        .font(.system(size: 12))
+                    Spacer()
+                    Text(String(format: "%.1f MB", LocalImageStore.shared.getTotalSizeMB()))
+                        .font(.system(size: 12, weight: .medium))
+                }
+            }
+            .padding(10)
+            .background(Color.primary.opacity(0.05))
+            .cornerRadius(8)
             
             Divider()
             
