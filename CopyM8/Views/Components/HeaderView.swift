@@ -63,9 +63,9 @@ struct HeaderView: View {
             
             Spacer()
             
-            HStack(spacing: 4) {
-                Image(systemName: "infinity").font(.system(size: 14, weight: .bold))
-                Text("CopyM8").font(.system(size: 13, weight: .black, design: .rounded))
+            HStack(spacing: 1) {
+                Text("copym").font(.custom("Gill Sans", size: 15))
+                Image(systemName: "infinity").font(.system(size: 19, weight: .heavy))
             }.foregroundColor(.primary)
                 
             Spacer()
