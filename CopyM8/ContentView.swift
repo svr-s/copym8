@@ -12,7 +12,7 @@ let colors: [(name: String, color: Color)] = [
     ("Mint", Color(red: 0.4, green: 0.8, blue: 0.6)),
     ("Lemon", Color(red: 0.9, green: 0.8, blue: 0.4)),
     ("Bubblegum", Color(red: 0.9, green: 0.4, blue: 0.6)),
-    ("White", Color.white),
+    ("White", Color.primary),
     ("Grey", Color.gray),
     ("Black", Color.black)
 ]
@@ -39,6 +39,7 @@ struct ContentView: View {
     
     // UI State
     @AppStorage("activeColorName") private var activeColorName: String = "Glacier"
+    @AppStorage("themePreference") private var themePreference: String = "System"
     @AppStorage("isDense") private var isDense: Bool = true
     @AppStorage("dockEdgeRaw") private var dockEdgeRaw: String = "right"
     @AppStorage("windowWidth") private var windowWidth: Double = 320
@@ -57,6 +58,7 @@ struct ContentView: View {
     private var activeColor: Color {
         colors.first(where: { $0.name == activeColorName })?.color ?? .cyan
     }
+
     
     private var filteredHistory: [ClipboardItem] {
         var results = clipboard.history
@@ -120,7 +122,8 @@ struct ContentView: View {
         }
         .background(Color.clear)
         .animation(.spring(response: 0.4, dampingFraction: 0.75), value: shortcut.isExpanded)
-        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: shortcut.isExpanded)
+
+
         .onChange(of: shortcut.isExpanded) { _, expanded in
             adjustWindowFrame(expanded: expanded, animate: true)
             if expanded {
@@ -139,6 +142,28 @@ struct ContentView: View {
         .onChange(of: searchText) { _, _ in
             selectedIndex = 0
             expandedItemIndex = nil
+        }
+        .onChange(of: themePreference) { _, newTheme in
+            applyTheme(newTheme)
+        }
+        .onAppear {
+            applyTheme(themePreference)
+        }
+    }
+    
+    private func applyTheme(_ theme: String) {
+        if theme == "Light" {
+            NSApp.appearance = NSAppearance(named: .aqua)
+        } else if theme == "Dark" {
+            NSApp.appearance = NSAppearance(named: .darkAqua)
+        } else {
+            NSApp.appearance = nil
+        }
+        
+        // Force appearance update on all windows instantly
+        for window in NSApp.windows {
+            window.appearance = NSApp.appearance
+            window.viewsNeedDisplay = true
         }
     }
     
@@ -175,7 +200,7 @@ struct ContentView: View {
             }) {
                 Image(systemName: isEditMode ? "checkmark.circle.fill" : "checklist")
                     .font(.system(size: 11))
-                    .foregroundColor(isEditMode ? activeColor : .white.opacity(0.6))
+                    .foregroundColor(isEditMode ? Color.accentColor : .primary.opacity(0.6))
             }
             .buttonStyle(PlainButtonStyle())
             .onHover { hover in
@@ -195,7 +220,7 @@ struct ContentView: View {
             }) {
                 Image(systemName: "trash")
                     .font(.system(size: 11))
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundColor(.primary.opacity(0.6))
             }
             .buttonStyle(PlainButtonStyle())
             .onHover { hover in
@@ -208,9 +233,13 @@ struct ContentView: View {
             
             Spacer()
             
-            Image(systemName: "infinity")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(.white)
+            HStack(spacing: 4) {
+                Image(systemName: "infinity")
+                    .font(.system(size: 14, weight: .bold))
+                Text("CopyM8")
+                    .font(.system(size: 13, weight: .black, design: .rounded))
+            }
+            .foregroundColor(.primary)
                 
             Spacer()
             
@@ -220,10 +249,10 @@ struct ContentView: View {
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)
                     .font(.system(size: 9, weight: isDense ? .bold : .regular))
-                    .foregroundColor(isDense ? .white : .white.opacity(0.5))
+                    .foregroundColor(isDense ? .primary : .primary.opacity(0.5))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 3)
-                    .background(isDense ? Color.white.opacity(0.15) : Color.clear)
+                    .background(isDense ? Color.primary.opacity(0.15) : Color.clear)
                     .cornerRadius(4)
                     .onTapGesture { isDense = true }
                 
@@ -231,14 +260,14 @@ struct ContentView: View {
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)
                     .font(.system(size: 9, weight: !isDense ? .bold : .regular))
-                    .foregroundColor(!isDense ? .white : .white.opacity(0.5))
+                    .foregroundColor(!isDense ? .primary : .primary.opacity(0.5))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 3)
-                    .background(!isDense ? Color.white.opacity(0.15) : Color.clear)
+                    .background(!isDense ? Color.primary.opacity(0.15) : Color.clear)
                     .cornerRadius(4)
                     .onTapGesture { isDense = false }
             }
-            .background(Color.black.opacity(0.2))
+            .background(Color.primary.opacity(0.05))
             .cornerRadius(4)
             
             // Colors moved to Settings
@@ -249,7 +278,7 @@ struct ContentView: View {
             }) {
                 Image(systemName: "gearshape")
                     .font(.system(size: 11))
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundColor(.primary.opacity(0.6))
             }
             .buttonStyle(PlainButtonStyle())
             .onHover { hover in
@@ -266,7 +295,7 @@ struct ContentView: View {
                 }
             }
             
-            Divider().frame(height: 12).background(Color.white.opacity(0.2))
+            Divider().frame(height: 12).background(Color.primary.opacity(0.2))
             
             // Reset Size Button
             Button(action: {
@@ -278,13 +307,13 @@ struct ContentView: View {
             }) {
                 Image(systemName: "arrow.up.left.and.down.right.and.arrow.up.right.and.down.left")
                     .font(.system(size: 10))
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundColor(.primary.opacity(0.7))
             }
             .buttonStyle(PlainButtonStyle())
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
-        .background(VisualEffectView(material: .popover, blendingMode: .behindWindow).opacity(0.5))
+        .background(VisualEffectView(material: .windowBackground, blendingMode: .behindWindow))
         .background(
             Group {
                 Button("") { isSearchFocused = true }.keyboardShortcut("f", modifiers: .command)
@@ -308,7 +337,7 @@ struct ContentView: View {
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
                         .background(Color.black.opacity(0.8))
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                         .cornerRadius(12)
                         .transition(.opacity.combined(with: .move(edge: .top)))
                         .offset(y: 10)
@@ -317,7 +346,7 @@ struct ContentView: View {
         )
     }
     private var tabBarView: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        HStack {
             HStack(spacing: 6) {
                 ForEach(["All", "Pinned", "Text", "Links", "Images", "Files"], id: \.self) { tab in
                     if shouldShowTab(tab) {
@@ -334,11 +363,11 @@ struct ContentView: View {
                                 .font(.system(size: 11, weight: isActive ? .bold : .regular))
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 4)
-                                .foregroundColor(isActive ? (isBlack ? .white : activeColor) : .white.opacity(0.6))
+                                .foregroundColor(isActive ? Color.accentColor : .primary.opacity(0.6))
                                 .background(
                                     isActive 
-                                    ? (isBlack ? Color.white.opacity(0.2) : activeColor.opacity(0.15)) 
-                                    : Color.white.opacity(0.05)
+                                    ? (isBlack ? Color.primary.opacity(0.2) : activeColor.opacity(0.15)) 
+                                    : Color.primary.opacity(0.05)
                                 )
                                 .cornerRadius(12)
                         }
@@ -380,10 +409,10 @@ struct ContentView: View {
             Spacer()
             Image(systemName: "clipboard")
                 .font(.system(size: 32))
-                .foregroundColor(.white.opacity(0.3))
+                .foregroundColor(.primary.opacity(0.3))
             Text(emptyStateMessage)
                 .font(.system(size: 12))
-                .foregroundColor(.white.opacity(0.5))
+                .foregroundColor(.primary.opacity(0.5))
                 .multilineTextAlignment(.center)
             Spacer()
         }
@@ -401,7 +430,7 @@ struct ContentView: View {
             }) {
                 Text(selectedItemsForDeletion.count == clipboard.history.count ? "Deselect All" : "Select All")
                     .font(.system(size: 11))
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundColor(.primary.opacity(0.6))
             }
             .buttonStyle(PlainButtonStyle())
             .onHover { hover in
@@ -419,10 +448,10 @@ struct ContentView: View {
             }) {
                 Text("Pin Selected")
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(activeColor)
+                    .foregroundColor(Color.accentColor)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
-                    .background(activeColor.opacity(0.1))
+                    .background(Color.accentColor.opacity(0.1))
                     .cornerRadius(6)
             }
             .buttonStyle(PlainButtonStyle())
@@ -437,10 +466,10 @@ struct ContentView: View {
             }) {
                 Text("Delete Selected (\(selectedItemsForDeletion.count))")
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(selectedItemsForDeletion.isEmpty ? .white.opacity(0.4) : .white)
+                    .foregroundColor(selectedItemsForDeletion.isEmpty ? .primary.opacity(0.4) : .white)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(selectedItemsForDeletion.isEmpty ? Color.white.opacity(0.1) : Color.red.opacity(0.8))
+                    .background(selectedItemsForDeletion.isEmpty ? Color.primary.opacity(0.1) : Color.red.opacity(0.8))
                     .cornerRadius(6)
             }
             .buttonStyle(PlainButtonStyle())
@@ -463,37 +492,30 @@ struct ContentView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 12)
-        .background(Color.black.opacity(0.2))
+        .background(Color.primary.opacity(0.05))
     }
     
     private var searchBarView: some View {
         HStack {
-            HStack(spacing: 4) {
-                Text("CopyM8")
-                    .font(.system(size: 13, weight: .black, design: .rounded))
-                    .foregroundColor(.white)
-            }
-            .padding(.trailing, 4)
-            
             Image(systemName: "magnifyingglass")
-                .foregroundColor(.white.opacity(0.5))
+                .foregroundColor(.primary.opacity(0.5))
                 .font(.system(size: 12))
             TextField("Search copied items or source apps...", text: $searchText)
                 .textFieldStyle(PlainTextFieldStyle())
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
                 .focused($isSearchFocused)
                 .font(.system(size: 12))
             if !searchText.isEmpty {
                 Button(action: { searchText = "" }) {
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.white.opacity(0.5))
+                        .foregroundColor(.primary.opacity(0.5))
                         .font(.system(size: 12))
                 }
                 .buttonStyle(PlainButtonStyle())
             }
         }
         .padding(8)
-        .background(Color.black.opacity(0.2))
+        .background(Color.primary.opacity(0.05))
         .cornerRadius(8)
         .padding(.horizontal, 10)
         .padding(.bottom, 4)
@@ -509,7 +531,7 @@ struct ContentView: View {
                         isSelected: index == selectedIndex && !isEditMode,
                         isExpanded: index == expandedItemIndex,
                         isDense: isDense,
-                        activeColor: activeColorName == "Black" ? .white : activeColor,
+                        activeColor: activeColorName == "Black" ? .primary : activeColor,
                         isEditMode: isEditMode,
                         isChecked: selectedItemsForDeletion.contains(item.id),
                         onPaste: {
@@ -559,6 +581,8 @@ struct ContentView: View {
                 // Header
                 headerView
                 
+                Spacer().frame(height: 4)
+                
                 searchBarView
                 tabBarView
                 
@@ -574,16 +598,11 @@ struct ContentView: View {
             }
         }
         .frame(width: getDynamicWindowSize().width, height: getDynamicWindowSize().height)
-        .background(
-            ZStack {
-                VisualEffectView(material: .popover, blendingMode: .behindWindow)
-                activeColor.opacity(0.08)
-            }
-        )
+        .background(VisualEffectView(material: .windowBackground, blendingMode: .behindWindow))
         .cornerRadius(12)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                .stroke(Color.primary.opacity(0.2), lineWidth: 1)
         )
         .overlay(
             ResizeEdgesView(
@@ -603,14 +622,12 @@ struct ContentView: View {
         let isTop = dockEdge == .top
         let width: CGFloat = isTop ? 40 : 28
         let height: CGFloat = isTop ? 28 : 40
-        let hoverLogoColor = activeColorName == "Black" ? Color.white : activeColor
+        let hoverLogoColor = activeColorName == "Black" ? Color.primary : activeColor
         let logoColor = isHovering ? hoverLogoColor : Color.primary.opacity(0.4)
         
         return RoundedRectangle(cornerRadius: 24)
             .fill(Color.clear)
-            .background(
-                VisualEffectView(material: .popover, blendingMode: .behindWindow)
-            )
+            .background(VisualEffectView(material: .windowBackground, blendingMode: .behindWindow))
             .clipShape(RoundedRectangle(cornerRadius: 24))
             .frame(width: width, height: height)
             .overlay(
@@ -898,19 +915,32 @@ struct ClipboardItemView: View {
     let onExpandToggle: () -> Void
     
     @State private var hover = false
+    @Environment(\.controlActiveState) private var controlActiveState
+    
+    private var isWindowActive: Bool {
+        controlActiveState == .key || controlActiveState == .active
+    }
+    
+    private var primaryTextColor: Color {
+        isSelected && isWindowActive ? .white : .primary.opacity(0.95)
+    }
+    
+    private var secondaryTextColor: Color {
+        isSelected && isWindowActive ? .white.opacity(0.8) : .primary.opacity(0.6)
+    }
     
     var body: some View {
         Button(action: onPaste) {
             HStack(spacing: 12) {
                 if isEditMode {
                     Image(systemName: isChecked ? "checkmark.circle.fill" : "circle")
-                        .foregroundColor(isChecked ? activeColor : .white.opacity(0.3))
+                        .foregroundColor(isChecked ? Color.accentColor : .primary.opacity(0.3))
                         .font(.system(size: 14))
                 } else {
                     let shortcutText = index == 9 ? "0" : "\(index + 1)"
                     Text(shortcutText)
                         .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .foregroundColor(activeColor)
+                        .foregroundColor(secondaryTextColor)
                         .frame(width: 16, alignment: .leading)
                 }
                 
@@ -929,34 +959,34 @@ struct ClipboardItemView: View {
                             Text(item.text)
                                 .lineLimit(isExpanded ? nil : 1)
                                 .font(.system(size: 13, weight: .regular))
-                                .foregroundColor(.white.opacity(0.95))
+                                .foregroundColor(primaryTextColor)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     } else {
                         Text(item.text)
                             .lineLimit(isExpanded ? nil : 1)
                             .font(.system(size: 13, weight: .regular))
-                            .foregroundColor(.white.opacity(0.95))
+                            .foregroundColor(primaryTextColor)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     
                     if !isDense, let app = item.sourceApp {
                         Text("\(app) • \(item.timestamp.formatted(date: .omitted, time: .shortened))")
                             .font(.system(size: 9))
-                            .foregroundColor(.white.opacity(0.4))
+                            .foregroundColor(isSelected && isWindowActive ? .white.opacity(0.8) : .primary.opacity(0.4))
                     }
                 }
                 
                 Spacer()
             }
-            .padding(.vertical, isDense ? 6 : 10)
-            .padding(.horizontal, 14)
-            .background(isSelected ? Color.white.opacity(0.15) : Color.white.opacity(0.08))
-            .cornerRadius(8)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(activeColor.opacity(isSelected ? 0.8 : 0.0), lineWidth: 1)
+            .padding(.vertical, isDense ? 4 : 8)
+            .padding(.horizontal, 12)
+            .background(
+                isSelected 
+                ? (isWindowActive ? Color.accentColor : Color(nsColor: .unemphasizedSelectedContentBackgroundColor)) 
+                : (hover ? Color.primary.opacity(0.05) : Color.clear)
             )
+            .cornerRadius(6)
         }
         .buttonStyle(PlainButtonStyle())
         .onHover { hovering in
@@ -1166,6 +1196,9 @@ struct SettingsView: View {
     @AppStorage("saveImages") private var saveImages: Bool = true
     @AppStorage("saveFiles") private var saveFiles: Bool = true
     
+    @AppStorage("themePreference") private var themePreference: String = "System"
+    @AppStorage("activeColorName") private var activeColorName: String = "Glacier"
+    
     @State private var selectedTab = "General"
     
     var body: some View {
@@ -1217,7 +1250,22 @@ struct SettingsView: View {
             }
             Text("Maximum number of items to keep in history.")
                 .font(.system(size: 11))
-                .foregroundColor(.white.opacity(0.5))
+                .foregroundColor(.primary.opacity(0.5))
+            
+            Divider()
+            
+            HStack {
+                Text("Theme:")
+                    .font(.system(size: 13))
+                Spacer()
+                Picker("", selection: $themePreference) {
+                    Text("System").tag("System")
+                    Text("Light").tag("Light")
+                    Text("Dark").tag("Dark")
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .frame(width: 150)
+            }
             
             Divider()
             
@@ -1227,14 +1275,14 @@ struct SettingsView: View {
             HStack(spacing: 8) {
                 ForEach(colors, id: \.name) { c in
                     Circle()
-                        .fill(c.name == "Clear" ? Color.white.opacity(0.1) : c.color)
+                        .fill(c.name == "Clear" ? Color.primary.opacity(0.1) : c.color)
                         .frame(width: 14, height: 14)
                         .overlay(
                             Circle()
-                                .stroke(Color.white, lineWidth: UserDefaults.standard.string(forKey: "activeColorName") ?? "Ocean" == c.name ? 2 : 0)
+                                .stroke(Color.primary, lineWidth: activeColorName == c.name ? 2 : 0)
                         )
                         .onTapGesture { 
-                            UserDefaults.standard.set(c.name, forKey: "activeColorName") 
+                            activeColorName = c.name
                         }
                 }
             }
@@ -1279,7 +1327,7 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Select which types of content to save.")
                 .font(.system(size: 11))
-                .foregroundColor(.white.opacity(0.6))
+                .foregroundColor(.primary.opacity(0.6))
             
             Toggle("Save Text", isOn: $saveText)
             Toggle("Save Links", isOn: $saveLinks)
@@ -1316,7 +1364,7 @@ struct SettingsView: View {
                 .font(.system(size: 11, weight: .bold, design: .monospaced))
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
-                .background(Color.white.opacity(0.1))
+                .background(Color.primary.opacity(0.1))
                 .cornerRadius(4)
         }
     }
