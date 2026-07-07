@@ -70,22 +70,11 @@ struct HeaderView: View {
                 
             Spacer()
             
-            HStack(spacing: 0) {
-                Text(windowWidth < 360 ? "D..." : "Dense")
-                    .lineLimit(1).fixedSize(horizontal: true, vertical: false)
-                    .font(.system(size: 9, weight: isDense ? .bold : .regular))
-                    .foregroundColor(isDense ? .primary : .primary.opacity(0.5))
-                    .padding(.horizontal, 6).padding(.vertical, 3)
-                    .background(isDense ? Color.primary.opacity(0.15) : Color.clear).cornerRadius(4)
-                    .onTapGesture { isDense = true }
-                Text(windowWidth < 360 ? "S..." : "Spaced")
-                    .lineLimit(1).fixedSize(horizontal: true, vertical: false)
-                    .font(.system(size: 9, weight: !isDense ? .bold : .regular))
-                    .foregroundColor(!isDense ? .primary : .primary.opacity(0.5))
-                    .padding(.horizontal, 6).padding(.vertical, 3)
-                    .background(!isDense ? Color.primary.opacity(0.15) : Color.clear).cornerRadius(4)
-                    .onTapGesture { isDense = false }
-            }.background(Color.primary.opacity(0.05)).cornerRadius(4)
+            Toggle("", isOn: $isDense)
+                .toggleStyle(.switch)
+                .scaleEffect(0.8)
+                .help(isDense ? "Dense" : "Spaced")
+
             
             Button(action: { showingSettings.toggle() }) {
                 Image(systemName: "gearshape").font(.system(size: 11)).foregroundColor(.primary.opacity(0.6))
