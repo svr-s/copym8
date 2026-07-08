@@ -9,36 +9,44 @@ struct TabBarView: View {
     
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                ForEach(["All", "Pinned", "Groups", "Text", "Links", "Images", "Files"], id: \.self) { tab in
-                    if shouldShowTab(tab) {
-                        Button(action: {
-                            withAnimation {
-                                activeTab = tab
-                                selectedIndex = 0
+            ScrollViewReader { proxy in
+                HStack(spacing: 6) {
+                    ForEach(["All", "Pinned", "Groups", "Text", "Links", "Images", "Files"], id: \.self) { tab in
+                        if shouldShowTab(tab) {
+                            Button(action: {
+                                withAnimation {
+                                    activeTab = tab
+                                    selectedIndex = 0
+                                }
+                            }) {
+                                let isActive = activeTab == tab
+                                
+                                Text(tab)
+                                    .font(.system(size: 11, weight: isActive ? .bold : .regular))
+                                    .lineLimit(1)
+                                    .fixedSize(horizontal: true, vertical: false)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 4)
+                                    .foregroundColor(isActive ? .primary : .primary.opacity(0.6))
+                                    .background(
+                                        isActive 
+                                        ? Color.primary.opacity(0.15) 
+                                        : Color.primary.opacity(0.05)
+                                    )
+                                    .cornerRadius(12)
                             }
-                        }) {
-                            let isActive = activeTab == tab
-                            
-                            Text(tab)
-                                .font(.system(size: 11, weight: isActive ? .bold : .regular))
-                                .lineLimit(1)
-                                .fixedSize(horizontal: true, vertical: false)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 4)
-                                .foregroundColor(isActive ? .primary : .primary.opacity(0.6))
-                                .background(
-                                    isActive 
-                                    ? Color.primary.opacity(0.15) 
-                                    : Color.primary.opacity(0.05)
-                                )
-                                .cornerRadius(12)
+                            .buttonStyle(PlainButtonStyle())
+                            .id(tab)
                         }
-                        .buttonStyle(PlainButtonStyle())
+                    }
+                }
+                .padding(.horizontal, 12).padding(.bottom, 8)
+                .onChange(of: activeTab) { _, newTab in
+                    withAnimation {
+                        proxy.scrollTo(newTab, anchor: .center)
                     }
                 }
             }
-            .padding(.horizontal, 12).padding(.bottom, 8)
         }
     }
     
