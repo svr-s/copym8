@@ -165,11 +165,14 @@ struct ContentView: View {
                 teardownKeyboardMonitor()
             }
         }
-        .onChange(of: maxHistoryCount) { _, newValue in clipboard.truncateHistory(to: newValue) }
+        .onChange(of: activeTab) { _, _ in restartKeyboardMonitor() }
         .onChange(of: searchText) { _, _ in
             selectedIndex = 0
             expandedItemIndex = nil
+            restartKeyboardMonitor()
         }
+        .onChange(of: selectedFolderId) { _, _ in restartKeyboardMonitor() }
+        .onChange(of: maxHistoryCount) { _, newValue in clipboard.truncateHistory(to: newValue) }
         .onChange(of: themePreference) { _, newTheme in applyTheme(newTheme) }
         .onAppear { applyTheme(themePreference) }
         .environmentObject(clipboard)
@@ -274,7 +277,7 @@ struct ContentView: View {
         selectedIndex = 0
         expandedItemIndex = nil
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            if showingSettings || showingDeleteSelectedAlert { return event }
+            if showingSettings || showingDeleteSelectedAlert || showingGroupAssignment { return event }
             switch event.keyCode {
             case 43: // ,
                 if event.modifierFlags.contains(.command) {
@@ -377,13 +380,46 @@ struct ContentView: View {
                 self.pasteItem(index: self.selectedIndex, isFormatted: isCmd)
                 return nil
             case 124: // Right arrow
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    self.expandedItemIndex = (self.expandedItemIndex == self.selectedIndex) ? nil : self.selectedIndex
+                if self.activeTab == "Groups" && self.selectedFolderId == nil {
+                    // Open folder
+                    if self.selectedIndex >= 0 && self.selectedIndex < self.clipboard.folders.count {
+                        withAnimation {
+                            self.selectedFolderId = self.clipboard.folders[self.selectedIndex].id
+                            self.selectedIndex = 0
+                            self.expandedItemIndex = nil
+                        }
+                    }
+                } else {
+                    // Toggle expansion
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        self.expandedItemIndex = (self.expandedItemIndex == self.selectedIndex) ? nil : self.selectedIndex
+                    }
                 }
                 return nil
             case 123: // Left arrow
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    self.expandedItemIndex = (self.expandedItemIndex == self.selectedIndex) ? nil : self.selectedIndex
+                if self.activeTab == "Groups" {
+                    if self.selectedFolderId == nil {
+                        // Open folder (same as right arrow when collapsed)
+                        if self.selectedIndex >= 0 && self.selectedIndex < self.clipboard.folders.count {
+                            withAnimation {
+                                self.selectedFolderId = self.clipboard.folders[self.selectedIndex].id
+                                self.selectedIndex = 0
+                                self.expandedItemIndex = nil
+                            }
+                        }
+                    } else {
+                        // Close folder
+                        withAnimation {
+                            self.selectedFolderId = nil
+                            self.selectedIndex = 0
+                            self.expandedItemIndex = nil
+                        }
+                    }
+                } else {
+                    // Toggle expansion
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        self.expandedItemIndex = (self.expandedItemIndex == self.selectedIndex) ? nil : self.selectedIndex
+                    }
                 }
                 return nil
             case 49: // Space
@@ -451,6 +487,13 @@ struct ContentView: View {
         if let monitor = eventMonitor {
             NSEvent.removeMonitor(monitor)
             eventMonitor = nil
+        }
+    }
+    
+    private func restartKeyboardMonitor() {
+        teardownKeyboardMonitor()
+        if shortcut.isExpanded {
+            setupKeyboardMonitor()
         }
     }
     
