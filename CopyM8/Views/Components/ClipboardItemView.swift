@@ -94,7 +94,6 @@ struct ClipboardItemView: View {
         .buttonStyle(PlainButtonStyle())
         .onHover { hovering in
             hover = hovering
-            if hovering { NSCursor.pointingHand.push() } else { NSCursor.pop() }
         }
     }
 }

@@ -25,7 +25,6 @@ struct HeaderView: View {
             }
             .onHover { hover in
                 isHoveringClose = hover
-                if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() }
             }
             .onTapGesture { NSApplication.shared.terminate(nil) }
             
@@ -40,7 +39,6 @@ struct HeaderView: View {
                     .foregroundColor(isEditMode ? .primary : .primary.opacity(0.6))
             }
             .buttonStyle(PlainButtonStyle())
-            .onHover { hover in if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() } }
             
 
             
@@ -65,7 +63,6 @@ struct HeaderView: View {
                 Image(systemName: "gearshape").font(.system(size: 11)).foregroundColor(.primary.opacity(0.6))
             }
             .buttonStyle(PlainButtonStyle())
-            .onHover { hover in if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() } }
             .popover(isPresented: $showingSettings, arrowEdge: .bottom) {
                 SettingsView(draftHistoryCount: $draftHistoryCount, maxHistoryCount: $maxHistoryCount)
             }

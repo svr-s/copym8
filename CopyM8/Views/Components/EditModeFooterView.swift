@@ -17,7 +17,6 @@ struct EditModeFooterView: View {
                 Text(selectedItemsForDeletion.count == filteredHistory.count && !filteredHistory.isEmpty ? "Deselect All" : "Select All")
                     .font(.system(size: 11)).foregroundColor(.primary.opacity(0.6))
             }.buttonStyle(PlainButtonStyle())
-            .onHover { hover in if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() } }
             
             Spacer()
             
@@ -40,7 +39,6 @@ struct EditModeFooterView: View {
                 .padding(.horizontal, 10).padding(.vertical, 6)
                 .background(Color.primary.opacity(0.1)).cornerRadius(6)
             }.buttonStyle(PlainButtonStyle())
-            .onHover { hover in if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() } }
             
             let hasGroupedItem = clipboard.history.contains { item in selectedItemsForDeletion.contains(item.id) && item.folderId != nil }
             if hasGroupedItem {
@@ -62,7 +60,6 @@ struct EditModeFooterView: View {
                     .padding(.horizontal, 10).padding(.vertical, 6)
                     .background(Color.primary.opacity(0.1)).cornerRadius(6)
                 }.buttonStyle(PlainButtonStyle())
-                .onHover { hover in if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() } }
             }
             
             Button(action: {
@@ -87,7 +84,6 @@ struct EditModeFooterView: View {
             }.buttonStyle(PlainButtonStyle())
             .disabled(selectedItemsForDeletion.isEmpty)
             .onHover { hover in
-                if !selectedItemsForDeletion.isEmpty { if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() } }
             }
             .alert("Delete selected items?", isPresented: $showingDeleteSelectedAlert) {
                 Button("Cancel", role: .cancel) { }

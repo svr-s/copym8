@@ -35,7 +35,6 @@ struct TabBarView: View {
                                 .cornerRadius(12)
                         }
                         .buttonStyle(PlainButtonStyle())
-                        .onHover { hover in if hover { NSCursor.pointingHand.push() } else { NSCursor.pop() } }
                     }
                 }
             }
