@@ -353,7 +353,7 @@ struct ContentView: View {
                     return nil
                 }
                 
-                if event.modifierFlags.contains(.command) {
+                if event.modifierFlags.intersection([.command, .option, .control]).isEmpty {
                     // Open Group Assignment Modal
                     if !self.isEditMode && self.selectedIndex >= 0 && self.selectedIndex < self.filteredHistory.count {
                         self.itemToAssignGroup = self.filteredHistory[self.selectedIndex].id
@@ -433,6 +433,15 @@ struct ContentView: View {
                 }
                 return event
             case 0: // A
+                if event.modifierFlags.contains(.option) {
+                    withAnimation {
+                        self.activeTab = "All"
+                        self.selectedIndex = 0
+                        self.expandedItemIndex = nil
+                    }
+                    return nil
+                }
+                
                 if event.modifierFlags.contains(.command) && self.isEditMode {
                     if self.selectedItemsForDeletion.count == self.filteredHistory.count {
                         self.selectedItemsForDeletion.removeAll()

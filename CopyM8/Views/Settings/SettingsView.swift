@@ -225,7 +225,7 @@ struct SettingsView: View {
                 shortcutRow(action: "Pinned Tab", key: "Opt + P")
                 shortcutRow(action: "Groups Tab", key: "Opt + G")
                 shortcutRow(action: "Reorder Item/Group", key: "Cmd + Up/Down")
-                shortcutRow(action: "Assign Group", key: "Cmd + G")
+                shortcutRow(action: "Assign Group", key: "G")
                 shortcutRow(action: "Pin Selected (Edit)", key: "P")
                 shortcutRow(action: "Delete Selected (Edit)", key: "⌫ Delete")
                 shortcutRow(action: "Select All (Current Tab)", key: "Cmd + A")
