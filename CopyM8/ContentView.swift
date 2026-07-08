@@ -350,8 +350,8 @@ struct ContentView: View {
                     return nil
                 }
                 
-                let maxIndex = max(0, (self.activeTab == "Groups" && self.selectedFolderId == nil) ? self.clipboard.folders.count - 1 : self.filteredHistory.count - 1)
-                self.selectedIndex = min(self.selectedIndex + 1, maxIndex)
+                let maxIndex = max(0, (self.activeTab == "Groups" && self.selectedFolderId == nil) ? self.clipboard.folders.count - 1 : filteredHistory.count - 1)
+                self.selectedIndex = min(selectedIndex + 1, maxIndex)
                 self.expandedItemIndex = nil
                 return nil
             case 35: // P
@@ -362,22 +362,17 @@ struct ContentView: View {
                         withAnimation { self.isEditMode = false }
                     }
                 } else {
-                    let fh = self.filteredHistory
-                    let idx = self.selectedIndex
-                    print("DEBUG: P key pressed. activeTab=\(self.activeTab), selectedIndex=\(idx), filteredHistory.count=\(fh.count)")
-                    if idx >= 0 && idx < fh.count {
-                        let id = fh[idx].id
-                        let text = fh[idx].text
-                        print("DEBUG: Toggling pin for id=\(id), text=\(text)")
+                    let idx = selectedIndex
+                    if idx >= 0 && idx < filteredHistory.count {
+                        let id = filteredHistory[idx].id
                         self.clipboard.togglePin(for: id)
                     }
                 }
                 return nil
             case 5: // G
                 if event.modifierFlags.intersection([.command, .option, .control]).isEmpty {
-                    // Open Group Assignment Modal
-                    if !self.isEditMode && self.selectedIndex >= 0 && self.selectedIndex < self.filteredHistory.count {
-                        self.itemToAssignGroup = self.filteredHistory[self.selectedIndex].id
+                    if !self.isEditMode && selectedIndex >= 0 && selectedIndex < filteredHistory.count {
+                        self.itemToAssignGroup = filteredHistory[selectedIndex].id
                         DispatchQueue.main.async {
                             self.showingGroupAssignment = true
                         }
@@ -395,43 +390,39 @@ struct ContentView: View {
                     return nil
                 }
                 
-                self.selectedIndex = max(self.selectedIndex - 1, 0)
+                self.selectedIndex = max(selectedIndex - 1, 0)
                 self.expandedItemIndex = nil
                 return nil
             case 36: // Enter
                 let isCmd = event.modifierFlags.contains(.command)
-                self.pasteItem(index: self.selectedIndex, isFormatted: isCmd)
+                self.pasteItem(index: selectedIndex, isFormatted: isCmd)
                 return nil
             case 124: // Right arrow
                 if self.activeTab == "Groups" && self.selectedFolderId == nil {
-                    // Open folder
-                    if self.selectedIndex >= 0 && self.selectedIndex < self.clipboard.folders.count {
+                    if selectedIndex >= 0 && selectedIndex < self.clipboard.folders.count {
                         withAnimation {
-                            self.selectedFolderId = self.clipboard.folders[self.selectedIndex].id
+                            self.selectedFolderId = self.clipboard.folders[selectedIndex].id
                             self.selectedIndex = 0
                             self.expandedItemIndex = nil
                         }
                     }
                 } else {
-                    // Toggle expansion
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        self.expandedItemIndex = (self.expandedItemIndex == self.selectedIndex) ? nil : self.selectedIndex
+                        self.expandedItemIndex = (self.expandedItemIndex == selectedIndex) ? nil : selectedIndex
                     }
                 }
                 return nil
             case 123: // Left arrow
                 if self.activeTab == "Groups" {
                     if self.selectedFolderId == nil {
-                        // Open folder (same as right arrow when collapsed)
-                        if self.selectedIndex >= 0 && self.selectedIndex < self.clipboard.folders.count {
+                        if selectedIndex >= 0 && selectedIndex < self.clipboard.folders.count {
                             withAnimation {
-                                self.selectedFolderId = self.clipboard.folders[self.selectedIndex].id
+                                self.selectedFolderId = self.clipboard.folders[selectedIndex].id
                                 self.selectedIndex = 0
                                 self.expandedItemIndex = nil
                             }
                         }
                     } else {
-                        // Close folder
                         withAnimation {
                             self.selectedFolderId = nil
                             self.selectedIndex = 0
@@ -439,16 +430,15 @@ struct ContentView: View {
                         }
                     }
                 } else {
-                    // Toggle expansion
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        self.expandedItemIndex = (self.expandedItemIndex == self.selectedIndex) ? nil : self.selectedIndex
+                        self.expandedItemIndex = (self.expandedItemIndex == selectedIndex) ? nil : selectedIndex
                     }
                 }
                 return nil
             case 49: // Space
                 if self.isEditMode {
-                    if self.selectedIndex >= 0 && self.selectedIndex < self.filteredHistory.count {
-                        let id = self.filteredHistory[self.selectedIndex].id
+                    if selectedIndex >= 0 && selectedIndex < filteredHistory.count {
+                        let id = filteredHistory[selectedIndex].id
                         if self.selectedItemsForDeletion.contains(id) { self.selectedItemsForDeletion.remove(id) }
                         else { self.selectedItemsForDeletion.insert(id) }
                     }

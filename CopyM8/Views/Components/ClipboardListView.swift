@@ -46,7 +46,7 @@ struct ClipboardListView: View {
                             Button(item.isPinned ? "Unpin" : "Pin") { clipboard.togglePin(for: item.id) }
                             Button("Delete") { clipboard.history.removeAll { $0.id == item.id } }
                         }
-                        .id(index)
+                        .id(item.id) // IMPORTANT: Use item ID for view identity, NOT array index
                     }
                     .onMove { source, destination in
                         var items = clipboard.history
@@ -64,8 +64,11 @@ struct ClipboardListView: View {
                 }
                 .padding(8)
                 .onChange(of: selectedIndex) { _, newIndex in
-                    withAnimation(.easeOut(duration: 0.15)) {
-                        proxy.scrollTo(newIndex, anchor: nil)
+                    if newIndex >= 0 && newIndex < filteredHistory.count {
+                        let targetId = filteredHistory[newIndex].id
+                        withAnimation(.easeOut(duration: 0.15)) {
+                            proxy.scrollTo(targetId, anchor: nil)
+                        }
                     }
                 }
             }
