@@ -63,6 +63,9 @@ struct HeaderView: View {
                 Image(systemName: "gearshape").font(.system(size: 11)).foregroundColor(.primary.opacity(0.6))
             }
             .buttonStyle(PlainButtonStyle())
+            .onHover { hover in
+                if hover { NSCursor.arrow.push() } else { NSCursor.pop() }
+            }
             .popover(isPresented: $showingSettings, arrowEdge: .bottom) {
                 SettingsView(draftHistoryCount: $draftHistoryCount, maxHistoryCount: $maxHistoryCount)
             }

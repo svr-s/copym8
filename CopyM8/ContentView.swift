@@ -158,6 +158,7 @@ struct ContentView: View {
                 NSApp.windows.first?.makeKeyAndOrderFront(nil)
                 searchText = ""
                 activeTab = "All"
+                selectedIndex = 0
                 selectedFolderId = nil
                 expandedItemIndex = nil
                 setupKeyboardMonitor()
@@ -174,6 +175,7 @@ struct ContentView: View {
         .onChange(of: selectedFolderId) { _, _ in restartKeyboardMonitor() }
         .onChange(of: maxHistoryCount) { _, newValue in clipboard.truncateHistory(to: newValue) }
         .onChange(of: themePreference) { _, newTheme in applyTheme(newTheme) }
+        .onChange(of: clipboard.history) { _, _ in restartKeyboardMonitor() }
         .onAppear { applyTheme(themePreference) }
         .environmentObject(clipboard)
         .sheet(isPresented: $showingGroupAssignment) {
@@ -276,13 +278,37 @@ struct ContentView: View {
     private func setupKeyboardMonitor() {
         selectedIndex = 0
         expandedItemIndex = nil
-        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [self] event in
             if showingSettings || showingDeleteSelectedAlert || showingGroupAssignment { return event }
             
             if isSearchFocused {
                 let allowedWhenSearchFocused: Set<UInt16> = [36, 48, 53, 125, 126] // Enter, Tab, Esc, Down, Up
                 if !allowedWhenSearchFocused.contains(event.keyCode) {
                     return event
+                }
+            }
+            
+            if event.modifierFlags.contains(.option) {
+                var newTab: String? = nil
+                switch event.keyCode {
+                case 0: newTab = "All" // A
+                case 35: newTab = "Pinned" // P
+                case 5: newTab = "Groups" // G
+                case 17: newTab = "Text" // T
+                case 37: newTab = "Links" // L
+                case 34: newTab = "Images" // I
+                case 26, 3: newTab = "Files" // 7 or F
+                default: break
+                }
+                if let tab = newTab {
+                    DispatchQueue.main.async {
+                        withAnimation {
+                            self.activeTab = tab
+                            self.selectedIndex = 0
+                            self.expandedItemIndex = nil
+                        }
+                    }
+                    return nil
                 }
             }
             
@@ -331,15 +357,6 @@ struct ContentView: View {
                 self.expandedItemIndex = nil
                 return nil
             case 35: // P
-                if event.modifierFlags.contains(.option) {
-                    withAnimation {
-                        self.activeTab = "Pinned"
-                        self.selectedIndex = 0
-                        self.expandedItemIndex = nil
-                    }
-                    return nil
-                }
-                
                 if self.isEditMode {
                     if !self.selectedItemsForDeletion.isEmpty {
                         for id in self.selectedItemsForDeletion { self.clipboard.togglePin(for: id) }
@@ -352,15 +369,6 @@ struct ContentView: View {
                 }
                 return nil
             case 5: // G
-                if event.modifierFlags.contains(.option) {
-                    withAnimation {
-                        self.activeTab = "Groups"
-                        self.selectedIndex = 0
-                        self.expandedItemIndex = nil
-                    }
-                    return nil
-                }
-                
                 if event.modifierFlags.intersection([.command, .option, .control]).isEmpty {
                     // Open Group Assignment Modal
                     if !self.isEditMode && self.selectedIndex >= 0 && self.selectedIndex < self.filteredHistory.count {

@@ -159,6 +159,7 @@ class ClipboardManager: ObservableObject {
             } else {
                 history[index].folderId = nil // Clear folder if unpinned
             }
+            saveHistory()
         }
     }
     
