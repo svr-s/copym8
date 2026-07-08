@@ -276,8 +276,6 @@ struct ContentView: View {
     @State private var previousApp: NSRunningApplication?
     
     private func setupKeyboardMonitor() {
-        selectedIndex = 0
-        expandedItemIndex = nil
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [self] event in
             if showingSettings || showingDeleteSelectedAlert || showingGroupAssignment { return event }
             
