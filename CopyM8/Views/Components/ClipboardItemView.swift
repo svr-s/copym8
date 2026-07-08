@@ -81,6 +81,12 @@ struct ClipboardItemView: View {
                 }
                 
                 Spacer()
+                
+                if item.isPinned {
+                    Image(systemName: "pin.fill")
+                        .foregroundColor(activeColor)
+                        .font(.system(size: 10))
+                }
             }
             .padding(.vertical, isDense ? 4 : 8)
             .padding(.horizontal, 12)
