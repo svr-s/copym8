@@ -22,6 +22,10 @@ Here is a comprehensive list of all keyboard shortcuts available in CopyM8.
 | **Previous Tab** | `Option + Shift + Tab` | Cycles to the previous visible tab. |
 | **Switch Tabs** | `Option + 1-7` | Instantly switches to a specific tab (All, Pinned, Groups, Text, Links, Images, Files). |
 | **All Tab** | `Option + A` | Instantly switches to the All tab. |
+| **Pinned Tab** | `Option + P` | Instantly switches to the Pinned tab. |
+| **Groups Tab** | `Option + G` | Instantly switches to the Groups tab. |
+| **Reorder Item/Group** | `Cmd + Up/Down Arrow` | Moves the selected item (or group) up or down in the list. |
+| **Assign Group** | `Cmd + G` | Opens the group assignment modal for the currently selected item. |
 | **Toggle Pin** | `P` | Instantly pins/unpins the currently highlighted item (or selected items in Edit Mode). |
 | **Delete Item** | `Backspace` | Instantly deletes the currently highlighted item. In Edit Mode, triggers "Delete Selected". |
 | **Toggle Selection (Edit Mode)** | `Space` | Selects or deselects the currently highlighted item when in Edit Mode. |

@@ -332,15 +332,6 @@ struct ContentView: View {
                     return nil
                 }
                 
-                if event.modifierFlags.contains(.command) {
-                    // Open Group Assignment Modal
-                    if !self.isEditMode && self.selectedIndex >= 0 && self.selectedIndex < self.filteredHistory.count {
-                        self.itemToAssignGroup = self.filteredHistory[self.selectedIndex].id
-                        self.showingGroupAssignment = true
-                    }
-                    return nil
-                }
-                
                 if self.isEditMode {
                     if !self.selectedItemsForDeletion.isEmpty {
                         for id in self.selectedItemsForDeletion { self.clipboard.togglePin(for: id) }
@@ -358,6 +349,15 @@ struct ContentView: View {
                         self.activeTab = "Groups"
                         self.selectedIndex = 0
                         self.expandedItemIndex = nil
+                    }
+                    return nil
+                }
+                
+                if event.modifierFlags.contains(.command) {
+                    // Open Group Assignment Modal
+                    if !self.isEditMode && self.selectedIndex >= 0 && self.selectedIndex < self.filteredHistory.count {
+                        self.itemToAssignGroup = self.filteredHistory[self.selectedIndex].id
+                        self.showingGroupAssignment = true
                     }
                     return nil
                 }
