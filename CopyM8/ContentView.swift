@@ -460,23 +460,32 @@ struct ContentView: View {
                 }
                 return event
             default:
-                if let chars = event.charactersIgnoringModifiers, let number = Int(chars) {
+                if let chars = event.charactersIgnoringModifiers {
                     if event.modifierFlags.contains(.option) {
-                        let visibleTabs = getVisibleTabs()
-                        if number >= 1 && number <= visibleTabs.count {
+                        let tabs = ["All", "Pinned", "Groups", "Text", "Links", "Images", "Files"]
+                        if chars.lowercased() == "a" || chars.lowercased() == "å" {
                             withAnimation {
-                                self.activeTab = visibleTabs[number - 1]
+                                self.activeTab = "All"
                                 self.selectedIndex = 0
                                 self.expandedItemIndex = nil
                             }
+                            return nil
+                        } else if let number = Int(chars), number >= 1 && number <= tabs.count {
+                            withAnimation {
+                                self.activeTab = tabs[number - 1]
+                                self.selectedIndex = 0
+                                self.expandedItemIndex = nil
+                            }
+                            return nil
                         }
-                        return nil
                     }
                     
-                    let isCmd = event.modifierFlags.contains(.command)
-                    let targetIndex = number == 0 ? 9 : number - 1
-                    self.pasteItem(index: targetIndex, isFormatted: isCmd)
-                    return nil
+                    if let number = Int(chars) {
+                        let isCmd = event.modifierFlags.contains(.command)
+                        let targetIndex = number == 0 ? 9 : number - 1
+                        self.pasteItem(index: targetIndex, isFormatted: isCmd)
+                        return nil
+                    }
                 }
                 return event
             }
