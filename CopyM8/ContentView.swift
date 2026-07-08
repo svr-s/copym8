@@ -157,6 +157,8 @@ struct ContentView: View {
                 NSApp.activate()
                 NSApp.windows.first?.makeKeyAndOrderFront(nil)
                 searchText = ""
+                activeTab = "All"
+                selectedFolderId = nil
                 setupKeyboardMonitor()
             } else {
                 teardownKeyboardMonitor()
