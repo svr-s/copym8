@@ -49,7 +49,6 @@ struct ClipboardListView: View {
                         .id(index)
                     }
                     .onMove { source, destination in
-                        // Map filtered history indices back to global clipboard.history
                         var items = clipboard.history
                         let sourceIndices = source.compactMap { idx -> Int? in
                             let id = filteredHistory[idx].id

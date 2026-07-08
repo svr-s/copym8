@@ -159,6 +159,7 @@ struct ContentView: View {
                 searchText = ""
                 activeTab = "All"
                 selectedFolderId = nil
+                expandedItemIndex = nil
                 setupKeyboardMonitor()
             } else {
                 teardownKeyboardMonitor()
@@ -323,6 +324,7 @@ struct ContentView: View {
                     withAnimation {
                         self.activeTab = "Pinned"
                         self.selectedIndex = 0
+                        self.expandedItemIndex = nil
                     }
                     return nil
                 }
@@ -352,6 +354,7 @@ struct ContentView: View {
                     withAnimation {
                         self.activeTab = "Groups"
                         self.selectedIndex = 0
+                        self.expandedItemIndex = nil
                     }
                     return nil
                 }
@@ -414,6 +417,7 @@ struct ContentView: View {
                         withAnimation {
                             self.activeTab = visibleTabs[nextIndex]
                             self.selectedIndex = 0
+                            self.expandedItemIndex = nil
                         }
                     }
                     return nil
@@ -427,6 +431,7 @@ struct ContentView: View {
                             withAnimation {
                                 self.activeTab = visibleTabs[number - 1]
                                 self.selectedIndex = 0
+                                self.expandedItemIndex = nil
                             }
                         }
                         return nil
