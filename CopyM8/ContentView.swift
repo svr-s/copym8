@@ -278,6 +278,14 @@ struct ContentView: View {
         expandedItemIndex = nil
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if showingSettings || showingDeleteSelectedAlert || showingGroupAssignment { return event }
+            
+            if isSearchFocused {
+                let allowedWhenSearchFocused: Set<UInt16> = [36, 48, 53, 125, 126] // Enter, Tab, Esc, Down, Up
+                if !allowedWhenSearchFocused.contains(event.keyCode) {
+                    return event
+                }
+            }
+            
             switch event.keyCode {
             case 43: // ,
                 if event.modifierFlags.contains(.command) {
@@ -357,7 +365,9 @@ struct ContentView: View {
                     // Open Group Assignment Modal
                     if !self.isEditMode && self.selectedIndex >= 0 && self.selectedIndex < self.filteredHistory.count {
                         self.itemToAssignGroup = self.filteredHistory[self.selectedIndex].id
-                        self.showingGroupAssignment = true
+                        DispatchQueue.main.async {
+                            self.showingGroupAssignment = true
+                        }
                     }
                     return nil
                 }
