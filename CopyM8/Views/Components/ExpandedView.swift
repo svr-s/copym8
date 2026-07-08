@@ -21,6 +21,8 @@ struct ExpandedView: View {
     @Binding var expandedItemIndex: Int?
     var activeColorName: String
     @Binding var showingDeleteSelectedAlert: Bool
+    @Binding var showingFolderDeleteAlert: Bool
+    @Binding var selectedFolderId: UUID?
     
     @Binding var isResizing: Bool
     @Binding var resizeStartMouse: NSPoint?
@@ -53,7 +55,21 @@ struct ExpandedView: View {
                 SearchBarView(searchText: $searchText, isSearchFocused: isSearchFocused)
                 TabBarView(activeTab: $activeTab, selectedIndex: $selectedIndex, activeColor: activeColor)
                 
-                if filteredHistory.isEmpty {
+                if activeTab == "Groups" && selectedFolderId == nil {
+                    if clipboard.folders.isEmpty {
+                        EmptyStateView(searchText: searchText, activeTab: activeTab)
+                    } else {
+                        ClipboardFolderListView(
+                            folders: clipboard.folders,
+                            isDense: isDense,
+                            selectedIndex: $selectedIndex,
+                            activeColor: activeColor,
+                            isEditMode: isEditMode,
+                            selectedItemsForDeletion: $selectedItemsForDeletion,
+                            selectedFolderId: $selectedFolderId
+                        )
+                    }
+                } else if filteredHistory.isEmpty {
                     EmptyStateView(searchText: searchText, activeTab: activeTab)
                 } else {
                     ClipboardListView(
@@ -74,6 +90,7 @@ struct ExpandedView: View {
                         selectedItemsForDeletion: $selectedItemsForDeletion,
                         isEditMode: $isEditMode,
                         showingDeleteSelectedAlert: $showingDeleteSelectedAlert,
+                        showingFolderDeleteAlert: $showingFolderDeleteAlert,
                         filteredHistory: filteredHistory
                     )
                 }

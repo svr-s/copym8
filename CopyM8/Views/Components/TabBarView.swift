@@ -10,7 +10,7 @@ struct TabBarView: View {
     var body: some View {
         HStack {
             HStack(spacing: 6) {
-                ForEach(["All", "Pinned", "Text", "Links", "Images", "Files"], id: \.self) { tab in
+                ForEach(["All", "Pinned", "Groups", "Text", "Links", "Images", "Files"], id: \.self) { tab in
                     if shouldShowTab(tab) {
                         Button(action: {
                             withAnimation {
@@ -43,7 +43,7 @@ struct TabBarView: View {
     
     private func shouldShowTab(_ tab: String) -> Bool {
         switch tab {
-        case "All", "Pinned": return true
+        case "All", "Pinned", "Groups": return true
         case "Text": return UserDefaults.standard.object(forKey: "saveText") as? Bool ?? true
         case "Links": return UserDefaults.standard.object(forKey: "saveLinks") as? Bool ?? true
         case "Images": return UserDefaults.standard.object(forKey: "saveImages") as? Bool ?? true

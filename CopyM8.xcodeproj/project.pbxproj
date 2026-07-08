@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		28DFF035561641D79FE33929 /* GroupAssignmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EA0DC345CF1479C953DAEDF /* GroupAssignmentView.swift */; };
+		49BD55C6BE0840E886D91270 /* ClipboardFolderListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21A62B31FEA84E61A01DA5EF /* ClipboardFolderListView.swift */; };
+		CFC8067FB02A467BBFEA8012 /* ClipboardFolderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E306BF54CB4AF1A7F048D5 /* ClipboardFolderView.swift */; };
 		758F617403854531B9C107BA /* HeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB563E6B45E483A996B7B09 /* HeaderView.swift */; };
 		CEEBC3F8383C4548A7A2D045 /* TabBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BA781002D2B4ED880AE8A13 /* TabBarView.swift */; };
 		C5F4121F83FD454D8C274338 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A7404ABC5EE433FA787FDCD /* EmptyStateView.swift */; };
@@ -28,6 +31,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		2EA0DC345CF1479C953DAEDF /* GroupAssignmentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Components/GroupAssignmentView.swift; sourceTree = "<group>"; };
+		21A62B31FEA84E61A01DA5EF /* ClipboardFolderListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Components/ClipboardFolderListView.swift; sourceTree = "<group>"; };
+		D1E306BF54CB4AF1A7F048D5 /* ClipboardFolderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Components/ClipboardFolderView.swift; sourceTree = "<group>"; };
 		4BB563E6B45E483A996B7B09 /* HeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Components/HeaderView.swift; sourceTree = "<group>"; };
 		4BA781002D2B4ED880AE8A13 /* TabBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Components/TabBarView.swift; sourceTree = "<group>"; };
 		0A7404ABC5EE433FA787FDCD /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Components/EmptyStateView.swift; sourceTree = "<group>"; };
@@ -72,6 +78,9 @@
 		AF8B5A3326A0D3B725AC6559 /* CopyM8 */ = {
 			isa = PBXGroup;
 			children = (
+				2EA0DC345CF1479C953DAEDF /* GroupAssignmentView.swift */,
+				21A62B31FEA84E61A01DA5EF /* ClipboardFolderListView.swift */,
+				D1E306BF54CB4AF1A7F048D5 /* ClipboardFolderView.swift */,
 				4BB563E6B45E483A996B7B09 /* HeaderView.swift */,
 				4BA781002D2B4ED880AE8A13 /* TabBarView.swift */,
 				0A7404ABC5EE433FA787FDCD /* EmptyStateView.swift */,
@@ -160,6 +169,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				28DFF035561641D79FE33929 /* GroupAssignmentView.swift in Sources */,
+				49BD55C6BE0840E886D91270 /* ClipboardFolderListView.swift in Sources */,
+				CFC8067FB02A467BBFEA8012 /* ClipboardFolderView.swift in Sources */,
 				758F617403854531B9C107BA /* HeaderView.swift in Sources */,
 				CEEBC3F8383C4548A7A2D045 /* TabBarView.swift in Sources */,
 				C5F4121F83FD454D8C274338 /* EmptyStateView.swift in Sources */,

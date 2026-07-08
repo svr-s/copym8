@@ -48,6 +48,20 @@ struct ClipboardListView: View {
                         }
                         .id(index)
                     }
+                    .onMove { source, destination in
+                        // Map filtered history indices back to global clipboard.history
+                        var items = clipboard.history
+                        let sourceIndices = source.compactMap { idx -> Int? in
+                            let id = filteredHistory[idx].id
+                            return items.firstIndex(where: { $0.id == id })
+                        }
+                        
+                        let destId: UUID? = destination < filteredHistory.count ? filteredHistory[destination].id : nil
+                        let globalDestIndex = destId != nil ? items.firstIndex(where: { $0.id == destId! }) ?? items.endIndex : items.endIndex
+                        
+                        items.move(fromOffsets: IndexSet(sourceIndices), toOffset: globalDestIndex)
+                        clipboard.history = items
+                    }
                 }
                 .padding(8)
                 .onChange(of: selectedIndex) { _, newIndex in

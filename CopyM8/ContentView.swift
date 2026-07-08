@@ -22,8 +22,11 @@ struct ContentView: View {
     @StateObject private var shortcut = ShortcutManager()
     @State private var isHovering = false
     @State private var showingDeleteSelectedAlert = false
+    @State private var showingFolderDeleteAlert = false
     @State private var expandedItemIndex: Int? = nil
     @State private var showingSettings = false
+    @State private var showingGroupAssignment = false
+    @State private var itemToAssignGroup: UUID? = nil
     @State private var draftHistoryCount: Int = 25
     @State private var searchText: String = ""
     @FocusState private var isSearchFocused: Bool
@@ -32,6 +35,7 @@ struct ContentView: View {
     @State private var selectedItemsForDeletion: Set<UUID> = []
     
     @State private var activeTab: String = "All"
+    @State private var selectedFolderId: UUID? = nil
     
     @AppStorage("activeColorName") private var activeColorName: String = "Glacier"
     @AppStorage("themePreference") private var themePreference: String = "System"
@@ -57,7 +61,13 @@ struct ContentView: View {
         var results = clipboard.history
         
         switch activeTab {
-        case "Pinned": results = results.filter { $0.isPinned }
+        case "Pinned": results = results.filter { $0.isPinned && $0.folderId == nil }
+        case "Groups": 
+            if let sfid = selectedFolderId {
+                results = results.filter { $0.folderId == sfid }
+            } else {
+                return []
+            }
         case "Text": results = results.filter { $0.itemType == .text }
         case "Links": results = results.filter { $0.itemType == .link }
         case "Images": results = results.filter { $0.itemType == .image }
@@ -112,6 +122,8 @@ struct ContentView: View {
                     expandedItemIndex: $expandedItemIndex,
                     activeColorName: activeColorName,
                     showingDeleteSelectedAlert: $showingDeleteSelectedAlert,
+                    showingFolderDeleteAlert: $showingFolderDeleteAlert,
+                    selectedFolderId: $selectedFolderId,
                     isResizing: $isResizing,
                     resizeStartMouse: $resizeStartMouse,
                     resizeStartSize: $resizeStartSize,
@@ -158,6 +170,12 @@ struct ContentView: View {
         .onChange(of: themePreference) { _, newTheme in applyTheme(newTheme) }
         .onAppear { applyTheme(themePreference) }
         .environmentObject(clipboard)
+        .sheet(isPresented: $showingGroupAssignment) {
+            if let id = itemToAssignGroup {
+                GroupAssignmentView(isPresented: $showingGroupAssignment, itemId: id)
+                    .environmentObject(clipboard)
+            }
+        }
     }
     
     private func applyTheme(_ theme: String) {
@@ -272,7 +290,12 @@ struct ContentView: View {
                 return event
             case 51: // Backspace/Delete
                 if self.isEditMode && !self.selectedItemsForDeletion.isEmpty {
-                    self.showingDeleteSelectedAlert = true
+                    let hasFolder = self.clipboard.folders.contains(where: { self.selectedItemsForDeletion.contains($0.id) })
+                    if hasFolder {
+                        self.showingFolderDeleteAlert = true
+                    } else {
+                        self.showingDeleteSelectedAlert = true
+                    }
                     return nil
                 }
                 return event
@@ -280,11 +303,37 @@ struct ContentView: View {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { shortcut.isExpanded = false }
                 return nil
             case 125: // Down arrow
-                let maxIndex = max(0, self.filteredHistory.count - 1)
+                if event.modifierFlags.contains(.command) {
+                    if self.activeTab == "Groups" && self.selectedFolderId == nil {
+                        self.moveSelectedFolder(up: false)
+                    } else {
+                        self.moveSelectedItem(up: false)
+                    }
+                    return nil
+                }
+                
+                let maxIndex = max(0, (self.activeTab == "Groups" && self.selectedFolderId == nil) ? self.clipboard.folders.count - 1 : self.filteredHistory.count - 1)
                 self.selectedIndex = min(self.selectedIndex + 1, maxIndex)
                 self.expandedItemIndex = nil
                 return nil
             case 35: // P
+                if event.modifierFlags.contains(.option) {
+                    withAnimation {
+                        self.activeTab = "Pinned"
+                        self.selectedIndex = 0
+                    }
+                    return nil
+                }
+                
+                if event.modifierFlags.contains(.command) {
+                    // Open Group Assignment Modal
+                    if !self.isEditMode && self.selectedIndex >= 0 && self.selectedIndex < self.filteredHistory.count {
+                        self.itemToAssignGroup = self.filteredHistory[self.selectedIndex].id
+                        self.showingGroupAssignment = true
+                    }
+                    return nil
+                }
+                
                 if self.isEditMode {
                     if !self.selectedItemsForDeletion.isEmpty {
                         for id in self.selectedItemsForDeletion { self.clipboard.togglePin(for: id) }
@@ -296,7 +345,25 @@ struct ContentView: View {
                     self.clipboard.togglePin(for: id)
                 }
                 return nil
+            case 5: // G
+                if event.modifierFlags.contains(.option) {
+                    withAnimation {
+                        self.activeTab = "Groups"
+                        self.selectedIndex = 0
+                    }
+                    return nil
+                }
+                return event
             case 126: // Up arrow
+                if event.modifierFlags.contains(.command) {
+                    if self.activeTab == "Groups" && self.selectedFolderId == nil {
+                        self.moveSelectedFolder(up: true)
+                    } else {
+                        self.moveSelectedItem(up: true)
+                    }
+                    return nil
+                }
+                
                 self.selectedIndex = max(self.selectedIndex - 1, 0)
                 self.expandedItemIndex = nil
                 return nil
@@ -392,10 +459,10 @@ struct ContentView: View {
     }
     
     private func getVisibleTabs() -> [String] {
-        let tabs = ["All", "Pinned", "Text", "Links", "Images", "Files"]
+        let tabs = ["All", "Pinned", "Groups", "Text", "Links", "Images", "Files"]
         return tabs.filter { t in
             switch t {
-            case "All", "Pinned": return true
+            case "All", "Pinned", "Groups": return true
             case "Text": return UserDefaults.standard.object(forKey: "saveText") as? Bool ?? true
             case "Links": return UserDefaults.standard.object(forKey: "saveLinks") as? Bool ?? true
             case "Images": return UserDefaults.standard.object(forKey: "saveImages") as? Bool ?? true
@@ -403,5 +470,31 @@ struct ContentView: View {
             default: return false
             }
         }
+    }
+    
+    private func moveSelectedItem(up: Bool) {
+        let history = filteredHistory
+        guard selectedIndex >= 0 && selectedIndex < history.count else { return }
+        
+        let targetIndex = up ? selectedIndex - 1 : selectedIndex + 1
+        guard targetIndex >= 0 && targetIndex < history.count else { return }
+        
+        let item1 = history[selectedIndex]
+        let item2 = history[targetIndex]
+        
+        if let idx1 = clipboard.history.firstIndex(where: { $0.id == item1.id }),
+           let idx2 = clipboard.history.firstIndex(where: { $0.id == item2.id }) {
+            clipboard.history.swapAt(idx1, idx2)
+            selectedIndex = targetIndex
+        }
+    }
+    
+    private func moveSelectedFolder(up: Bool) {
+        guard selectedIndex >= 0 && selectedIndex < clipboard.folders.count else { return }
+        let targetIndex = up ? selectedIndex - 1 : selectedIndex + 1
+        guard targetIndex >= 0 && targetIndex < clipboard.folders.count else { return }
+        
+        clipboard.folders.swapAt(selectedIndex, targetIndex)
+        selectedIndex = targetIndex
     }
 }

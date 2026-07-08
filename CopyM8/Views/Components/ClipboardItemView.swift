@@ -36,11 +36,15 @@ struct ClipboardItemView: View {
                         .foregroundColor(isChecked ? .primary : .primary.opacity(0.3))
                         .font(.system(size: 14))
                 } else {
-                    let shortcutText = index == 9 ? "0" : "\(index + 1)"
-                    Text(shortcutText)
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .foregroundColor(secondaryTextColor)
-                        .frame(width: 16, alignment: .leading)
+                    if index < 10 {
+                        let shortcutText = index == 9 ? "0" : "\(index + 1)"
+                        Text(shortcutText)
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundColor(secondaryTextColor)
+                            .frame(width: 16, alignment: .leading)
+                    } else {
+                        Spacer().frame(width: 16)
+                    }
                 }
                 
                 VStack(alignment: .leading, spacing: 4) {

@@ -8,6 +8,12 @@ enum ItemType: String, Codable {
     case file
 }
 
+struct ClipboardFolder: Identifiable, Equatable, Codable {
+    var id = UUID()
+    var name: String
+    var orderIndex: Int = 0
+}
+
 struct ClipboardItem: Identifiable, Equatable, Codable {
     var id = UUID()
     let text: String
@@ -17,6 +23,8 @@ struct ClipboardItem: Identifiable, Equatable, Codable {
     var isPinned: Bool = false
     var itemType: ItemType = .text
     var fileURL: String?
+    var folderId: UUID? = nil
+    var orderIndex: Int = 0
 }
 
 
@@ -87,10 +95,17 @@ class ClipboardManager: ObservableObject {
         }
     }
     
+    @Published var folders: [ClipboardFolder] = [] {
+        didSet {
+            saveFolders()
+        }
+    }
+    
     private let pasteboard = NSPasteboard.general
     private var lastChangeCount: Int = 0
     private var timer: Timer?
     private let storageKey = "copym8_clipboard_history"
+    private let foldersKey = "copym8_clipboard_folders"
     
     init() {
         loadHistory()
@@ -113,11 +128,22 @@ class ClipboardManager: ObservableObject {
             }
             self.history = updated
         }
+        
+        if let folderData = UserDefaults.standard.data(forKey: foldersKey),
+           let decodedFolders = try? JSONDecoder().decode([ClipboardFolder].self, from: folderData) {
+            self.folders = decodedFolders
+        }
     }
     
     private func saveHistory() {
         if let encoded = try? JSONEncoder().encode(history) {
             UserDefaults.standard.set(encoded, forKey: storageKey)
+        }
+    }
+    
+    private func saveFolders() {
+        if let encoded = try? JSONEncoder().encode(folders) {
+            UserDefaults.standard.set(encoded, forKey: foldersKey)
         }
     }
     
@@ -128,6 +154,11 @@ class ClipboardManager: ObservableObject {
     func togglePin(for id: UUID) {
         if let index = history.firstIndex(where: { $0.id == id }) {
             history[index].isPinned.toggle()
+            if history[index].isPinned {
+                history[index].folderId = nil // Pin directly to unassigned
+            } else {
+                history[index].folderId = nil // Clear folder if unpinned
+            }
         }
     }
     
