@@ -361,9 +361,16 @@ struct ContentView: View {
                         self.selectedItemsForDeletion.removeAll()
                         withAnimation { self.isEditMode = false }
                     }
-                } else if self.selectedIndex >= 0 && self.selectedIndex < self.filteredHistory.count {
-                    let id = self.filteredHistory[self.selectedIndex].id
-                    self.clipboard.togglePin(for: id)
+                } else {
+                    let fh = self.filteredHistory
+                    let idx = self.selectedIndex
+                    print("DEBUG: P key pressed. activeTab=\(self.activeTab), selectedIndex=\(idx), filteredHistory.count=\(fh.count)")
+                    if idx >= 0 && idx < fh.count {
+                        let id = fh[idx].id
+                        let text = fh[idx].text
+                        print("DEBUG: Toggling pin for id=\(id), text=\(text)")
+                        self.clipboard.togglePin(for: id)
+                    }
                 }
                 return nil
             case 5: // G
