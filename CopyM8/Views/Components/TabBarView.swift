@@ -8,7 +8,7 @@ struct TabBarView: View {
     var activeColor: Color
     
     var body: some View {
-        HStack {
+        ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
                 ForEach(["All", "Pinned", "Groups", "Text", "Links", "Images", "Files"], id: \.self) { tab in
                     if shouldShowTab(tab) {
@@ -22,6 +22,8 @@ struct TabBarView: View {
                             
                             Text(tab)
                                 .font(.system(size: 11, weight: isActive ? .bold : .regular))
+                                .lineLimit(1)
+                                .fixedSize(horizontal: true, vertical: false)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 4)
                                 .foregroundColor(isActive ? .primary : .primary.opacity(0.6))
