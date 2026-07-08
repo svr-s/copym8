@@ -291,13 +291,13 @@ struct ContentView: View {
             if event.modifierFlags.contains(.option) {
                 var newTab: String? = nil
                 switch event.keyCode {
-                case 0: newTab = "All" // A
-                case 35: newTab = "Pinned" // P
-                case 5: newTab = "Groups" // G
-                case 17: newTab = "Text" // T
-                case 37: newTab = "Links" // L
-                case 34: newTab = "Images" // I
-                case 26, 3: newTab = "Files" // 7 or F
+                case 0, 18: newTab = "All" // A or 1
+                case 35, 19: newTab = "Pinned" // P or 2
+                case 5, 20: newTab = "Groups" // G or 3
+                case 17, 21: newTab = "Text" // T or 4
+                case 37, 23: newTab = "Links" // L or 5
+                case 34, 22: newTab = "Images" // I or 6
+                case 3, 26: newTab = "Files" // F or 7
                 default: break
                 }
                 if let tab = newTab {

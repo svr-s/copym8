@@ -21,9 +21,13 @@ Here is a comprehensive list of all keyboard shortcuts available in CopyM8.
 | **Next Tab** | `Option + Tab` | Cycles to the next visible tab. |
 | **Previous Tab** | `Option + Shift + Tab` | Cycles to the previous visible tab. |
 | **Switch Tabs** | `Option + 1-7` | Instantly switches to a specific tab (All, Pinned, Groups, Text, Links, Images, Files). |
-| **All Tab** | `Option + A` | Instantly switches to the All tab. |
-| **Pinned Tab** | `Option + P` | Instantly switches to the Pinned tab. |
-| **Groups Tab** | `Option + G` | Instantly switches to the Groups tab. |
+| **All Tab** | `Option + A` / `1` | Instantly switches to the All tab. |
+| **Pinned Tab** | `Option + P` / `2` | Instantly switches to the Pinned tab. |
+| **Groups Tab** | `Option + G` / `3` | Instantly switches to the Groups tab. |
+| **Text Tab** | `Option + T` / `4` | Instantly switches to the Text tab. |
+| **Links Tab** | `Option + L` / `5` | Instantly switches to the Links tab. |
+| **Images Tab** | `Option + I` / `6` | Instantly switches to the Images tab. |
+| **Files Tab** | `Option + F` / `7` | Instantly switches to the Files tab. |
 | **Reorder Item/Group** | `Cmd + Up/Down Arrow` | Moves the selected item (or group) up or down in the list. |
 | **Assign Group** | `G` | Opens the group assignment modal for the currently selected item. |
 | **Toggle Pin** | `P` | Instantly pins/unpins the currently highlighted item (or selected items in Edit Mode). |
