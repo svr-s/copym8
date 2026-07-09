@@ -7,6 +7,7 @@ struct GroupAssignmentView: View {
     
     @State private var newFolderName: String = ""
     @State private var isCreatingNew = false
+    @FocusState private var isTextFieldFocused: Bool
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -49,6 +50,7 @@ struct GroupAssignmentView: View {
             if isCreatingNew {
                 HStack {
                     TextField("New Group Name", text: $newFolderName)
+                        .focused($isTextFieldFocused)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .onSubmit {
                             createNewFolder()
@@ -61,6 +63,9 @@ struct GroupAssignmentView: View {
             } else {
                 Button(action: {
                     withAnimation { isCreatingNew = true }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        isTextFieldFocused = true
+                    }
                 }) {
                     HStack {
                         Image(systemName: "plus")
