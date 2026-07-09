@@ -348,33 +348,38 @@ struct ContentView: View {
                         self.moveSelectedItem(up: false)
                     }
                     return nil
+                    if activeTab == "Groups" && selectedFolderId == nil {
+                        moveSelectedFolder(up: false)
+                    } else {
+                        moveSelectedItem(up: false)
+                    }
+                    return nil
                 }
                 
-                let maxIndex = max(0, (self.activeTab == "Groups" && self.selectedFolderId == nil) ? self.clipboard.folders.count - 1 : filteredHistory.count - 1)
-                self.selectedIndex = min(selectedIndex + 1, maxIndex)
-                self.expandedItemIndex = nil
+                let maxIndex = max(0, (activeTab == "Groups" && selectedFolderId == nil) ? clipboard.folders.count - 1 : filteredHistory.count - 1)
+                _selectedIndex.wrappedValue = min(selectedIndex + 1, maxIndex)
+                _expandedItemIndex.wrappedValue = nil
                 return nil
             case 35: // P
-                if self.isEditMode {
-                    if !self.selectedItemsForDeletion.isEmpty {
-                        for id in self.selectedItemsForDeletion { self.clipboard.togglePin(for: id) }
-                        self.selectedItemsForDeletion.removeAll()
-                        withAnimation { self.isEditMode = false }
+                if isEditMode {
+                    if !selectedItemsForDeletion.isEmpty {
+                        for id in selectedItemsForDeletion { clipboard.togglePin(for: id) }
+                        _selectedItemsForDeletion.wrappedValue.removeAll()
+                        withAnimation { _isEditMode.wrappedValue = false }
                     }
                 } else {
-                    let idx = selectedIndex
-                    if idx >= 0 && idx < filteredHistory.count {
-                        let id = filteredHistory[idx].id
-                        self.clipboard.togglePin(for: id)
+                    if selectedIndex >= 0 && selectedIndex < filteredHistory.count {
+                        let id = filteredHistory[selectedIndex].id
+                        clipboard.togglePin(for: id)
                     }
                 }
                 return nil
             case 5: // G
                 if event.modifierFlags.intersection([.command, .option, .control]).isEmpty {
-                    if !self.isEditMode && selectedIndex >= 0 && selectedIndex < filteredHistory.count {
-                        self.itemToAssignGroup = filteredHistory[selectedIndex].id
+                    if !isEditMode && selectedIndex >= 0 && selectedIndex < filteredHistory.count {
+                        _itemToAssignGroup.wrappedValue = filteredHistory[selectedIndex].id
                         DispatchQueue.main.async {
-                            self.showingGroupAssignment = true
+                            _showingGroupAssignment.wrappedValue = true
                         }
                     }
                     return nil
@@ -382,84 +387,81 @@ struct ContentView: View {
                 return event
             case 126: // Up arrow
                 if event.modifierFlags.contains(.command) {
-                    if self.activeTab == "Groups" && self.selectedFolderId == nil {
-                        self.moveSelectedFolder(up: true)
+                    if activeTab == "Groups" && selectedFolderId == nil {
+                        moveSelectedFolder(up: true)
                     } else {
-                        self.moveSelectedItem(up: true)
+                        moveSelectedItem(up: true)
                     }
                     return nil
                 }
                 
-                self.selectedIndex = max(selectedIndex - 1, 0)
-                self.expandedItemIndex = nil
+                _selectedIndex.wrappedValue = max(selectedIndex - 1, 0)
+                _expandedItemIndex.wrappedValue = nil
                 return nil
             case 36: // Enter
                 let isCmd = event.modifierFlags.contains(.command)
-                self.pasteItem(index: selectedIndex, isFormatted: isCmd)
+                pasteItem(index: selectedIndex, isFormatted: isCmd)
                 return nil
             case 124: // Right arrow
-                if self.activeTab == "Groups" && self.selectedFolderId == nil {
-                    if selectedIndex >= 0 && selectedIndex < self.clipboard.folders.count {
+                if activeTab == "Groups" && selectedFolderId == nil {
+                    if selectedIndex >= 0 && selectedIndex < clipboard.folders.count {
                         withAnimation {
-                            self.selectedFolderId = self.clipboard.folders[selectedIndex].id
-                            self.selectedIndex = 0
-                            self.expandedItemIndex = nil
+                            _selectedFolderId.wrappedValue = clipboard.folders[selectedIndex].id
+                            _selectedIndex.wrappedValue = 0
+                            _expandedItemIndex.wrappedValue = nil
                         }
                     }
                 } else {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        self.expandedItemIndex = (self.expandedItemIndex == selectedIndex) ? nil : selectedIndex
+                        _expandedItemIndex.wrappedValue = (expandedItemIndex == selectedIndex) ? nil : selectedIndex
                     }
                 }
                 return nil
             case 123: // Left arrow
-                if self.activeTab == "Groups" {
-                    if self.selectedFolderId == nil {
-                        if selectedIndex >= 0 && selectedIndex < self.clipboard.folders.count {
+                if activeTab == "Groups" {
+                    if selectedFolderId == nil {
+                        if selectedIndex >= 0 && selectedIndex < clipboard.folders.count {
                             withAnimation {
-                                self.selectedFolderId = self.clipboard.folders[selectedIndex].id
-                                self.selectedIndex = 0
-                                self.expandedItemIndex = nil
+                                _selectedFolderId.wrappedValue = clipboard.folders[selectedIndex].id
+                                _selectedIndex.wrappedValue = 0
+                                _expandedItemIndex.wrappedValue = nil
                             }
                         }
                     } else {
                         withAnimation {
-                            self.selectedFolderId = nil
-                            self.selectedIndex = 0
-                            self.expandedItemIndex = nil
+                            _selectedFolderId.wrappedValue = nil
+                            _selectedIndex.wrappedValue = 0
+                            _expandedItemIndex.wrappedValue = nil
                         }
                     }
                 } else {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        self.expandedItemIndex = (self.expandedItemIndex == selectedIndex) ? nil : selectedIndex
+                        _expandedItemIndex.wrappedValue = (expandedItemIndex == selectedIndex) ? nil : selectedIndex
                     }
                 }
                 return nil
             case 49: // Space
-                if self.isEditMode {
+                if isEditMode {
                     if selectedIndex >= 0 && selectedIndex < filteredHistory.count {
                         let id = filteredHistory[selectedIndex].id
-                        if self.selectedItemsForDeletion.contains(id) { self.selectedItemsForDeletion.remove(id) }
-                        else { self.selectedItemsForDeletion.insert(id) }
+                        if selectedItemsForDeletion.contains(id) { _selectedItemsForDeletion.wrappedValue.remove(id) }
+                        else { _selectedItemsForDeletion.wrappedValue.insert(id) }
                     }
                     return nil
                 }
                 return event
-            case 0: // A
-                if event.modifierFlags.contains(.option) {
-                    withAnimation {
-                        self.activeTab = "All"
-                        self.selectedIndex = 0
-                        self.expandedItemIndex = nil
-                    }
+            case 14: // E
+                if event.modifierFlags.contains(.command) {
+                    withAnimation { _isEditMode.wrappedValue.toggle() }
                     return nil
                 }
-                
-                if event.modifierFlags.contains(.command) && self.isEditMode {
-                    if self.selectedItemsForDeletion.count == self.filteredHistory.count {
-                        self.selectedItemsForDeletion.removeAll()
+                return event
+            case 0: // A
+                if isEditMode && event.modifierFlags.contains(.command) {
+                    if selectedItemsForDeletion.count == filteredHistory.count {
+                        _selectedItemsForDeletion.wrappedValue.removeAll()
                     } else {
-                        self.selectedItemsForDeletion = Set(self.filteredHistory.map { $0.id })
+                        _selectedItemsForDeletion.wrappedValue = Set(filteredHistory.map { $0.id })
                     }
                     return nil
                 }
@@ -468,44 +470,44 @@ struct ContentView: View {
                 if event.modifierFlags.contains(.option) {
                     let isShift = event.modifierFlags.contains(.shift)
                     let visibleTabs = getVisibleTabs()
-                    if let currentIndex = visibleTabs.firstIndex(of: self.activeTab) {
+                    if let currentIndex = visibleTabs.firstIndex(of: activeTab) {
                         let nextIndex = isShift 
                             ? (currentIndex - 1 + visibleTabs.count) % visibleTabs.count 
                             : (currentIndex + 1) % visibleTabs.count
                         withAnimation {
-                            self.activeTab = visibleTabs[nextIndex]
-                            self.selectedIndex = 0
-                            self.expandedItemIndex = nil
+                            _activeTab.wrappedValue = visibleTabs[nextIndex]
+                            _selectedIndex.wrappedValue = 0
+                            _expandedItemIndex.wrappedValue = nil
                         }
                     }
                     return nil
                 }
                 return event
-            default:
-                if let chars = event.charactersIgnoringModifiers {
-                    if event.modifierFlags.contains(.option) {
-                        let tabs = ["All", "Pinned", "Groups", "Text", "Links", "Images", "Files"]
-                        if chars.lowercased() == "a" || chars.lowercased() == "å" {
-                            withAnimation {
-                                self.activeTab = "All"
-                                self.selectedIndex = 0
-                                self.expandedItemIndex = nil
-                            }
-                            return nil
-                        } else if let number = Int(chars), number >= 1 && number <= tabs.count {
-                            withAnimation {
-                                self.activeTab = tabs[number - 1]
-                                self.selectedIndex = 0
-                                self.expandedItemIndex = nil
-                            }
-                            return nil
-                        }
+            case 53: // Esc
+                if isEditMode {
+                    withAnimation { _isEditMode.wrappedValue = false }
+                    return nil
+                }
+                
+                if activeTab != "All" {
+                    withAnimation {
+                        _activeTab.wrappedValue = "All"
+                        _selectedIndex.wrappedValue = 0
+                        _expandedItemIndex.wrappedValue = nil
                     }
+                    return nil
+                }
+                return event
+            default:
+                if !isSearchFocused,
+                   let char = event.charactersIgnoringModifiers,
+                   let num = Int(char),
+                   num >= 0 && num <= 9 {
                     
-                    if let number = Int(chars) {
+                    let targetIndex = num == 0 ? 9 : num - 1
+                    if targetIndex < filteredHistory.count {
                         let isCmd = event.modifierFlags.contains(.command)
-                        let targetIndex = number == 0 ? 9 : number - 1
-                        self.pasteItem(index: targetIndex, isFormatted: isCmd)
+                        pasteItem(index: targetIndex, isFormatted: isCmd)
                         return nil
                     }
                 }
