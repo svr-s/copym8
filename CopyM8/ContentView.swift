@@ -477,6 +477,13 @@ struct ContentView: View {
                     return nil
                 }
                 return event
+            case 53: // Esc
+                if isSearchFocused {
+                    _isSearchFocused.wrappedValue = false
+                } else {
+                    NSApplication.shared.hide(nil)
+                }
+                return nil
             case 48: // Tab
                 if event.modifierFlags.contains(.option) {
                     let isShift = event.modifierFlags.contains(.shift)
