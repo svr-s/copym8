@@ -2,7 +2,7 @@ import SwiftUI
 
 struct GroupAssignmentView: View {
     @EnvironmentObject var clipboard: ClipboardManager
-    @Binding var isPresented: Bool
+    @Environment(\.dismiss) var dismiss
     let itemId: UUID
     
     @State private var newFolderName: String = ""
@@ -75,7 +75,7 @@ struct GroupAssignmentView: View {
             HStack {
                 Spacer()
                 Button("Cancel") {
-                    isPresented = false
+                    dismiss()
                 }
                 .keyboardShortcut(.cancelAction)
             }
@@ -89,7 +89,7 @@ struct GroupAssignmentView: View {
             clipboard.history[idx].folderId = folderId
             clipboard.history[idx].isPinned = true
         }
-        isPresented = false
+        dismiss()
     }
     
     private func createNewFolder() {
@@ -102,3 +102,4 @@ struct GroupAssignmentView: View {
         assignToFolder(newFolder.id)
     }
 }
+

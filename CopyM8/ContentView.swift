@@ -17,6 +17,10 @@ let colors: [(name: String, color: Color)] = [
     ("Black", Color.black)
 ]
 
+extension UUID: Identifiable {
+    public var id: UUID { self }
+}
+
 struct ContentView: View {
     @StateObject private var clipboard = ClipboardManager()
     @StateObject private var shortcut = ShortcutManager()
@@ -178,11 +182,9 @@ struct ContentView: View {
         .onChange(of: clipboard.history) { _, _ in restartKeyboardMonitor() }
         .onAppear { applyTheme(themePreference) }
         .environmentObject(clipboard)
-        .sheet(isPresented: $showingGroupAssignment) {
-            if let id = itemToAssignGroup {
-                GroupAssignmentView(isPresented: $showingGroupAssignment, itemId: id)
-                    .environmentObject(clipboard)
-            }
+        .sheet(item: $itemToAssignGroup) { id in
+            GroupAssignmentView(itemId: id)
+                .environmentObject(clipboard)
         }
     }
     
@@ -276,8 +278,41 @@ struct ContentView: View {
     @State private var previousApp: NSRunningApplication?
     
     private func setupKeyboardMonitor() {
-        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [self] event in
-            if showingSettings || showingDeleteSelectedAlert || showingGroupAssignment { return event }
+        let _activeTab = self._activeTab
+        let _selectedIndex = self._selectedIndex
+        let _isEditMode = self._isEditMode
+        let _selectedFolderId = self._selectedFolderId
+        let _expandedItemIndex = self._expandedItemIndex
+        let _selectedItemsForDeletion = self._selectedItemsForDeletion
+        let _isSearchFocused = self._isSearchFocused
+        let _itemToAssignGroup = self._itemToAssignGroup
+        let _showingSettings = self._showingSettings
+        let _showingDeleteSelectedAlert = self._showingDeleteSelectedAlert
+        
+        let clipboard = self.clipboard
+        let pasteItem = self.pasteItem
+        let moveSelectedFolder = self.moveSelectedFolder
+        let moveSelectedItem = self.moveSelectedItem
+        let getVisibleTabs = self.getVisibleTabs
+        
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if _showingSettings.wrappedValue || _showingDeleteSelectedAlert.wrappedValue || _itemToAssignGroup.wrappedValue != nil {
+                if event.keyCode == 53 {
+                    if _itemToAssignGroup.wrappedValue != nil { _itemToAssignGroup.wrappedValue = nil }
+                    return event
+                }
+                return event
+            }
+            
+            let activeTab = _activeTab.wrappedValue
+            let selectedIndex = _selectedIndex.wrappedValue
+            let isEditMode = _isEditMode.wrappedValue
+            let selectedFolderId = _selectedFolderId.wrappedValue
+            let expandedItemIndex = _expandedItemIndex.wrappedValue
+            var selectedItemsForDeletion = _selectedItemsForDeletion.wrappedValue
+            let isSearchFocused = _isSearchFocused.wrappedValue
+            
+            let filteredHistory = clipboard.getFilteredHistory(activeTab: activeTab, selectedFolderId: selectedFolderId, searchText: "")
             
             if isSearchFocused {
                 let allowedWhenSearchFocused: Set<UInt16> = [36, 48, 53, 125, 126] // Enter, Tab, Esc, Down, Up
@@ -289,69 +324,48 @@ struct ContentView: View {
             if event.modifierFlags.contains(.option) {
                 var newTab: String? = nil
                 switch event.keyCode {
-                case 0, 18: newTab = "All" // A or 1
                 case 35, 19: newTab = "Pinned" // P or 2
                 case 5, 20: newTab = "Groups" // G or 3
                 case 17, 21: newTab = "Text" // T or 4
                 case 37, 23: newTab = "Links" // L or 5
                 case 34, 22: newTab = "Images" // I or 6
                 case 3, 26: newTab = "Files" // F or 7
+                case 0, 18: newTab = "All" // A or 1
                 default: break
                 }
-                if let tab = newTab {
-                    DispatchQueue.main.async {
-                        withAnimation {
-                            self.activeTab = tab
-                            self.selectedIndex = 0
-                            self.expandedItemIndex = nil
-                        }
+                
+                if let tab = newTab, tab != activeTab {
+                    withAnimation {
+                        _activeTab.wrappedValue = tab
+                        _selectedIndex.wrappedValue = 0
+                        _expandedItemIndex.wrappedValue = nil
                     }
                     return nil
                 }
             }
             
             switch event.keyCode {
-            case 43: // ,
-                if event.modifierFlags.contains(.command) {
-                    self.showingSettings.toggle()
-                    return nil
-                }
-                return event
-            case 14: // E
-                if event.modifierFlags.contains(.command) {
-                    withAnimation {
-                        self.isEditMode.toggle()
-                        if !self.isEditMode { self.selectedItemsForDeletion.removeAll() }
+            case 51: // Backspace
+                if isEditMode {
+                    if !selectedItemsForDeletion.isEmpty {
+                        _showingDeleteSelectedAlert.wrappedValue = true
                     }
-                    return nil
-                }
-                return event
-            case 51: // Backspace/Delete
-                if self.isEditMode && !self.selectedItemsForDeletion.isEmpty {
-                    let hasFolder = self.clipboard.folders.contains(where: { self.selectedItemsForDeletion.contains($0.id) })
-                    if hasFolder {
-                        self.showingFolderDeleteAlert = true
-                    } else {
-                        self.showingDeleteSelectedAlert = true
+                } else {
+                    if activeTab == "Groups" && selectedFolderId == nil {
+                        // let other alert handle
+                    } else if selectedIndex >= 0 && selectedIndex < filteredHistory.count {
+                        let id = filteredHistory[selectedIndex].id
+                        withAnimation { clipboard.history.removeAll { $0.id == id } }
+                        _selectedIndex.wrappedValue = max(0, min(selectedIndex, filteredHistory.count - 2))
                     }
-                    return nil
                 }
-                return event
-            case 53: // Esc
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { shortcut.isExpanded = false }
                 return nil
             case 125: // Down arrow
                 if event.modifierFlags.contains(.command) {
-                    if self.activeTab == "Groups" && self.selectedFolderId == nil {
-                        self.moveSelectedFolder(up: false)
-                    } else {
-                        self.moveSelectedItem(up: false)
-                    }
-                    return nil
                     if activeTab == "Groups" && selectedFolderId == nil {
-                        moveSelectedFolder(up: false)
+                        moveSelectedFolder(false)
                     } else {
-                        moveSelectedItem(up: false)
+                        moveSelectedItem(false)
                     }
                     return nil
                 }
@@ -378,9 +392,6 @@ struct ContentView: View {
                 if event.modifierFlags.intersection([.command, .option, .control]).isEmpty {
                     if !isEditMode && selectedIndex >= 0 && selectedIndex < filteredHistory.count {
                         _itemToAssignGroup.wrappedValue = filteredHistory[selectedIndex].id
-                        DispatchQueue.main.async {
-                            _showingGroupAssignment.wrappedValue = true
-                        }
                     }
                     return nil
                 }
@@ -388,9 +399,9 @@ struct ContentView: View {
             case 126: // Up arrow
                 if event.modifierFlags.contains(.command) {
                     if activeTab == "Groups" && selectedFolderId == nil {
-                        moveSelectedFolder(up: true)
+                        moveSelectedFolder(true)
                     } else {
-                        moveSelectedItem(up: true)
+                        moveSelectedItem(true)
                     }
                     return nil
                 }
@@ -400,7 +411,7 @@ struct ContentView: View {
                 return nil
             case 36: // Enter
                 let isCmd = event.modifierFlags.contains(.command)
-                pasteItem(index: selectedIndex, isFormatted: isCmd)
+                pasteItem(selectedIndex, isCmd)
                 return nil
             case 124: // Right arrow
                 if activeTab == "Groups" && selectedFolderId == nil {
@@ -483,21 +494,6 @@ struct ContentView: View {
                     return nil
                 }
                 return event
-            case 53: // Esc
-                if isEditMode {
-                    withAnimation { _isEditMode.wrappedValue = false }
-                    return nil
-                }
-                
-                if activeTab != "All" {
-                    withAnimation {
-                        _activeTab.wrappedValue = "All"
-                        _selectedIndex.wrappedValue = 0
-                        _expandedItemIndex.wrappedValue = nil
-                    }
-                    return nil
-                }
-                return event
             default:
                 if !isSearchFocused,
                    let char = event.charactersIgnoringModifiers,
@@ -507,7 +503,7 @@ struct ContentView: View {
                     let targetIndex = num == 0 ? 9 : num - 1
                     if targetIndex < filteredHistory.count {
                         let isCmd = event.modifierFlags.contains(.command)
-                        pasteItem(index: targetIndex, isFormatted: isCmd)
+                        pasteItem(targetIndex, isCmd)
                         return nil
                     }
                 }
