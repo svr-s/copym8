@@ -481,7 +481,7 @@ struct ContentView: View {
                 if isSearchFocused {
                     _isSearchFocused.wrappedValue = false
                 } else {
-                    NSApplication.shared.hide(nil)
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { shortcut.isExpanded = false }
                 }
                 return nil
             case 48: // Tab
