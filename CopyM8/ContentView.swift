@@ -170,6 +170,11 @@ struct ContentView: View {
                 setupKeyboardMonitor()
             } else {
                 teardownKeyboardMonitor()
+                itemToAssignGroup = nil
+                showingSettings = false
+                showingDeleteSelectedAlert = false
+                showingFolderDeleteAlert = false
+                showingGroupAssignment = false
             }
         }
         .onChange(of: activeTab) { _, _ in restartKeyboardMonitor() }
