@@ -46,6 +46,11 @@ struct ClipboardFolderView: View {
                     }
                 }
                 
+                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(secondaryTextColor.opacity(0.6))
+                    .frame(width: 10)
+                
                 HStack(spacing: 8) {
                     Image(systemName: isExpanded ? "folder.fill" : "folder")
                         .foregroundColor(activeColor)
@@ -57,10 +62,6 @@ struct ClipboardFolderView: View {
                 }
                 
                 Spacer()
-                
-                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(secondaryTextColor.opacity(0.5))
             }
             .padding(.vertical, isDense ? 6 : 10)
             .padding(.horizontal, 12)
