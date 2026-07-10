@@ -311,6 +311,7 @@ struct ContentView: View {
         let getVisibleTabs = self.getVisibleTabs
         let _isDense = self._isDense
         let _activeColorName = self._activeColorName
+        let _searchText = self._searchText
         
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if _showingSettings.wrappedValue || _showingDeleteSelectedAlert.wrappedValue || _itemToAssignGroup.wrappedValue != nil {
@@ -328,6 +329,7 @@ struct ContentView: View {
             let expandedItemIndex = _expandedItemIndex.wrappedValue
             var selectedItemsForDeletion = _selectedItemsForDeletion.wrappedValue
             let isSearchFocused = _isSearchFocused.wrappedValue
+            let searchText = _searchText.wrappedValue
             
             if event.modifierFlags.contains(.command) {
                 switch event.keyCode {
@@ -337,11 +339,6 @@ struct ContentView: View {
                 case 2: // D
                     _isDense.wrappedValue.toggle()
                     return nil
-                case 40: // K
-                    if let idx = colors.firstIndex(where: { $0.name == _activeColorName.wrappedValue }) {
-                        _activeColorName.wrappedValue = colors[(idx + 1) % colors.count].name
-                    }
-                    return nil
                 case 43: // , (comma)
                     _showingSettings.wrappedValue.toggle()
                     return nil
@@ -349,7 +346,7 @@ struct ContentView: View {
                 }
             }
             
-            let filteredHistory = clipboard.getFilteredHistory(activeTab: activeTab, selectedFolderId: selectedFolderId, searchText: "")
+            let filteredHistory = clipboard.getFilteredHistory(activeTab: activeTab, selectedFolderId: selectedFolderId, searchText: searchText)
             
             if isSearchFocused {
                 let allowedWhenSearchFocused: Set<UInt16> = [36, 48, 53, 125, 126] // Enter, Tab, Esc, Down, Up
@@ -407,8 +404,10 @@ struct ContentView: View {
                     return nil
                 }
                 
-                let maxIndex = max(0, (activeTab == "Groups" && selectedFolderId == nil) ? clipboard.folders.count - 1 : filteredHistory.count - 1)
-                _selectedIndex.wrappedValue = min(selectedIndex + 1, maxIndex)
+                let maxIndex = (activeTab == "Groups" && selectedFolderId == nil) ? clipboard.folders.count - 1 : filteredHistory.count - 1
+                if maxIndex >= 0 {
+                    _selectedIndex.wrappedValue = (selectedIndex >= maxIndex) ? 0 : selectedIndex + 1
+                }
                 _expandedItemIndex.wrappedValue = nil
                 return nil
             case 35: // P
@@ -443,7 +442,10 @@ struct ContentView: View {
                     return nil
                 }
                 
-                _selectedIndex.wrappedValue = max(selectedIndex - 1, 0)
+                let maxIndex = (activeTab == "Groups" && selectedFolderId == nil) ? clipboard.folders.count - 1 : filteredHistory.count - 1
+                if maxIndex >= 0 {
+                    _selectedIndex.wrappedValue = (selectedIndex <= 0) ? maxIndex : selectedIndex - 1
+                }
                 _expandedItemIndex.wrappedValue = nil
                 return nil
             case 36: // Enter
