@@ -56,11 +56,12 @@ struct ExpandedView: View {
                 TabBarView(activeTab: $activeTab, selectedIndex: $selectedIndex, activeColor: activeColor)
                 
                 if activeTab == "Groups" && selectedFolderId == nil {
-                    if clipboard.folders.isEmpty {
+                    let filteredFolders = clipboard.getFilteredFolders(searchText: searchText)
+                    if filteredFolders.isEmpty {
                         EmptyStateView(searchText: searchText, activeTab: activeTab)
                     } else {
                         ClipboardFolderListView(
-                            folders: clipboard.folders,
+                            folders: filteredFolders,
                             isDense: isDense,
                             selectedIndex: $selectedIndex,
                             activeColor: activeColor,

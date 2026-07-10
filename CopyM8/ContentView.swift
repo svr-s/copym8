@@ -347,6 +347,7 @@ struct ContentView: View {
             }
             
             let filteredHistory = clipboard.getFilteredHistory(activeTab: activeTab, selectedFolderId: selectedFolderId, searchText: searchText)
+            let filteredFolders = clipboard.getFilteredFolders(searchText: searchText)
             
             if isSearchFocused {
                 let allowedWhenSearchFocused: Set<UInt16> = [36, 48, 53, 125, 126] // Enter, Tab, Esc, Down, Up
@@ -404,7 +405,7 @@ struct ContentView: View {
                     return nil
                 }
                 
-                let maxIndex = (activeTab == "Groups" && selectedFolderId == nil) ? clipboard.folders.count - 1 : filteredHistory.count - 1
+                let maxIndex = (activeTab == "Groups" && selectedFolderId == nil) ? filteredFolders.count - 1 : filteredHistory.count - 1
                 if maxIndex >= 0 {
                     _selectedIndex.wrappedValue = (selectedIndex >= maxIndex) ? 0 : selectedIndex + 1
                 }
@@ -442,7 +443,7 @@ struct ContentView: View {
                     return nil
                 }
                 
-                let maxIndex = (activeTab == "Groups" && selectedFolderId == nil) ? clipboard.folders.count - 1 : filteredHistory.count - 1
+                let maxIndex = (activeTab == "Groups" && selectedFolderId == nil) ? filteredFolders.count - 1 : filteredHistory.count - 1
                 if maxIndex >= 0 {
                     _selectedIndex.wrappedValue = (selectedIndex <= 0) ? maxIndex : selectedIndex - 1
                 }
