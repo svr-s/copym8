@@ -52,6 +52,7 @@ struct GroupAssignmentView: View {
                     TextField("New Group Name", text: $newFolderName)
                         .focused($isTextFieldFocused)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .onAppear { isTextFieldFocused = true }
                         .onSubmit {
                             createNewFolder()
                         }
@@ -63,9 +64,6 @@ struct GroupAssignmentView: View {
             } else {
                 Button(action: {
                     withAnimation { isCreatingNew = true }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        isTextFieldFocused = true
-                    }
                 }) {
                     HStack {
                         Image(systemName: "plus")
