@@ -95,7 +95,6 @@ struct GroupAssignmentView: View {
     private func assignToFolder(_ folderId: UUID) {
         if let idx = clipboard.history.firstIndex(where: { $0.id == itemId }) {
             clipboard.history[idx].folderId = folderId
-            clipboard.history[idx].isPinned = true
         }
         dismiss()
     }

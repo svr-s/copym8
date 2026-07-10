@@ -21,6 +21,14 @@ extension UUID: Identifiable {
     public var id: UUID { self }
 }
 
+struct DisplayNode: Identifiable {
+    let id: String
+    let isFolder: Bool
+    let folder: ClipboardFolder?
+    let item: ClipboardItem?
+    let parentFolderId: UUID?
+}
+
 struct ContentView: View {
     @StateObject private var clipboard = ClipboardManager()
     @StateObject private var shortcut = ShortcutManager()
@@ -114,7 +122,7 @@ struct ContentView: View {
                 }
             }
             
-            return results.map { DisplayNode(id: "item_\($0.id.uuidString)", isFolder: false, folder: nil, item: $0, parentFolderId: $0.folderId) }
+            return results.map { DisplayNode(id: "item_\($0.id.uuidString)", isFolder: false, folder: nil, item: $0, parentFolderId: nil) }
         }
     }
     

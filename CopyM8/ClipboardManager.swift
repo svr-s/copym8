@@ -125,6 +125,11 @@ class ClipboardManager: ObservableObject {
                         updated[i].itemType = .link
                     }
                 }
+                
+                // Migration: Items in folders shouldn't be artificially pinned anymore
+                if updated[i].folderId != nil && updated[i].isPinned {
+                    updated[i].isPinned = false
+                }
             }
             self.history = updated
         }
@@ -311,7 +316,7 @@ var maxHistoryCount: Int {
         if currentSizeMB <= Double(maxTotalStorageMB) { return }
         
         var idsToRemove = Set<UUID>()
-        let unpinnedImages = history.filter { !$0.isPinned && $0.itemType == .image }.sorted { $0.timestamp < $1.timestamp }
+        let unpinnedImages = history.filter { !$0.isPinned && $0.folderId == nil && $0.itemType == .image }.sorted { $0.timestamp < $1.timestamp }
         
         for img in unpinnedImages {
             if currentSizeMB <= Double(maxTotalStorageMB) { break }
@@ -327,17 +332,19 @@ var maxHistoryCount: Int {
     }
     
     func truncateHistory(to limit: Int) {
-        let unpinnedCount = history.filter { !$0.isPinned }.count
+        let unpinnedCount = history.filter { !$0.isPinned && $0.folderId == nil }.count
         if unpinnedCount > limit {
             let elementsToRemove = unpinnedCount - limit
             var removed = 0
             for i in stride(from: history.count - 1, through: 0, by: -1) {
-                if !history[i].isPinned {
+                let item = history[i]
+                if !item.isPinned && item.folderId == nil {
+                    if item.itemType == .image {
+                        LocalImageStore.shared.deleteImage(id: item.id)
+                    }
                     history.remove(at: i)
                     removed += 1
-                    if removed >= elementsToRemove {
-                        break
-                    }
+                    if removed >= elementsToRemove { break }
                 }
             }
         }
