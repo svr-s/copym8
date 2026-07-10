@@ -150,7 +150,6 @@ class ClipboardManager: ObservableObject {
     func getFilteredFolders(searchText: String) -> [ClipboardFolder] {
         if searchText.isEmpty { return folders }
         return folders.filter { folder in
-            if folder.name.localizedCaseInsensitiveContains(searchText) { return true }
             return history.contains(where: { $0.folderId == folder.id && $0.text.localizedCaseInsensitiveContains(searchText) })
         }
     }
@@ -175,11 +174,7 @@ class ClipboardManager: ObservableObject {
         
         
         if !searchText.isEmpty {
-            if activeTab == "Groups", let folderId = selectedFolderId, let folder = folders.first(where: { $0.id == folderId }), folder.name.localizedCaseInsensitiveContains(searchText) {
-                // Folder name matches the search, so we display all items within it
-            } else {
-                results = results.filter { $0.text.localizedCaseInsensitiveContains(searchText) }
-            }
+            results = results.filter { $0.text.localizedCaseInsensitiveContains(searchText) }
         }
         
         return results
