@@ -459,9 +459,9 @@ struct ContentView: View {
                 return nil
             case 124: // Right arrow
                 if activeTab == "Groups" && selectedFolderId == nil {
-                    if selectedIndex >= 0 && selectedIndex < clipboard.folders.count {
+                    if selectedIndex >= 0 && selectedIndex < filteredFolders.count {
                         withAnimation {
-                            _selectedFolderId.wrappedValue = clipboard.folders[selectedIndex].id
+                            _selectedFolderId.wrappedValue = filteredFolders[selectedIndex].id
                             _selectedIndex.wrappedValue = 0
                             _expandedItemIndex.wrappedValue = nil
                         }
@@ -475,9 +475,9 @@ struct ContentView: View {
             case 123: // Left arrow
                 if activeTab == "Groups" {
                     if selectedFolderId == nil {
-                        if selectedIndex >= 0 && selectedIndex < clipboard.folders.count {
+                        if selectedIndex >= 0 && selectedIndex < filteredFolders.count {
                             withAnimation {
-                                _selectedFolderId.wrappedValue = clipboard.folders[selectedIndex].id
+                                _selectedFolderId.wrappedValue = filteredFolders[selectedIndex].id
                                 _selectedIndex.wrappedValue = 0
                                 _expandedItemIndex.wrappedValue = nil
                             }
