@@ -2,6 +2,7 @@ import Foundation
 import HotKey
 import Combine
 import AppKit
+import SwiftUI
 
 class ShortcutManager: ObservableObject {
     @Published var isExpanded: Bool = false
@@ -22,7 +23,9 @@ class ShortcutManager: ObservableObject {
         eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
             DispatchQueue.main.async {
                 if self?.isExpanded == true {
-                    self?.isExpanded = false
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        self?.isExpanded = false
+                    }
                 }
             }
         }
