@@ -61,35 +61,61 @@ struct ContentView: View {
         colors.first(where: { $0.name == activeColorName })?.color ?? .cyan
     }
     
-    private var filteredHistory: [ClipboardItem] {
-        var results = clipboard.history
-        
-        switch activeTab {
-        case "Pinned": results = results.filter { $0.isPinned && $0.folderId == nil }
-        case "Groups": 
-            if let sfid = selectedFolderId {
-                results = results.filter { $0.folderId == sfid }
-            } else {
-                return []
-            }
-        case "Text": results = results.filter { $0.itemType == .text }
-        case "Links": results = results.filter { $0.itemType == .link }
-        case "Images": results = results.filter { $0.itemType == .image }
-        case "Files": results = results.filter { $0.itemType == .file }
-        default: break
-        }
-        
-        if !searchText.isEmpty {
-            results = results.filter { item in
-                if item.text.localizedCaseInsensitiveContains(searchText) { return true }
-                if item.sourceApp?.localizedCaseInsensitiveContains(searchText) == true { return true }
-                if let folderId = item.folderId, let folder = clipboard.folders.first(where: { $0.id == folderId }) {
-                    if folder.name.localizedCaseInsensitiveContains(searchText) { return true }
+    @State private var expandedFolderIds: Set<UUID> = []
+    
+    private var displayNodes: [DisplayNode] {
+        if activeTab == "Groups" {
+            let filteredFolders = clipboard.getFilteredFolders(searchText: searchText)
+            var nodes: [DisplayNode] = []
+            
+            for folder in filteredFolders {
+                nodes.append(DisplayNode(id: "folder_\(folder.id.uuidString)", isFolder: true, folder: folder, item: nil, parentFolderId: nil))
+                
+                if expandedFolderIds.contains(folder.id) {
+                    var items = clipboard.history.filter { $0.folderId == folder.id }
+                    if !searchText.isEmpty {
+                        let bypassFilter = folder.name.localizedCaseInsensitiveContains(searchText)
+                        if !bypassFilter {
+                            items = items.filter { item in
+                                if item.text.localizedCaseInsensitiveContains(searchText) { return true }
+                                if item.sourceApp?.localizedCaseInsensitiveContains(searchText) == true { return true }
+                                return false
+                            }
+                        }
+                    }
+                    
+                    for item in items {
+                        nodes.append(DisplayNode(id: "item_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: folder.id))
+                    }
                 }
-                return false
             }
+            return nodes
+        } else {
+            // Re-use existing filteredHistory logic
+            var results = clipboard.history
+            
+            switch activeTab {
+            case "Pinned": results = results.filter { $0.isPinned && $0.folderId == nil }
+            case "Text": results = results.filter { $0.itemType == .text }
+            case "Links": results = results.filter { $0.itemType == .link }
+            case "Images": results = results.filter { $0.itemType == .image }
+            case "Files": results = results.filter { $0.itemType == .file }
+            default: break
+            }
+            
+            if !searchText.isEmpty {
+                results = results.filter { item in
+                    if item.text.localizedCaseInsensitiveContains(searchText) { return true }
+                    if item.sourceApp?.localizedCaseInsensitiveContains(searchText) == true { return true }
+                    if let folderId = item.folderId, let folder = clipboard.folders.first(where: { $0.id == folderId }) {
+                        if folder.name.localizedCaseInsensitiveContains(searchText) { return true }
+                    }
+                    return false
+                }
+            }
+            
+            return results.map { DisplayNode(id: "item_\($0.id.uuidString)", isFolder: false, folder: nil, item: $0, parentFolderId: $0.folderId) }
         }
-        return results
     }
     
     @State private var dragOffset: CGSize = .zero
@@ -126,12 +152,12 @@ struct ContentView: View {
                     activeColor: activeColor,
                     searchText: $searchText,
                     isSearchFocused: $isSearchFocused,
-                    filteredHistory: filteredHistory,
+                    displayNodes: displayNodes,
+                    expandedFolderIds: $expandedFolderIds,
                     expandedItemIndex: $expandedItemIndex,
                     activeColorName: activeColorName,
                     showingDeleteSelectedAlert: $showingDeleteSelectedAlert,
                     showingFolderDeleteAlert: $showingFolderDeleteAlert,
-                    selectedFolderId: $selectedFolderId,
                     isResizing: $isResizing,
                     resizeStartMouse: $resizeStartMouse,
                     resizeStartSize: $resizeStartSize,
@@ -169,7 +195,6 @@ struct ContentView: View {
                 searchText = ""
                 activeTab = "All"
                 selectedIndex = 0
-                selectedFolderId = nil
                 expandedItemIndex = nil
                 setupKeyboardMonitor()
             } else {
@@ -178,7 +203,6 @@ struct ContentView: View {
                 showingSettings = false
                 showingDeleteSelectedAlert = false
                 showingFolderDeleteAlert = false
-                showingGroupAssignment = false
             }
         }
         .onChange(of: activeTab) { _, _ in restartKeyboardMonitor() }
@@ -187,7 +211,7 @@ struct ContentView: View {
             expandedItemIndex = nil
             restartKeyboardMonitor()
         }
-        .onChange(of: selectedFolderId) { _, _ in restartKeyboardMonitor() }
+        .onChange(of: expandedFolderIds) { _, _ in restartKeyboardMonitor() }
         .onChange(of: maxHistoryCount) { _, newValue in clipboard.truncateHistory(to: newValue) }
         .onChange(of: themePreference) { _, newTheme in applyTheme(newTheme) }
         .onChange(of: clipboard.history) { _, _ in restartKeyboardMonitor() }
@@ -300,7 +324,6 @@ struct ContentView: View {
         let _activeTab = self._activeTab
         let _selectedIndex = self._selectedIndex
         let _isEditMode = self._isEditMode
-        let _selectedFolderId = self._selectedFolderId
         let _expandedItemIndex = self._expandedItemIndex
         let _selectedItemsForDeletion = self._selectedItemsForDeletion
         let _isSearchFocused = self._isSearchFocused
@@ -310,12 +333,9 @@ struct ContentView: View {
         
         let clipboard = self.clipboard
         let pasteItem = self.pasteItem
-        let moveSelectedFolder = self.moveSelectedFolder
-        let moveSelectedItem = self.moveSelectedItem
-        let getVisibleTabs = self.getVisibleTabs
         let _isDense = self._isDense
-        let _activeColorName = self._activeColorName
         let _searchText = self._searchText
+        let _expandedFolderIds = self._expandedFolderIds
         
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if _showingSettings.wrappedValue || _showingDeleteSelectedAlert.wrappedValue || _itemToAssignGroup.wrappedValue != nil {
@@ -329,11 +349,8 @@ struct ContentView: View {
             let activeTab = _activeTab.wrappedValue
             let selectedIndex = _selectedIndex.wrappedValue
             let isEditMode = _isEditMode.wrappedValue
-            let selectedFolderId = _selectedFolderId.wrappedValue
             let expandedItemIndex = _expandedItemIndex.wrappedValue
-            var selectedItemsForDeletion = _selectedItemsForDeletion.wrappedValue
-            let isSearchFocused = _isSearchFocused.wrappedValue
-            let searchText = _searchText.wrappedValue
+            let displayNodesLocal = self.displayNodes
             
             if event.modifierFlags.contains(.command) {
                 switch event.keyCode {
@@ -350,215 +367,136 @@ struct ContentView: View {
                 }
             }
             
-            let filteredHistoryLocal = self.filteredHistory
-            let filteredFolders = clipboard.getFilteredFolders(searchText: searchText)
-            
             if isSearchFocused {
-                let allowedWhenSearchFocused: Set<UInt16> = [36, 48, 53, 125, 126, 123, 124] // Enter, Tab, Esc, Down, Up, Left, Right
+                let allowedWhenSearchFocused: Set<UInt16> = [36, 48, 53, 125, 126, 123, 124]
                 if !allowedWhenSearchFocused.contains(event.keyCode) {
                     return event
                 }
             }
             
-            if event.modifierFlags.contains(.option) {
-                var newTab: String? = nil
-                switch event.keyCode {
-                case 35, 19: newTab = "Pinned" // P or 2
-                case 5, 20: newTab = "Groups" // G or 3
-                case 17, 21: newTab = "Text" // T or 4
-                case 37, 23: newTab = "Links" // L or 5
-                case 34, 22: newTab = "Images" // I or 6
-                case 3, 26: newTab = "Files" // F or 7
-                case 0, 18: newTab = "All" // A or 1
-                default: break
-                }
-                
-                if let tab = newTab, tab != activeTab {
-                    withAnimation {
-                        _activeTab.wrappedValue = tab
-                        _selectedIndex.wrappedValue = 0
-                        _expandedItemIndex.wrappedValue = nil
+            switch event.keyCode {
+            case 18...29:
+                if event.modifierFlags.contains(.option) {
+                    let tabMap: [UInt16: String] = [18: "All", 19: "Pinned", 20: "Groups", 21: "Text", 23: "Links", 22: "Images", 26: "Files"]
+                    if let tab = tabMap[event.keyCode] {
+                        withAnimation {
+                            _activeTab.wrappedValue = tab
+                            _selectedIndex.wrappedValue = 0
+                            _expandedItemIndex.wrappedValue = nil
+                        }
                     }
                     return nil
                 }
-            }
-            
-            switch event.keyCode {
+                
+                let keyMap: [UInt16: Int] = [18: 0, 19: 1, 20: 2, 21: 3, 23: 4, 22: 5, 26: 6, 28: 7, 25: 8, 29: 9]
+                if let index = keyMap[event.keyCode], index < displayNodesLocal.count {
+                    let isCmd = event.modifierFlags.contains(.command)
+                    pasteItem(index, isCmd)
+                }
+                return nil
             case 51: // Backspace
                 if isEditMode {
-                    if !selectedItemsForDeletion.isEmpty {
-                        _showingDeleteSelectedAlert.wrappedValue = true
-                    }
-                } else {
-                    if activeTab == "Groups" && selectedFolderId == nil {
-                        // let other alert handle
-                    } else if selectedIndex >= 0 && selectedIndex < filteredHistory.count {
-                        let id = filteredHistory[selectedIndex].id
+                    if !_selectedItemsForDeletion.wrappedValue.isEmpty { _showingDeleteSelectedAlert.wrappedValue = true }
+                } else if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
+                    if let id = displayNodesLocal[selectedIndex].item?.id {
+                        if selectedIndex >= displayNodesLocal.count - 1 && selectedIndex > 0 { _selectedIndex.wrappedValue -= 1 }
                         withAnimation { clipboard.history.removeAll { $0.id == id } }
-                        _selectedIndex.wrappedValue = max(0, min(selectedIndex, filteredHistory.count - 2))
                     }
                 }
-                return nil
-            case 125: // Down arrow
-                if event.modifierFlags.contains(.command) {
-                    if activeTab == "Groups" && selectedFolderId == nil {
-                        moveSelectedFolder(false)
-                    } else {
-                        moveSelectedItem(false)
-                    }
-                    return nil
-                }
-                
-                let maxIndex = (activeTab == "Groups" && selectedFolderId == nil) ? filteredFolders.count - 1 : filteredHistoryLocal.count - 1
-                if maxIndex >= 0 {
-                    _selectedIndex.wrappedValue = (selectedIndex >= maxIndex) ? 0 : selectedIndex + 1
-                }
-                _expandedItemIndex.wrappedValue = nil
                 return nil
             case 35: // P
-                if isEditMode {
-                    if !selectedItemsForDeletion.isEmpty {
-                        for id in selectedItemsForDeletion { clipboard.togglePin(for: id) }
-                        _selectedItemsForDeletion.wrappedValue.removeAll()
-                        withAnimation { _isEditMode.wrappedValue = false }
-                    }
-                } else {
-                    if selectedIndex >= 0 && selectedIndex < filteredHistory.count {
-                        let id = filteredHistory[selectedIndex].id
-                        clipboard.togglePin(for: id)
-                    }
+                if !isEditMode && selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
+                    if let id = displayNodesLocal[selectedIndex].item?.id { clipboard.togglePin(for: id) }
                 }
                 return nil
             case 5: // G
-                if event.modifierFlags.intersection([.command, .option, .control]).isEmpty {
-                    if !isEditMode && selectedIndex >= 0 && selectedIndex < filteredHistory.count {
-                        _itemToAssignGroup.wrappedValue = filteredHistory[selectedIndex].id
-                    }
-                    return nil
+                if !isEditMode && selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
+                    if let id = displayNodesLocal[selectedIndex].item?.id { _itemToAssignGroup.wrappedValue = id }
                 }
-                return event
-            case 126: // Up arrow
-                if event.modifierFlags.contains(.command) {
-                    if activeTab == "Groups" && selectedFolderId == nil {
-                        moveSelectedFolder(true)
-                    } else {
-                        moveSelectedItem(true)
-                    }
-                    return nil
-                }
-                
-                let maxIndex = (activeTab == "Groups" && selectedFolderId == nil) ? filteredFolders.count - 1 : filteredHistoryLocal.count - 1
-                if maxIndex >= 0 {
-                    _selectedIndex.wrappedValue = (selectedIndex <= 0) ? maxIndex : selectedIndex - 1
-                }
-                _expandedItemIndex.wrappedValue = nil
+                return nil
+            case 126: // Up
+                let maxIndex = displayNodesLocal.count - 1
+                if selectedIndex > 0 { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue -= 1 } }
+                else { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue = maxIndex } }
+                return nil
+            case 125: // Down
+                let maxIndex = displayNodesLocal.count - 1
+                if selectedIndex < maxIndex { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue += 1 } }
+                else { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue = 0 } }
                 return nil
             case 36: // Enter
-                let isCmd = event.modifierFlags.contains(.command)
-                pasteItem(selectedIndex, isCmd)
-                return nil
-            case 124: // Right arrow
-                if activeTab == "Groups" && selectedFolderId == nil {
-                    if selectedIndex >= 0 && selectedIndex < filteredFolders.count {
+                if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
+                    let node = displayNodesLocal[selectedIndex]
+                    if node.isFolder, let folder = node.folder {
                         withAnimation {
-                            _selectedFolderId.wrappedValue = filteredFolders[selectedIndex].id
-                            _selectedIndex.wrappedValue = 0
-                            _expandedItemIndex.wrappedValue = nil
+                            if _expandedFolderIds.wrappedValue.contains(folder.id) { _expandedFolderIds.wrappedValue.remove(folder.id) }
+                            else { _expandedFolderIds.wrappedValue.insert(folder.id) }
                         }
-                    }
-                } else {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        _expandedItemIndex.wrappedValue = (expandedItemIndex == selectedIndex) ? nil : selectedIndex
+                    } else {
+                        pasteItem(selectedIndex, event.modifierFlags.contains(.command))
                     }
                 }
                 return nil
-            case 123: // Left arrow
-                if activeTab == "Groups" {
-                    if selectedFolderId == nil {
-                        if selectedIndex >= 0 && selectedIndex < filteredFolders.count {
+            case 124: // Right
+                if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
+                    let node = displayNodesLocal[selectedIndex]
+                    if node.isFolder, let folder = node.folder {
+                        withAnimation { _expandedFolderIds.wrappedValue.insert(folder.id) }
+                    } else {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _expandedItemIndex.wrappedValue = selectedIndex }
+                    }
+                }
+                return nil
+            case 123: // Left
+                if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
+                    let node = displayNodesLocal[selectedIndex]
+                    if event.modifierFlags.contains(.option) {
+                        if let parentId = node.parentFolderId ?? node.folder?.id {
                             withAnimation {
-                                _selectedFolderId.wrappedValue = filteredFolders[selectedIndex].id
-                                _selectedIndex.wrappedValue = 0
+                                _expandedFolderIds.wrappedValue.remove(parentId)
+                                if let pIdx = displayNodesLocal.firstIndex(where: { $0.folder?.id == parentId }) { _selectedIndex.wrappedValue = pIdx }
                                 _expandedItemIndex.wrappedValue = nil
                             }
                         }
-                    } else {
-                        withAnimation {
-                            _selectedFolderId.wrappedValue = nil
-                            _selectedIndex.wrappedValue = 0
-                            _expandedItemIndex.wrappedValue = nil
-                        }
+                        return nil
                     }
-                } else {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        _expandedItemIndex.wrappedValue = (expandedItemIndex == selectedIndex) ? nil : selectedIndex
+                    if node.isFolder, let folder = node.folder {
+                        withAnimation { _expandedFolderIds.wrappedValue.remove(folder.id) }
+                    } else if expandedItemIndex == selectedIndex {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _expandedItemIndex.wrappedValue = nil }
+                    } else if activeTab == "Groups", let parentId = node.parentFolderId {
+                        if let pIdx = displayNodesLocal.firstIndex(where: { $0.folder?.id == parentId }) {
+                            withAnimation { _selectedIndex.wrappedValue = pIdx; _expandedItemIndex.wrappedValue = nil }
+                        }
                     }
                 }
                 return nil
             case 49: // Space
-                if isEditMode {
-                    if selectedIndex >= 0 && selectedIndex < filteredHistory.count {
-                        let id = filteredHistory[selectedIndex].id
-                        if selectedItemsForDeletion.contains(id) { _selectedItemsForDeletion.wrappedValue.remove(id) }
-                        else { _selectedItemsForDeletion.wrappedValue.insert(id) }
-                    }
+                if isEditMode && selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
+                    let id = displayNodesLocal[selectedIndex].item?.id ?? displayNodesLocal[selectedIndex].folder?.id ?? UUID()
+                    if _selectedItemsForDeletion.wrappedValue.contains(id) { _selectedItemsForDeletion.wrappedValue.remove(id) }
+                    else { _selectedItemsForDeletion.wrappedValue.insert(id) }
                     return nil
                 }
                 return event
             case 14: // E
-                if event.modifierFlags.contains(.command) {
-                    withAnimation { _isEditMode.wrappedValue.toggle() }
-                    return nil
-                }
+                if event.modifierFlags.contains(.command) { withAnimation { _isEditMode.wrappedValue.toggle() }; return nil }
                 return event
             case 0: // A
                 if isEditMode && event.modifierFlags.contains(.command) {
-                    if selectedItemsForDeletion.count == filteredHistory.count {
-                        _selectedItemsForDeletion.wrappedValue.removeAll()
-                    } else {
-                        _selectedItemsForDeletion.wrappedValue = Set(filteredHistory.map { $0.id })
+                    withAnimation {
+                        let ids = Set(displayNodesLocal.compactMap { $0.item?.id ?? $0.folder?.id })
+                        if _selectedItemsForDeletion.wrappedValue.isSuperset(of: ids) { _selectedItemsForDeletion.wrappedValue.subtract(ids) }
+                        else { _selectedItemsForDeletion.wrappedValue.formUnion(ids) }
                     }
                     return nil
                 }
                 return event
             case 53: // Esc
-                if isSearchFocused {
-                    _isSearchFocused.wrappedValue = false
-                } else {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { shortcut.isExpanded = false }
-                }
+                if isSearchFocused { _isSearchFocused.wrappedValue = false }
+                else { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { shortcut.isExpanded = false } }
                 return nil
-            case 48: // Tab
-                if event.modifierFlags.contains(.option) {
-                    let isShift = event.modifierFlags.contains(.shift)
-                    let visibleTabs = getVisibleTabs()
-                    if let currentIndex = visibleTabs.firstIndex(of: activeTab) {
-                        let nextIndex = isShift 
-                            ? (currentIndex - 1 + visibleTabs.count) % visibleTabs.count 
-                            : (currentIndex + 1) % visibleTabs.count
-                        withAnimation {
-                            _activeTab.wrappedValue = visibleTabs[nextIndex]
-                            _selectedIndex.wrappedValue = 0
-                            _expandedItemIndex.wrappedValue = nil
-                        }
-                    }
-                    return nil
-                }
-                return event
-            default:
-                if !isSearchFocused,
-                   let char = event.charactersIgnoringModifiers,
-                   let num = Int(char),
-                   num >= 0 && num <= 9 {
-                    
-                    let targetIndex = num == 0 ? 9 : num - 1
-                    if targetIndex < filteredHistory.count {
-                        let isCmd = event.modifierFlags.contains(.command)
-                        pasteItem(targetIndex, isCmd)
-                        return nil
-                    }
-                }
-                return event
+            default: return event
             }
         }
     }
@@ -578,14 +516,14 @@ struct ContentView: View {
     }
     
     private func pasteItem(index: Int, isFormatted: Bool = false) {
-        if isEditMode { return }
-        let history = self.filteredHistory
-        guard index >= 0 && index < history.count else { return }
-        let item = history[index]
-        clipboard.prepareForPaste(item, isFormatted: isFormatted)
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { shortcut.isExpanded = false }
-        previousApp?.activate(options: [])
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { clipboard.triggerPasteKeystroke() }
+        if index >= 0 && index < displayNodes.count {
+            if let item = displayNodes[index].item {
+                clipboard.prepareForPaste(item, isFormatted: isFormatted)
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { shortcut.isExpanded = false }
+                previousApp?.activate(options: [])
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { clipboard.triggerPasteKeystroke() }
+            }
+        }
     }
     
     private func getVisibleTabs() -> [String] {
@@ -603,19 +541,18 @@ struct ContentView: View {
     }
     
     private func moveSelectedItem(up: Bool) {
-        let history = filteredHistory
-        guard selectedIndex >= 0 && selectedIndex < history.count else { return }
+        let nodes = displayNodes
+        guard selectedIndex >= 0 && selectedIndex < nodes.count else { return }
         
         let targetIndex = up ? selectedIndex - 1 : selectedIndex + 1
-        guard targetIndex >= 0 && targetIndex < history.count else { return }
+        guard targetIndex >= 0 && targetIndex < nodes.count else { return }
         
-        let item1 = history[selectedIndex]
-        let item2 = history[targetIndex]
-        
-        if let idx1 = clipboard.history.firstIndex(where: { $0.id == item1.id }),
-           let idx2 = clipboard.history.firstIndex(where: { $0.id == item2.id }) {
-            clipboard.history.swapAt(idx1, idx2)
-            selectedIndex = targetIndex
+        if let item1 = nodes[selectedIndex].item, let item2 = nodes[targetIndex].item {
+            if let idx1 = clipboard.history.firstIndex(where: { $0.id == item1.id }),
+               let idx2 = clipboard.history.firstIndex(where: { $0.id == item2.id }) {
+                clipboard.history.swapAt(idx1, idx2)
+                selectedIndex = targetIndex
+            }
         }
     }
     

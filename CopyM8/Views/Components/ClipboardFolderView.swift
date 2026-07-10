@@ -10,6 +10,7 @@ struct ClipboardFolderView: View {
     let isEditMode: Bool
     let isChecked: Bool
     let onTap: () -> Void
+    var isExpanded: Bool = false
     
     @State private var hover = false
     @Environment(\.controlActiveState) private var controlActiveState
@@ -46,7 +47,7 @@ struct ClipboardFolderView: View {
                 }
                 
                 HStack(spacing: 8) {
-                    Image(systemName: "folder.fill")
+                    Image(systemName: isExpanded ? "folder.fill" : "folder")
                         .foregroundColor(activeColor)
                         .font(.system(size: 14))
                     
@@ -57,7 +58,7 @@ struct ClipboardFolderView: View {
                 
                 Spacer()
                 
-                Image(systemName: "chevron.right")
+                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundColor(secondaryTextColor.opacity(0.5))
             }

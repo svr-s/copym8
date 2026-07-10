@@ -17,12 +17,12 @@ struct ExpandedView: View {
     @Binding var searchText: String
     var isSearchFocused: FocusState<Bool>.Binding
     
-    var filteredHistory: [ClipboardItem]
+    var displayNodes: [DisplayNode]
+    @Binding var expandedFolderIds: Set<UUID>
     @Binding var expandedItemIndex: Int?
     var activeColorName: String
     @Binding var showingDeleteSelectedAlert: Bool
     @Binding var showingFolderDeleteAlert: Bool
-    @Binding var selectedFolderId: UUID?
     
     @Binding var isResizing: Bool
     @Binding var resizeStartMouse: NSPoint?
@@ -55,26 +55,11 @@ struct ExpandedView: View {
                 SearchBarView(searchText: $searchText, isSearchFocused: isSearchFocused)
                 TabBarView(activeTab: $activeTab, selectedIndex: $selectedIndex, activeColor: activeColor)
                 
-                if activeTab == "Groups" && selectedFolderId == nil {
-                    let filteredFolders = clipboard.getFilteredFolders(searchText: searchText)
-                    if filteredFolders.isEmpty {
-                        EmptyStateView(searchText: searchText, activeTab: activeTab)
-                    } else {
-                        ClipboardFolderListView(
-                            folders: filteredFolders,
-                            isDense: isDense,
-                            selectedIndex: $selectedIndex,
-                            activeColor: activeColor,
-                            isEditMode: isEditMode,
-                            selectedItemsForDeletion: $selectedItemsForDeletion,
-                            selectedFolderId: $selectedFolderId
-                        )
-                    }
-                } else if filteredHistory.isEmpty {
+                if displayNodes.isEmpty {
                     EmptyStateView(searchText: searchText, activeTab: activeTab)
                 } else {
                     ClipboardListView(
-                        filteredHistory: filteredHistory,
+                        displayNodes: displayNodes,
                         isDense: isDense,
                         selectedIndex: $selectedIndex,
                         expandedItemIndex: $expandedItemIndex,
@@ -82,6 +67,7 @@ struct ExpandedView: View {
                         activeColor: activeColor,
                         isEditMode: isEditMode,
                         selectedItemsForDeletion: $selectedItemsForDeletion,
+                        expandedFolderIds: $expandedFolderIds,
                         pasteItem: pasteItem
                     )
                 }
@@ -92,7 +78,7 @@ struct ExpandedView: View {
                         isEditMode: $isEditMode,
                         showingDeleteSelectedAlert: $showingDeleteSelectedAlert,
                         showingFolderDeleteAlert: $showingFolderDeleteAlert,
-                        filteredHistory: filteredHistory
+                        displayNodes: displayNodes
                     )
                 }
             }

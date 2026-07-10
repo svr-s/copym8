@@ -6,15 +6,17 @@ struct EditModeFooterView: View {
     @Binding var isEditMode: Bool
     @Binding var showingDeleteSelectedAlert: Bool
     @Binding var showingFolderDeleteAlert: Bool
-    var filteredHistory: [ClipboardItem]
+    var displayNodes: [DisplayNode]
     
     var body: some View {
         HStack {
             Button(action: {
-                if selectedItemsForDeletion.count == filteredHistory.count { selectedItemsForDeletion.removeAll() }
-                else { selectedItemsForDeletion = Set(filteredHistory.map { $0.id }) }
+                let allIds = Set(displayNodes.compactMap { $0.item?.id ?? $0.folder?.id })
+                if selectedItemsForDeletion.count == allIds.count { selectedItemsForDeletion.removeAll() }
+                else { selectedItemsForDeletion = allIds }
             }) {
-                Text(selectedItemsForDeletion.count == filteredHistory.count && !filteredHistory.isEmpty ? "Deselect All" : "Select All")
+                let allIdsCount = Set(displayNodes.compactMap { $0.item?.id ?? $0.folder?.id }).count
+                Text(selectedItemsForDeletion.count == allIdsCount && allIdsCount > 0 ? "Deselect All" : "Select All")
                     .font(.system(size: 11)).foregroundColor(.primary.opacity(0.6))
             }.buttonStyle(PlainButtonStyle())
             
