@@ -30,7 +30,7 @@ struct PillView: View {
                         .resizable().scaledToFit().font(Font.system(size: 10, weight: .medium))
                         .foregroundColor(logoColor).shadow(color: isHovering ? logoColor : .clear, radius: 4, x: 0, y: 0)
                         .opacity(isHovering ? 1.0 : 0.8)
-                        .frame(width: 36, height: 16).frame(width: 60, height: 60)
+                        .frame(width: 36, height: 16)
                         .rotationEffect(.degrees(isTop ? 0 : (dockEdge == .left ? -90 : 90)))
                 }
             )
