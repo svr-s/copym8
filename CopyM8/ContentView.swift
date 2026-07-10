@@ -354,7 +354,7 @@ struct ContentView: View {
             let filteredFolders = clipboard.getFilteredFolders(searchText: searchText)
             
             if isSearchFocused {
-                let allowedWhenSearchFocused: Set<UInt16> = [36, 48, 53, 125, 126] // Enter, Tab, Esc, Down, Up
+                let allowedWhenSearchFocused: Set<UInt16> = [36, 48, 53, 125, 126, 123, 124] // Enter, Tab, Esc, Down, Up, Left, Right
                 if !allowedWhenSearchFocused.contains(event.keyCode) {
                     return event
                 }
