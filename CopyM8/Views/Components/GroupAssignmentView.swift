@@ -73,6 +73,7 @@ struct GroupAssignmentView: View {
                     .foregroundColor(.blue)
                 }
                 .buttonStyle(PlainButtonStyle())
+                .keyboardShortcut("n", modifiers: .command)
             }
             
             HStack {
