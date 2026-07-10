@@ -271,7 +271,15 @@ struct ContentView: View {
             frame.origin.x = max(screenRect.minX, min(frame.origin.x, screenRect.maxX - frame.width))
             frame.origin.y = max(screenRect.minY, min(frame.origin.y, screenRect.maxY - frame.height))
         }
-        window.setFrame(frame, display: true, animate: animate)
+        if animate {
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.3
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                window.animator().setFrame(frame, display: true)
+            }
+        } else {
+            window.setFrame(frame, display: true, animate: false)
+        }
     }
     
     @State private var eventMonitor: Any?
