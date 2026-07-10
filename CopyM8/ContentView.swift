@@ -135,6 +135,7 @@ struct ContentView: View {
                     snapToEdge: snapToEdge,
                     pasteItem: pasteItem
                 )
+                .frame(width: windowWidth, height: windowHeight)
                 .transition(.opacity.combined(with: .scale(scale: 0.95)))
             } else {
                 PillView(
