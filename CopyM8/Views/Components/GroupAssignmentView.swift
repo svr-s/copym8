@@ -52,7 +52,11 @@ struct GroupAssignmentView: View {
                     TextField("New Group Name", text: $newFolderName)
                         .focused($isTextFieldFocused)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .onAppear { isTextFieldFocused = true }
+                        .onAppear { 
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                isTextFieldFocused = true 
+                            }
+                        }
                         .onSubmit {
                             createNewFolder()
                         }
