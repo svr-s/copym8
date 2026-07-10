@@ -496,7 +496,36 @@ struct ContentView: View {
                 if isSearchFocused { _isSearchFocused.wrappedValue = false }
                 else { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { shortcut.isExpanded = false } }
                 return nil
-            default: return event
+            case 48: // Tab
+                if event.modifierFlags.contains(.option) {
+                    let isShift = event.modifierFlags.contains(.shift)
+                    let visibleTabs = self.getVisibleTabs()
+                    if let currentIndex = visibleTabs.firstIndex(of: activeTab) {
+                        let nextIndex = isShift 
+                            ? (currentIndex - 1 + visibleTabs.count) % visibleTabs.count 
+                            : (currentIndex + 1) % visibleTabs.count
+                        withAnimation {
+                            _activeTab.wrappedValue = visibleTabs[nextIndex]
+                            _selectedIndex.wrappedValue = 0
+                            _expandedItemIndex.wrappedValue = nil
+                        }
+                    }
+                    return nil
+                }
+                return event
+            default:
+                if event.modifierFlags.contains(.option) {
+                    let charToTab: [String: String] = ["a": "All", "p": "Pinned", "g": "Groups", "t": "Text", "l": "Links", "i": "Images", "f": "Files"]
+                    if let char = event.charactersIgnoringModifiers?.lowercased(), let tab = charToTab[char] {
+                        withAnimation {
+                            _activeTab.wrappedValue = tab
+                            _selectedIndex.wrappedValue = 0
+                            _expandedItemIndex.wrappedValue = nil
+                        }
+                        return nil
+                    }
+                }
+                return event
             }
         }
     }
