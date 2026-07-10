@@ -309,6 +309,8 @@ struct ContentView: View {
         let moveSelectedFolder = self.moveSelectedFolder
         let moveSelectedItem = self.moveSelectedItem
         let getVisibleTabs = self.getVisibleTabs
+        let _isDense = self._isDense
+        let _activeColorName = self._activeColorName
         
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if _showingSettings.wrappedValue || _showingDeleteSelectedAlert.wrappedValue || _itemToAssignGroup.wrappedValue != nil {
@@ -326,6 +328,26 @@ struct ContentView: View {
             let expandedItemIndex = _expandedItemIndex.wrappedValue
             var selectedItemsForDeletion = _selectedItemsForDeletion.wrappedValue
             let isSearchFocused = _isSearchFocused.wrappedValue
+            
+            if event.modifierFlags.contains(.command) {
+                switch event.keyCode {
+                case 3: // F
+                    _isSearchFocused.wrappedValue = true
+                    return nil
+                case 2: // D
+                    _isDense.wrappedValue.toggle()
+                    return nil
+                case 40: // K
+                    if let idx = colors.firstIndex(where: { $0.name == _activeColorName.wrappedValue }) {
+                        _activeColorName.wrappedValue = colors[(idx + 1) % colors.count].name
+                    }
+                    return nil
+                case 43: // , (comma)
+                    _showingSettings.wrappedValue.toggle()
+                    return nil
+                default: break
+                }
+            }
             
             let filteredHistory = clipboard.getFilteredHistory(activeTab: activeTab, selectedFolderId: selectedFolderId, searchText: "")
             
