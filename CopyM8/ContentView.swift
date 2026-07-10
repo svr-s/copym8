@@ -81,8 +81,12 @@ struct ContentView: View {
         
         if !searchText.isEmpty {
             results = results.filter { item in
-                item.text.localizedCaseInsensitiveContains(searchText) ||
-                (item.sourceApp?.localizedCaseInsensitiveContains(searchText) == true)
+                if item.text.localizedCaseInsensitiveContains(searchText) { return true }
+                if item.sourceApp?.localizedCaseInsensitiveContains(searchText) == true { return true }
+                if let folderId = item.folderId, let folder = clipboard.folders.first(where: { $0.id == folderId }) {
+                    if folder.name.localizedCaseInsensitiveContains(searchText) { return true }
+                }
+                return false
             }
         }
         return results
@@ -346,7 +350,7 @@ struct ContentView: View {
                 }
             }
             
-            let filteredHistory = clipboard.getFilteredHistory(activeTab: activeTab, selectedFolderId: selectedFolderId, searchText: searchText)
+            let filteredHistoryLocal = self.filteredHistory
             let filteredFolders = clipboard.getFilteredFolders(searchText: searchText)
             
             if isSearchFocused {
@@ -405,7 +409,7 @@ struct ContentView: View {
                     return nil
                 }
                 
-                let maxIndex = (activeTab == "Groups" && selectedFolderId == nil) ? filteredFolders.count - 1 : filteredHistory.count - 1
+                let maxIndex = (activeTab == "Groups" && selectedFolderId == nil) ? filteredFolders.count - 1 : filteredHistoryLocal.count - 1
                 if maxIndex >= 0 {
                     _selectedIndex.wrappedValue = (selectedIndex >= maxIndex) ? 0 : selectedIndex + 1
                 }
@@ -443,7 +447,7 @@ struct ContentView: View {
                     return nil
                 }
                 
-                let maxIndex = (activeTab == "Groups" && selectedFolderId == nil) ? filteredFolders.count - 1 : filteredHistory.count - 1
+                let maxIndex = (activeTab == "Groups" && selectedFolderId == nil) ? filteredFolders.count - 1 : filteredHistoryLocal.count - 1
                 if maxIndex >= 0 {
                     _selectedIndex.wrappedValue = (selectedIndex <= 0) ? maxIndex : selectedIndex - 1
                 }

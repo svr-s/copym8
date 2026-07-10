@@ -155,42 +155,7 @@ class ClipboardManager: ObservableObject {
         }
     }
     
-    func getFilteredHistory(activeTab: String, selectedFolderId: UUID?, searchText: String) -> [ClipboardItem] {
-        var results = self.history
-        
-        switch activeTab {
-        case "Pinned": results = results.filter { $0.isPinned && $0.folderId == nil }
-        case "Groups": 
-            if let folderId = selectedFolderId {
-                results = results.filter { $0.folderId == folderId }
-            } else {
-                return [] // Folders view
-            }
-        case "Text": results = results.filter { $0.itemType == .text && $0.folderId == nil }
-        case "Links": results = results.filter { $0.itemType == .link && $0.folderId == nil }
-        case "Images": results = results.filter { $0.itemType == .image && $0.folderId == nil }
-        case "Files": results = results.filter { $0.itemType == .file && $0.folderId == nil }
-        default: results = results.filter { $0.folderId == nil }
-        }
-        
-        
-        if !searchText.isEmpty {
-            var bypassFilter = false
-            if activeTab == "Groups", let folderId = selectedFolderId {
-                if let folder = folders.first(where: { $0.id == folderId }) {
-                    if folder.name.localizedCaseInsensitiveContains(searchText) {
-                        bypassFilter = true
-                    }
-                }
-            }
-            
-            if !bypassFilter {
-                results = results.filter { $0.text.localizedCaseInsensitiveContains(searchText) }
-            }
-        }
-        
-        return results
-    }
+
     
     func clearAll() {
         history.removeAll()
