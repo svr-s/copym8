@@ -374,20 +374,31 @@ struct ContentView: View {
                 }
             }
             
-            switch event.keyCode {
-            case 18...29:
-                if event.modifierFlags.contains(.option) {
-                    let tabMap: [UInt16: String] = [18: "All", 19: "Pinned", 20: "Groups", 21: "Text", 23: "Links", 22: "Images", 26: "Files"]
-                    if let tab = tabMap[event.keyCode] {
-                        withAnimation {
-                            _activeTab.wrappedValue = tab
-                            _selectedIndex.wrappedValue = 0
-                            _expandedItemIndex.wrappedValue = nil
-                        }
+            if event.modifierFlags.contains(.option) && event.keyCode != 48 && event.keyCode != 123 {
+                var newTab: String? = nil
+                switch event.keyCode {
+                case 35, 19: newTab = "Pinned" // P or 2
+                case 5, 20: newTab = "Groups" // G or 3
+                case 17, 21: newTab = "Text" // T or 4
+                case 37, 23: newTab = "Links" // L or 5
+                case 34, 22: newTab = "Images" // I or 6
+                case 3, 26: newTab = "Files" // F or 7
+                case 0, 18: newTab = "All" // A or 1
+                default: break
+                }
+                
+                if let tab = newTab, tab != activeTab {
+                    withAnimation {
+                        _activeTab.wrappedValue = tab
+                        _selectedIndex.wrappedValue = 0
+                        _expandedItemIndex.wrappedValue = nil
                     }
                     return nil
                 }
-                
+            }
+            
+            switch event.keyCode {
+            case 18...29:
                 let keyMap: [UInt16: Int] = [18: 0, 19: 1, 20: 2, 21: 3, 23: 4, 22: 5, 26: 6, 28: 7, 25: 8, 29: 9]
                 if let index = keyMap[event.keyCode], index < displayNodesLocal.count {
                     let isCmd = event.modifierFlags.contains(.command)
@@ -514,17 +525,6 @@ struct ContentView: View {
                 }
                 return event
             default:
-                if event.modifierFlags.contains(.option) {
-                    let charToTab: [String: String] = ["a": "All", "p": "Pinned", "g": "Groups", "t": "Text", "l": "Links", "i": "Images", "f": "Files"]
-                    if let char = event.charactersIgnoringModifiers?.lowercased(), let tab = charToTab[char] {
-                        withAnimation {
-                            _activeTab.wrappedValue = tab
-                            _selectedIndex.wrappedValue = 0
-                            _expandedItemIndex.wrappedValue = nil
-                        }
-                        return nil
-                    }
-                }
                 return event
             }
         }
