@@ -136,7 +136,7 @@ struct ContentView: View {
                     pasteItem: pasteItem
                 )
                 .frame(width: windowWidth, height: windowHeight)
-                .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                .transition(.asymmetric(insertion: .opacity, removal: .opacity.animation(.easeOut(duration: 0.1))))
             } else {
                 PillView(
                     dockEdge: dockEdge,
@@ -150,9 +150,10 @@ struct ContentView: View {
                     },
                     snapToEdge: snapToEdge
                 )
-                .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                .transition(.opacity)
             }
         }
+        .clipShape(RoundedRectangle(cornerRadius: shortcut.isExpanded ? 12 : 24))
         .background(Color.clear)
         .animation(.spring(response: 0.4, dampingFraction: 0.75), value: shortcut.isExpanded)
         .onChange(of: shortcut.isExpanded) { _, expanded in
