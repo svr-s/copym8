@@ -233,6 +233,9 @@ struct SettingsView: View {
                 shortcutRow(action: "Delete Selected (Edit)", key: "⌫ Delete")
                 shortcutRow(action: "Select All (Current Tab)", key: "Cmd + A")
                 shortcutRow(action: "Toggle Selection (Edit)", key: "Space")
+                shortcutRow(action: "Expand Item/Folder", key: "Right")
+                shortcutRow(action: "Collapse/Jump Up", key: "Left")
+                shortcutRow(action: "Super Collapse", key: "Opt + Left")
                 shortcutRow(action: "Close Window", key: "Esc")
             }
             .padding(.trailing, 12)

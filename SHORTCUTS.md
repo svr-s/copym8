@@ -10,8 +10,9 @@ Here is a comprehensive list of all keyboard shortcuts available in CopyM8.
 | **Close Window** | `Esc` | Instantly dismisses the CopyM8 window. |
 | **Select Down** | `Down Arrow` | Moves selection down the clipboard history list. |
 | **Select Up** | `Up Arrow` | Moves selection up the clipboard history list. |
-| **Expand Item** | `Right Arrow` | Expands the selected item to show its full multi-line text. |
-| **Collapse Item** | `Left Arrow` | Collapses the expanded item. |
+| **Expand Item / Folder** | `Right Arrow` | Expands the selected item (to show its full text) or expands a Folder in the Groups tab. |
+| **Collapse / Jump Up** | `Left Arrow` | Collapses the expanded item/folder, or jumps the selection up to the parent folder header. |
+| **Super Collapse** | `Option + Left Arrow` | Snaps a folder shut instantly and jumps the selection back to the parent folder header. |
 | **Paste Item** | `Enter` | Pastes the currently highlighted item into the previous application. |
 | **Quick Paste** | `1` - `0` | Instantly pastes the plain text of the corresponding item (1 for 1st item, 0 for 10th item). These numbers dynamically re-index when searching! |
 | **Rich Paste** | `Cmd + 1-0` | Pastes the corresponding item with its original Rich Text Formatting preserved. |
