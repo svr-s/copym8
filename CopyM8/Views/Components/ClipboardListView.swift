@@ -51,6 +51,12 @@ struct ClipboardListView: View {
                                 isExpanded: expandedFolderIds.contains(folder.id)
                             )
                             .id(node.id)
+                        } else if node.isDivider {
+                            Divider()
+                                .background(activeColorName == "Black" ? .primary.opacity(0.2) : activeColor.opacity(0.3))
+                                .padding(.vertical, 4)
+                                .padding(.horizontal, 16)
+                                .id(node.id)
                         } else if let item = node.item {
                             HStack {
                                 if node.parentFolderId != nil {
@@ -91,7 +97,39 @@ struct ClipboardListView: View {
                         }
                     }
                     .onMove { source, destination in
-                        // Reordering mixed arrays requires more advanced index mapping, skipping for now
+                        if activeTab == "Pinned" {
+                            var currentIds = displayNodes.filter { !$0.isDivider }.compactMap { $0.item?.id }
+                            // We need to adjust source and destination to ignore the divider
+                            let sourceIndices = source.compactMap { idx -> Int? in
+                                let node = displayNodes[idx]
+                                return currentIds.firstIndex(of: node.item!.id)
+                            }
+                            // destination is an index in displayNodes
+                            // We find how many dividers are before the destination
+                            let dividersBeforeDest = displayNodes.prefix(destination).filter { $0.isDivider }.count
+                            let adjustedDest = destination - dividersBeforeDest
+                            
+                            if let firstSource = sourceIndices.first {
+                                clipboard.reorderPinnedItems(source: IndexSet(integer: firstSource), destination: adjustedDest)
+                            }
+                        } else if activeTab == "Groups" {
+                            // If moving folders
+                            let firstNode = displayNodes[source.first!]
+                            if firstNode.isFolder {
+                                let folderIds = clipboard.folders.map { $0.id }
+                                if let fId = firstNode.folder?.id, let fIndex = folderIds.firstIndex(of: fId) {
+                                    let adjustedDest = displayNodes.prefix(destination).filter { $0.isFolder }.count
+                                    clipboard.reorderFolders(source: IndexSet(integer: fIndex), destination: adjustedDest)
+                                }
+                            } else if let fId = firstNode.parentFolderId {
+                                // Moving items inside folder
+                                var itemsInFolder = displayNodes.filter { $0.parentFolderId == fId }.compactMap { $0.item?.id }
+                                if let iId = firstNode.item?.id, let iIndex = itemsInFolder.firstIndex(of: iId) {
+                                    let adjustedDest = displayNodes.prefix(destination).filter { $0.parentFolderId == fId }.count
+                                    clipboard.reorderGroupItems(folderId: fId, source: IndexSet(integer: iIndex), destination: adjustedDest)
+                                }
+                            }
+                        }
                     }
                 }
                 .padding(8)

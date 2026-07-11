@@ -160,8 +160,98 @@ class ClipboardManager: ObservableObject {
         }
     }
     
-
     
+    func reorderFolders(source: IndexSet, destination: Int) {
+        folders.move(fromOffsets: source, toOffset: destination)
+        for i in folders.indices {
+            folders[i].orderIndex = i + 1
+        }
+    }
+    
+    func reorderGroupItems(folderId: UUID, source: IndexSet, destination: Int) {
+        var items = history.filter { $0.folderId == folderId }
+        items.sort { item1, item2 in
+            if item1.orderIndex > 0 && item2.orderIndex > 0 { return item1.orderIndex < item2.orderIndex }
+            if item1.orderIndex > 0 { return true }
+            if item2.orderIndex > 0 { return false }
+            return item1.timestamp > item2.timestamp
+        }
+        items.move(fromOffsets: source, toOffset: destination)
+        for i in 0..<items.count {
+            if let idx = history.firstIndex(where: { $0.id == items[i].id }) {
+                history[idx].orderIndex = i + 1
+            }
+        }
+        saveHistory()
+    }
+    
+    func reorderPinnedItems(source: IndexSet, destination: Int) {
+        var items = history.filter { $0.isPinned && $0.folderId == nil }
+        items.sort { item1, item2 in
+            if item1.orderIndex > 0 && item2.orderIndex > 0 { return item1.orderIndex < item2.orderIndex }
+            if item1.orderIndex > 0 { return true }
+            if item2.orderIndex > 0 { return false }
+            return item1.timestamp > item2.timestamp
+        }
+        
+        var maxIndexToFreeze = -1
+        for (i, item) in items.enumerated() { if item.orderIndex > 0 { maxIndexToFreeze = max(maxIndexToFreeze, i) } }
+        for i in source { maxIndexToFreeze = max(maxIndexToFreeze, i) }
+        maxIndexToFreeze = max(maxIndexToFreeze, destination - (destination > source.first! ? 1 : 0))
+        
+        items.move(fromOffsets: source, toOffset: destination)
+        
+        if maxIndexToFreeze >= 0 {
+            for i in 0...maxIndexToFreeze {
+                if i < items.count {
+                    if let idx = history.firstIndex(where: { $0.id == items[i].id }) {
+                        history[idx].orderIndex = i + 1
+                    }
+                }
+            }
+        }
+        saveHistory()
+    }
+
+    func moveItem(up: Bool, id: UUID) {
+        guard let item = history.first(where: { $0.id == id }) else { return }
+        if item.isPinned && item.folderId == nil {
+            var items = history.filter { $0.isPinned && $0.folderId == nil }
+            items.sort { item1, item2 in
+                if item1.orderIndex > 0 && item2.orderIndex > 0 { return item1.orderIndex < item2.orderIndex }
+                if item1.orderIndex > 0 { return true }
+                if item2.orderIndex > 0 { return false }
+                return item1.timestamp > item2.timestamp
+            }
+            guard let idx = items.firstIndex(where: { $0.id == id }) else { return }
+            let newIdx = up ? max(0, idx - 1) : min(items.count - 1, idx + 1)
+            if idx != newIdx {
+                reorderPinnedItems(source: IndexSet(integer: idx), destination: newIdx > idx ? newIdx + 1 : newIdx)
+            }
+        } else if let folderId = item.folderId {
+            var items = history.filter { $0.folderId == folderId }
+            items.sort { item1, item2 in
+                if item1.orderIndex > 0 && item2.orderIndex > 0 { return item1.orderIndex < item2.orderIndex }
+                if item1.orderIndex > 0 { return true }
+                if item2.orderIndex > 0 { return false }
+                return item1.timestamp > item2.timestamp
+            }
+            guard let idx = items.firstIndex(where: { $0.id == id }) else { return }
+            let newIdx = up ? max(0, idx - 1) : min(items.count - 1, idx + 1)
+            if idx != newIdx {
+                reorderGroupItems(folderId: folderId, source: IndexSet(integer: idx), destination: newIdx > idx ? newIdx + 1 : newIdx)
+            }
+        }
+    }
+    
+    func moveFolder(up: Bool, id: UUID) {
+        guard let idx = folders.firstIndex(where: { $0.id == id }) else { return }
+        let newIdx = up ? max(0, idx - 1) : min(folders.count - 1, idx + 1)
+        if idx != newIdx {
+            reorderFolders(source: IndexSet(integer: idx), destination: newIdx > idx ? newIdx + 1 : newIdx)
+        }
+    }
+
     func clearAll() {
         history.removeAll()
     }

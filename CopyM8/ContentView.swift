@@ -29,6 +29,7 @@ struct DisplayNode: Identifiable {
     let folder: ClipboardFolder?
     let item: ClipboardItem?
     let parentFolderId: UUID?
+    var isDivider: Bool = false
 }
 
 struct ContentView: View {
@@ -123,6 +124,28 @@ struct ContentView: View {
                     }
                     return false
                 }
+            }
+            
+            if activeTab == "Pinned" {
+                results.sort { item1, item2 in
+                    if item1.orderIndex > 0 && item2.orderIndex > 0 { return item1.orderIndex < item2.orderIndex }
+                    if item1.orderIndex > 0 { return true }
+                    if item2.orderIndex > 0 { return false }
+                    return item1.timestamp > item2.timestamp
+                }
+                
+                var nodes: [DisplayNode] = []
+                var addedDivider = false
+                let hasFrozen = results.contains(where: { $0.orderIndex > 0 })
+                
+                for item in results {
+                    if item.orderIndex == 0 && !addedDivider && hasFrozen {
+                        nodes.append(DisplayNode(id: "divider_pinned", isFolder: false, folder: nil, item: nil, parentFolderId: nil, isDivider: true))
+                        addedDivider = true
+                    }
+                    nodes.append(DisplayNode(id: "item_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: nil))
+                }
+                return nodes
             }
             
             return results.map { DisplayNode(id: "item_\($0.id.uuidString)", isFolder: false, folder: nil, item: $0, parentFolderId: nil) }
@@ -578,6 +601,21 @@ struct ContentView: View {
                 }
                 return nil
             case 126: // Up
+                if event.modifierFlags.contains(.command) && (activeTab == "Pinned" || activeTab == "Groups") {
+                    if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
+                        let node = displayNodesLocal[selectedIndex]
+                        if !node.isDivider {
+                            if node.isFolder, let fid = node.folder?.id {
+                                clipboard.moveFolder(up: true, id: fid)
+                            } else if let iid = node.item?.id {
+                                clipboard.moveItem(up: true, id: iid)
+                            }
+                            if selectedIndex > 0 { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue -= 1 } }
+                        }
+                    }
+                    return nil
+                }
+                
                 let maxIndex = displayNodesLocal.count - 1
                 if isEditMode {
                     if event.modifierFlags.contains(.shift) {
@@ -590,6 +628,21 @@ struct ContentView: View {
                 else { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue = maxIndex } }
                 return nil
             case 125: // Down
+                if event.modifierFlags.contains(.command) && (activeTab == "Pinned" || activeTab == "Groups") {
+                    if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
+                        let node = displayNodesLocal[selectedIndex]
+                        if !node.isDivider {
+                            if node.isFolder, let fid = node.folder?.id {
+                                clipboard.moveFolder(up: false, id: fid)
+                            } else if let iid = node.item?.id {
+                                clipboard.moveItem(up: false, id: iid)
+                            }
+                            if selectedIndex < displayNodesLocal.count - 1 { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue += 1 } }
+                        }
+                    }
+                    return nil
+                }
+                
                 let maxIndex = displayNodesLocal.count - 1
                 if isEditMode {
                     if event.modifierFlags.contains(.shift) {
