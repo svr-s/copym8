@@ -68,6 +68,7 @@ struct ExpandedView: View {
                         isEditMode: isEditMode,
                         selectedItemsForDeletion: $selectedItemsForDeletion,
                         expandedFolderIds: $expandedFolderIds,
+                        activeTab: activeTab,
                         pasteItem: pasteItem
                     )
                 }

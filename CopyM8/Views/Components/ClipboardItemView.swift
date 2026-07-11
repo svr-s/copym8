@@ -10,6 +10,7 @@ struct ClipboardItemView: View {
     let activeColor: Color
     let isEditMode: Bool
     let isChecked: Bool
+    let folderIdentifier: String?
     let onPaste: () -> Void
     let onExpandToggle: () -> Void
     
@@ -82,10 +83,24 @@ struct ClipboardItemView: View {
                 
                 Spacer()
                 
-                if item.isPinned {
-                    Image(systemName: "pin.fill")
-                        .foregroundColor(activeColor)
-                        .font(.system(size: 10))
+                HStack(spacing: 8) {
+                    Group {
+                        if item.isPinned {
+                            Image(systemName: "pin.fill")
+                                .foregroundColor(activeColor)
+                                .font(.system(size: 10))
+                        }
+                    }
+                    .frame(width: 12)
+                    
+                    Group {
+                        if let folderId = folderIdentifier {
+                            Text("[\(folderId)]")
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .foregroundColor(activeColor)
+                        }
+                    }
+                    .frame(width: 24, alignment: .trailing)
                 }
             }
             .padding(.vertical, isDense ? 4 : 8)

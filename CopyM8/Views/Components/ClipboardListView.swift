@@ -11,6 +11,7 @@ struct ClipboardListView: View {
     var isEditMode: Bool
     @Binding var selectedItemsForDeletion: Set<UUID>
     @Binding var expandedFolderIds: Set<UUID>
+    var activeTab: String
     var pasteItem: (Int, Bool) -> Void
     
     var body: some View {
@@ -59,6 +60,7 @@ struct ClipboardListView: View {
                                     activeColor: activeColorName == "Black" ? .primary : activeColor,
                                     isEditMode: isEditMode,
                                     isChecked: selectedItemsForDeletion.contains(item.id),
+                                    folderIdentifier: (activeTab != "Groups" && item.folderId != nil) ? clipboard.folders.first(where: { $0.id == item.folderId })?.name.prefix(1).uppercased() : nil,
                                     onPaste: {
                                         if isEditMode {
                                             if selectedItemsForDeletion.contains(item.id) { selectedItemsForDeletion.remove(item.id) }
