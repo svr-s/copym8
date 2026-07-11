@@ -229,6 +229,8 @@ struct SettingsView: View {
                 shortcutRow(action: "Files Tab", key: "Opt + F / 7")
                 shortcutRow(action: "Reorder Item/Group", key: "Cmd + Up/Down")
                 shortcutRow(action: "Assign Group", key: "Cmd + G")
+                shortcutRow(action: "Navigate Assign Modal", key: "Up/Down")
+                shortcutRow(action: "Quick Assign Group", key: "A-Z")
                 shortcutRow(action: "Toggle Pin", key: "Cmd + P")
                 shortcutRow(action: "Delete Selected (Edit)", key: "⌫ Delete")
                 shortcutRow(action: "Select All (Current Tab)", key: "Cmd + A")

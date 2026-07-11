@@ -30,6 +30,8 @@ Here is a comprehensive list of all keyboard shortcuts available in CopyM8.
 | **Files Tab** | `Option + F` / `7` | Instantly switches to the Files tab. |
 | **Reorder Item/Group** | `Cmd + Up/Down Arrow` | Moves the selected item (or group) up or down in the list. |
 | **Assign Group** | `Cmd + G` | Opens the group assignment modal for the currently selected item. |
+| **Navigate Group Modal** | `Up/Down Arrow` | Highlights a group in the Assign Group modal. Press `Enter` to select. |
+| **Quick Assign Group** | `A - Z` | When the Assign Group modal is open, press the folder's shortcut alphabet to instantly assign it. |
 | **Create New Group** | `Cmd + N` | Creates a new group when the Assign Group modal is open. |
 | **Toggle Pin** | `Cmd + P` | Instantly pins/unpins the currently highlighted item (or selected items in Edit Mode). |
 | **Delete Item** | `Backspace` | Instantly deletes the currently highlighted item. In Edit Mode, triggers "Delete Selected". |

@@ -12,7 +12,8 @@ CopyM8 is a modern, buttery-smooth, and lightweight clipboard manager built nati
 - **Rich & Plain Paste**: Press `Enter` (or `1-0`) to strip formatting and paste plain text, or hold `Cmd` to inject exact Rich Text formats with styles intact. 
 - **Context Capture**: Captures the source application (e.g., Safari, Xcode) and exact timestamp of every copy.
 - **Live Search & Re-indexing**: Search by text *or* source application. The `1-0` quick-paste keyboard shortcuts dynamically re-index to map perfectly to your filtered search results.
-- **Pinning**: Press `P` or right-click to pin items to save them forever.
+- **Pinning**: Press `Cmd + P` or right-click to pin items to save them forever.
+- **Grouping**: Press `Cmd + G` to assign items to custom folders. When the assignment pop-up is open, type the folder's shortcut alphabet (A, B, C...) to assign it instantly, or navigate using Arrow Keys.
 - **Full Keyboard Navigation**: Never touch the mouse. Use Arrow keys to navigate, `Cmd + E` to toggle Edit mode, `Spacebar` to select items, `Opt + Tab` and `Opt + Shift + Tab` to cycle through tabs, and `Enter` to paste.
 - **Accordion Folder Groups**: Use `Right Arrow` to expand folders and view their items. Use `Left Arrow` to collapse or jump to the parent folder. Use `Option + Left Arrow` for a quick "Super Collapse" to instantly shut a folder and return to its header.
 - **Advanced Bulk Edit Mode**: Press `Cmd + E` to enter a Finder-style selection mode. Use checkboxes or the spacebar to select items. Features context-aware "Select All" (`Cmd + A`) that perfectly respects your active filters, allowing you to bulk pin or bulk delete with ease.
