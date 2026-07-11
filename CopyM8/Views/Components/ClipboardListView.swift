@@ -21,8 +21,8 @@ struct ClipboardListView: View {
                     ForEach(Array(displayNodes.enumerated()), id: \.element.id) { index, node in
                         if node.isFolder, let folder = node.folder {
                             ClipboardFolderView(
-                                index: index,
                                 folder: folder,
+                                shortcutIndex: clipboard.folders.firstIndex(where: { $0.id == folder.id }),
                                 isSelected: index == selectedIndex,
                                 isDense: isDense,
                                 activeColor: activeColor,
@@ -52,15 +52,15 @@ struct ClipboardListView: View {
                                     Spacer().frame(width: 24) // Indent items inside folders
                                 }
                                 ClipboardItemView(
-                                    index: index,
                                     item: item,
+                                    shortcutIndex: getRelativeIndex(for: node.id),
                                     isSelected: index == selectedIndex,
                                     isExpanded: index == expandedItemIndex,
                                     isDense: isDense,
                                     activeColor: activeColorName == "Black" ? .primary : activeColor,
                                     isEditMode: isEditMode,
                                     isChecked: selectedItemsForDeletion.contains(item.id),
-                                    folderIdentifier: (activeTab != "Groups" && item.folderId != nil) ? clipboard.folders.first(where: { $0.id == item.folderId })?.name.prefix(1).uppercased() : nil,
+                                    folderIdentifier: getFolderIdentifier(for: item),
                                     onPaste: {
                                         if isEditMode {
                                             if selectedItemsForDeletion.contains(item.id) { selectedItemsForDeletion.remove(item.id) }
@@ -100,5 +100,39 @@ struct ClipboardListView: View {
                 }
             }
         }
+    }
+    
+    private func getFolderIdentifier(for item: ClipboardItem) -> String? {
+        if activeTab != "Groups", let folderId = item.folderId {
+            if let folderIndex = clipboard.folders.firstIndex(where: { $0.id == folderId }) {
+                return String(UnicodeScalar(UInt8(65 + folderIndex)))
+            }
+        }
+        return nil
+    }
+    
+    private func getRelativeIndex(for nodeId: String) -> Int? {
+        if activeTab == "Groups" {
+            var currentFolderId: UUID? = nil
+            var count = 0
+            for node in displayNodes {
+                if node.isFolder {
+                    currentFolderId = node.folder?.id
+                    count = 0
+                } else if node.parentFolderId == currentFolderId {
+                    if node.id == nodeId { return count < 10 ? count : nil }
+                    count += 1
+                }
+            }
+        } else {
+            var count = 0
+            for node in displayNodes {
+                if !node.isFolder {
+                    if node.id == nodeId { return count < 10 ? count : nil }
+                    count += 1
+                }
+            }
+        }
+        return nil
     }
 }

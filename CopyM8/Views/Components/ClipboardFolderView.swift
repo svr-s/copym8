@@ -2,8 +2,8 @@ import SwiftUI
 import AppKit
 
 struct ClipboardFolderView: View {
-    let index: Int
     let folder: ClipboardFolder
+    let shortcutIndex: Int?
     let isSelected: Bool
     let isDense: Bool
     let activeColor: Color
@@ -35,8 +35,8 @@ struct ClipboardFolderView: View {
                         .foregroundColor(isChecked ? .primary : .primary.opacity(0.3))
                         .font(.system(size: 14))
                 } else {
-                    if index < 26 {
-                        let shortcutLetter = String(UnicodeScalar(UInt8(65 + index)))
+                    if let sIndex = shortcutIndex, sIndex < 26 {
+                        let shortcutLetter = String(UnicodeScalar(UInt8(65 + sIndex)))
                         Text(shortcutLetter)
                             .font(.system(size: 11, weight: .bold, design: .monospaced))
                             .foregroundColor(secondaryTextColor)

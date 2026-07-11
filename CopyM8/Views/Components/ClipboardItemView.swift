@@ -2,8 +2,8 @@ import SwiftUI
 import AppKit
 
 struct ClipboardItemView: View {
-    let index: Int
     let item: ClipboardItem
+    let shortcutIndex: Int?
     let isSelected: Bool
     let isExpanded: Bool
     let isDense: Bool
@@ -37,8 +37,8 @@ struct ClipboardItemView: View {
                         .foregroundColor(isChecked ? .primary : .primary.opacity(0.3))
                         .font(.system(size: 14))
                 } else {
-                    if index < 10 {
-                        let shortcutText = index == 9 ? "0" : "\(index + 1)"
+                    if let sIndex = shortcutIndex {
+                        let shortcutText = sIndex == 9 ? "0" : "\(sIndex + 1)"
                         Text(shortcutText)
                             .font(.system(size: 11, weight: .bold, design: .monospaced))
                             .foregroundColor(secondaryTextColor)

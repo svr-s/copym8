@@ -16,8 +16,8 @@ struct ClipboardFolderListView: View {
                 LazyVStack(spacing: isDense ? 2 : 12) {
                     ForEach(Array(folders.enumerated()), id: \.element.id) { index, folder in
                         ClipboardFolderView(
-                            index: index,
                             folder: folder,
+                            shortcutIndex: index,
                             isSelected: index == selectedIndex,
                             isDense: isDense,
                             activeColor: activeColor,

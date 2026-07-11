@@ -409,9 +409,25 @@ struct ContentView: View {
             switch event.keyCode {
             case 18...29:
                 let keyMap: [UInt16: Int] = [18: 0, 19: 1, 20: 2, 21: 3, 23: 4, 22: 5, 26: 6, 28: 7, 25: 8, 29: 9]
-                if let index = keyMap[event.keyCode], index < displayNodesLocal.count {
+                if let relativeIndex = keyMap[event.keyCode] {
                     let isCmd = event.modifierFlags.contains(.command)
-                    pasteItem(index, isCmd)
+                    if activeTab == "Groups" {
+                        var targetFolderId: UUID? = nil
+                        if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
+                            let selectedNode = displayNodesLocal[selectedIndex]
+                            targetFolderId = selectedNode.isFolder ? selectedNode.folder?.id : selectedNode.parentFolderId
+                        }
+                        if let targetFolderId = targetFolderId {
+                            let folderItemIndices = displayNodesLocal.indices.filter { displayNodesLocal[$0].parentFolderId == targetFolderId }
+                            if relativeIndex < folderItemIndices.count {
+                                pasteItem(folderItemIndices[relativeIndex], isCmd)
+                            }
+                        }
+                    } else {
+                        if relativeIndex < displayNodesLocal.count {
+                            pasteItem(relativeIndex, isCmd)
+                        }
+                    }
                 }
                 return nil
             case 51: // Backspace
@@ -425,13 +441,20 @@ struct ContentView: View {
                 }
                 return nil
             case 35: // P
-                if !isEditMode && selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
-                    if let id = displayNodesLocal[selectedIndex].item?.id { clipboard.togglePin(for: id) }
+                if event.modifierFlags.contains(.command) {
+                    if !isEditMode && selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
+                        if let id = displayNodesLocal[selectedIndex].item?.id { clipboard.togglePin(for: id) }
+                    }
                 }
                 return nil
             case 5: // G
-                if !isEditMode && selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
-                    if let id = displayNodesLocal[selectedIndex].item?.id { _itemToAssignGroup.wrappedValue = id }
+                if event.modifierFlags.contains(.command) {
+                    if !isEditMode && selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
+                        let node = displayNodesLocal[selectedIndex]
+                        if !node.isFolder, let item = node.item {
+                            _itemToAssignGroup.wrappedValue = item.id
+                        }
+                    }
                 }
                 return nil
             case 126: // Up
