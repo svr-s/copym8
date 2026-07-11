@@ -35,6 +35,7 @@ struct ContentView: View {
     @State private var isHovering = false
     @State private var showingDeleteSelectedAlert = false
     @State private var showingFolderDeleteAlert = false
+    @State private var showingUngroupAlert = false
     @State private var expandedItemIndex: Int? = nil
     @State private var showingSettings = false
     @State private var showingGroupAssignment = false
@@ -166,6 +167,7 @@ struct ContentView: View {
                     activeColorName: activeColorName,
                     showingDeleteSelectedAlert: $showingDeleteSelectedAlert,
                     showingFolderDeleteAlert: $showingFolderDeleteAlert,
+                    showingUngroupAlert: $showingUngroupAlert,
                     itemToAssignGroup: $itemToAssignGroup,
                     isResizing: $isResizing,
                     resizeStartMouse: $resizeStartMouse,
@@ -215,7 +217,10 @@ struct ContentView: View {
                 expandedFolderIds.removeAll()
             }
         }
-        .onChange(of: activeTab) { _, _ in restartKeyboardMonitor() }
+        .onChange(of: activeTab) { _, _ in 
+            restartKeyboardMonitor() 
+            selectedItemsForDeletion.removeAll()
+        }
         .onChange(of: searchText) { _, _ in
             selectedIndex = 0
             expandedItemIndex = nil
@@ -443,17 +448,48 @@ struct ContentView: View {
                 return nil
             case 35: // P
                 if event.modifierFlags.contains(.command) {
-                    if !isEditMode && selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
+                    if isEditMode {
+                        if activeTab == "Pinned" {
+                            for id in _selectedItemsForDeletion.wrappedValue {
+                                if let idx = clipboard.history.firstIndex(where: { $0.id == id }) {
+                                    clipboard.history[idx].isPinned = false
+                                }
+                            }
+                        } else {
+                            for id in _selectedItemsForDeletion.wrappedValue {
+                                if let idx = clipboard.history.firstIndex(where: { $0.id == id }) {
+                                    clipboard.history[idx].isPinned = true
+                                    clipboard.history[idx].folderId = nil
+                                }
+                            }
+                        }
+                        _selectedItemsForDeletion.wrappedValue.removeAll()
+                        _isEditMode.wrappedValue = false
+                    } else if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
                         if let id = displayNodesLocal[selectedIndex].item?.id { clipboard.togglePin(for: id) }
                     }
                 }
                 return nil
             case 5: // G
                 if event.modifierFlags.contains(.command) {
-                    if !isEditMode && selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
+                    if isEditMode {
+                        if !_selectedItemsForDeletion.wrappedValue.isEmpty {
+                            _itemToAssignGroup.wrappedValue = GroupAssignmentPayload(itemIds: _selectedItemsForDeletion.wrappedValue)
+                        }
+                    } else if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
                         let node = displayNodesLocal[selectedIndex]
                         if !node.isFolder, let item = node.item {
                             _itemToAssignGroup.wrappedValue = GroupAssignmentPayload(itemIds: [item.id])
+                        }
+                    }
+                }
+                return nil
+            case 32: // U
+                if event.modifierFlags.contains(.command) {
+                    if isEditMode && activeTab == "Groups" {
+                        let hasGroupedItem = clipboard.history.contains { item in _selectedItemsForDeletion.wrappedValue.contains(item.id) && item.folderId != nil }
+                        if hasGroupedItem {
+                            _showingUngroupAlert.wrappedValue = true
                         }
                     }
                 }

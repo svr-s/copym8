@@ -23,6 +23,7 @@ struct ExpandedView: View {
     var activeColorName: String
     @Binding var showingDeleteSelectedAlert: Bool
     @Binding var showingFolderDeleteAlert: Bool
+    @Binding var showingUngroupAlert: Bool
     @Binding var itemToAssignGroup: GroupAssignmentPayload?
     
     @Binding var isResizing: Bool
@@ -80,6 +81,7 @@ struct ExpandedView: View {
                         isEditMode: $isEditMode,
                         showingDeleteSelectedAlert: $showingDeleteSelectedAlert,
                         showingFolderDeleteAlert: $showingFolderDeleteAlert,
+                        showingUngroupAlert: $showingUngroupAlert,
                         displayNodes: displayNodes,
                         itemToAssignGroup: $itemToAssignGroup,
                         activeTab: activeTab

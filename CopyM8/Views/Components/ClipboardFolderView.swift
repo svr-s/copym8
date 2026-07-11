@@ -52,9 +52,11 @@ struct ClipboardFolderView: View {
                     .frame(width: 10)
                 
                 HStack(spacing: 8) {
-                    Image(systemName: isExpanded ? "folder.fill" : "folder")
-                        .foregroundColor(activeColor)
-                        .font(.system(size: 14))
+                    Image(nsImage: NSImage(named: NSImage.folderName)!)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 16, height: 16)
+                        .opacity(isExpanded ? 1.0 : 0.7)
                     
                     Text(folder.name)
                         .font(.system(size: 13, weight: .medium))
