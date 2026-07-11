@@ -33,7 +33,10 @@ Here is a comprehensive list of all keyboard shortcuts available in CopyM8.
 | **Navigate Group Modal** | `Up/Down Arrow` | Highlights a group in the Assign Group modal. Press `Enter` to select. |
 | **Quick Assign Group** | `A - Z` | When the Assign Group modal is open, press the folder's shortcut alphabet to instantly assign it. |
 | **Create New Group** | `Cmd + N` | Creates a new group when the Assign Group modal is open. |
-| **Toggle Pin** | `Cmd + P` | Instantly pins/unpins the currently highlighted item (or selected items in Edit Mode). |
+| **Pin Item** | `Cmd + P` | Instantly pins the currently highlighted item (or selected items in Edit Mode). Does not unpin. |
+| **Unpin / Ungroup (Edit Mode)** | `Cmd + U` | In Edit Mode: Unpins items (Pinned tab) or triggers the Ungroup modal (Groups tab). |
 | **Delete Item** | `Backspace` | Instantly deletes the currently highlighted item. In Edit Mode, triggers "Delete Selected". |
-| **Toggle Selection (Edit Mode)** | `Space` | Selects or deselects the currently highlighted item when in Edit Mode. |
+| **Multi-Select Range (Edit Mode)** | `Shift + Up/Down` | Highlights a continuous range of items in Edit Mode. |
+| **Toggle Selection (Edit Mode)** | `Space` | Selects/deselects the highlighted item. If a range is highlighted with Shift, toggles the entire range! |
 | **Select All (Edit Mode)** | `Cmd + A` | Selects or deselects all visible items in the current tab when in Edit Mode. |
+| **Navigate Pop-Up Modals** | `Up/Down & Enter` | Use arrow keys to select options (Delete, Cancel, Keep Items) in custom alerts, and `Enter` to confirm. |
