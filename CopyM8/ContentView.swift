@@ -21,6 +21,8 @@ extension UUID: Identifiable {
     public var id: UUID { self }
 }
 
+
+
 struct DisplayNode: Identifiable {
     let id: String
     let isFolder: Bool
@@ -233,9 +235,25 @@ struct ContentView: View {
         .onAppear { applyTheme(themePreference) }
         .environmentObject(clipboard)
         .sheet(item: $itemToAssignGroup) { payload in
-            GroupAssignmentView(itemIds: payload.itemIds)
+            GroupAssignmentView(itemIds: payload.itemIds, onComplete: payload.onComplete)
                 .environmentObject(clipboard)
         }
+        .sheet(isPresented: $showingUngroupAlert) {
+            UngroupConfirmationView(onConfirm: ungroupSelectedItems)
+        }
+    }
+    
+    private func ungroupSelectedItems(pin: Bool) {
+        for i in 0..<clipboard.history.count {
+            if selectedItemsForDeletion.contains(clipboard.history[i].id) {
+                clipboard.history[i].folderId = nil
+                if pin {
+                    clipboard.history[i].isPinned = true
+                }
+            }
+        }
+        selectedItemsForDeletion.removeAll()
+        isEditMode = false
     }
     
     private func applyTheme(_ theme: String) {
@@ -474,7 +492,10 @@ struct ContentView: View {
                 if event.modifierFlags.contains(.command) {
                     if isEditMode {
                         if !_selectedItemsForDeletion.wrappedValue.isEmpty {
-                            _itemToAssignGroup.wrappedValue = GroupAssignmentPayload(itemIds: _selectedItemsForDeletion.wrappedValue)
+                            _itemToAssignGroup.wrappedValue = GroupAssignmentPayload(itemIds: _selectedItemsForDeletion.wrappedValue) {
+                                _selectedItemsForDeletion.wrappedValue.removeAll()
+                                _isEditMode.wrappedValue = false
+                            }
                         }
                     } else if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
                         let node = displayNodesLocal[selectedIndex]

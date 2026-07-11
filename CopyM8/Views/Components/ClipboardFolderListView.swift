@@ -24,10 +24,7 @@ struct ClipboardFolderListView: View {
                             isEditMode: isEditMode,
                             isChecked: selectedItemsForDeletion.contains(folder.id),
                             onTap: {
-                                if isEditMode {
-                                    if selectedItemsForDeletion.contains(folder.id) { selectedItemsForDeletion.remove(folder.id) }
-                                    else { selectedItemsForDeletion.insert(folder.id) }
-                                } else {
+                                if !isEditMode {
                                     withAnimation {
                                         selectedFolderId = folder.id
                                         selectedIndex = 0

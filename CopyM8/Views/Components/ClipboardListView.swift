@@ -29,10 +29,7 @@ struct ClipboardListView: View {
                                 isEditMode: isEditMode,
                                 isChecked: selectedItemsForDeletion.contains(folder.id),
                                 onTap: {
-                                    if isEditMode {
-                                        if selectedItemsForDeletion.contains(folder.id) { selectedItemsForDeletion.remove(folder.id) }
-                                        else { selectedItemsForDeletion.insert(folder.id) }
-                                    } else {
+                                    if !isEditMode {
                                         withAnimation {
                                             if expandedFolderIds.contains(folder.id) {
                                                 expandedFolderIds.remove(folder.id)

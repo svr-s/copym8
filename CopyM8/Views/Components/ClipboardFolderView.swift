@@ -31,9 +31,7 @@ struct ClipboardFolderView: View {
         Button(action: onTap) {
             HStack(spacing: 12) {
                 if isEditMode {
-                    Image(systemName: isChecked ? "checkmark.circle.fill" : "circle")
-                        .foregroundColor(isChecked ? .primary : .primary.opacity(0.3))
-                        .font(.system(size: 14))
+                    Spacer().frame(width: 14)
                 } else {
                     if let sIndex = shortcutIndex, sIndex < 26 {
                         let shortcutLetter = String(UnicodeScalar(UInt8(65 + sIndex)))

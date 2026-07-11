@@ -4,6 +4,7 @@ struct GroupAssignmentView: View {
     @EnvironmentObject var clipboard: ClipboardManager
     @Environment(\.dismiss) var dismiss
     let itemIds: Set<UUID>
+    var onComplete: (() -> Void)? = nil
     
     @State private var newFolderName: String = ""
     @State private var isCreatingNew = false
@@ -156,6 +157,7 @@ struct GroupAssignmentView: View {
                 clipboard.history[idx].isPinned = false
             }
         }
+        onComplete?()
         dismiss()
     }
     
@@ -170,8 +172,9 @@ struct GroupAssignmentView: View {
     }
 }
 
-struct GroupAssignmentPayload: Identifiable, Equatable {
+struct GroupAssignmentPayload: Identifiable {
     let id = UUID()
     let itemIds: Set<UUID>
+    var onComplete: (() -> Void)? = nil
 }
 

@@ -36,7 +36,10 @@ struct EditModeFooterView: View {
             VStack(spacing: 8) {
                 HStack(spacing: 8) {
                     Button(action: {
-                        itemToAssignGroup = GroupAssignmentPayload(itemIds: selectedItemsForDeletion)
+                        itemToAssignGroup = GroupAssignmentPayload(itemIds: selectedItemsForDeletion) {
+                            selectedItemsForDeletion.removeAll()
+                            isEditMode = false
+                        }
                     }) {
                         HStack(spacing: 4) {
                             Image(systemName: "folder.fill.badge.plus")
@@ -148,29 +151,10 @@ struct EditModeFooterView: View {
             } message: {
                 Text("Do you want to keep the items inside the folders (move to Pinned) or delete them permanently?")
             }
-            .alert("Ungroup selected items?", isPresented: $showingUngroupAlert) {
-                Button("Move to Pinned", role: .none) { ungroupSelectedItems(pin: true) }
-                Button("Completely Ungroup", role: .destructive) { ungroupSelectedItems(pin: false) }
-                Button("Cancel", role: .cancel) { }
-            } message: {
-                Text("Do you want to keep these items in your Pinned list, or completely ungroup them?")
-            }
         }
         .padding(.horizontal, 12).padding(.vertical, 12).background(Color.primary.opacity(0.05))
     }
     
-    private func ungroupSelectedItems(pin: Bool) {
-        for i in 0..<clipboard.history.count {
-            if selectedItemsForDeletion.contains(clipboard.history[i].id) {
-                clipboard.history[i].folderId = nil
-                if pin {
-                    clipboard.history[i].isPinned = true
-                }
-            }
-        }
-        selectedItemsForDeletion.removeAll()
-        isEditMode = false
-    }
     
     private func deleteSelectedItems() {
         clipboard.history.removeAll { selectedItemsForDeletion.contains($0.id) }
