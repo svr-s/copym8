@@ -463,6 +463,31 @@ struct ContentView: View {
                 }
             }
             
+            if let chars = event.charactersIgnoringModifiers, chars.count == 1 {
+                let char = chars.uppercased()
+                if activeTab == "Groups" && char >= "A" && char <= "Z" && !event.modifierFlags.contains(.command) && !event.modifierFlags.contains(.control) && !event.modifierFlags.contains(.option) {
+                    let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                    if let letterIndex = alphabet.firstIndex(of: Character(char)) {
+                        let folderIndex = alphabet.distance(from: alphabet.startIndex, to: letterIndex)
+                        let folders = clipboard.folders
+                        if folderIndex < folders.count {
+                            let targetFolder = folders[folderIndex]
+                            if let nodeIndex = displayNodesLocal.firstIndex(where: { $0.isFolder && $0.folder?.id == targetFolder.id }) {
+                                withAnimation {
+                                    _selectedIndex.wrappedValue = nodeIndex
+                                    if !_expandedFolderIds.wrappedValue.contains(targetFolder.id) {
+                                        _expandedFolderIds.wrappedValue.insert(targetFolder.id)
+                                    } else {
+                                        _expandedFolderIds.wrappedValue.remove(targetFolder.id)
+                                    }
+                                }
+                                return nil
+                            }
+                        }
+                    }
+                }
+            }
+            
             switch event.keyCode {
             case 18...29:
                 let keyMap: [UInt16: Int] = [18: 0, 19: 1, 20: 2, 21: 3, 23: 4, 22: 5, 26: 6, 28: 7, 25: 8, 29: 9]
