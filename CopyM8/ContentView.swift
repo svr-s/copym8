@@ -211,6 +211,7 @@ struct ContentView: View {
                 showingSettings = false
                 showingDeleteSelectedAlert = false
                 showingFolderDeleteAlert = false
+                expandedFolderIds.removeAll()
             }
         }
         .onChange(of: activeTab) { _, _ in restartKeyboardMonitor() }
