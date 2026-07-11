@@ -313,6 +313,14 @@ struct ContentView: View {
                 setupKeyboardMonitor()
             } else {
                 teardownKeyboardMonitor()
+                if isReorderMode {
+                    clipboard.history = reorderBackupHistory
+                    clipboard.folders = reorderBackupFolders
+                    clipboard.isReordering = false
+                    isReorderMode = false
+                    reorderTarget = .none
+                    activeTab = "All"
+                }
                 itemToAssignGroup = nil
                 showingSettings = false
                 showingDeleteSelectedAlert = false
@@ -603,6 +611,11 @@ struct ContentView: View {
             
             if let chars = event.charactersIgnoringModifiers, chars.count == 1 {
                 let char = chars.uppercased()
+                if _isReorderMode.wrappedValue && char == "F" && !event.modifierFlags.contains(.command) && !event.modifierFlags.contains(.control) && !event.modifierFlags.contains(.option) {
+                    _isFreezeFieldFocused.wrappedValue = true
+                    return nil
+                }
+                
                 if activeTab == "Groups" && char >= "A" && char <= "Z" && !event.modifierFlags.contains(.command) && !event.modifierFlags.contains(.control) && !event.modifierFlags.contains(.option) {
                     let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                     if let letterIndex = alphabet.firstIndex(of: Character(char)) {
@@ -753,7 +766,11 @@ struct ContentView: View {
                         _selectionAnchorIndex.wrappedValue = nil
                     }
                 }
-                if selectedIndex > 0 { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue -= 1 } }
+                if selectedIndex > 0 {
+                    var nextIndex = selectedIndex - 1
+                    if nextIndex > 0 && displayNodesLocal[nextIndex].isDivider { nextIndex -= 1 }
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue = nextIndex }
+                }
                 else { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue = maxIndex } }
                 return nil
             case 125: // Down
@@ -794,14 +811,26 @@ struct ContentView: View {
                         _selectionAnchorIndex.wrappedValue = nil
                     }
                 }
-                if selectedIndex < maxIndex { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue += 1 } }
+                if selectedIndex < maxIndex {
+                    var nextIndex = selectedIndex + 1
+                    if nextIndex < maxIndex && displayNodesLocal[nextIndex].isDivider { nextIndex += 1 }
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue = nextIndex }
+                }
                 else { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue = 0 } }
                 return nil
             case 36: // Enter
                 if _isReorderMode.wrappedValue {
-                    // Handled by Save button or we can simulate save here
-                    // Actually, let's just let the Save button handle it, or we can inline the save logic. But ReorderFooterView has the save logic.
-                    // Instead, we can just return nil to ignore Enter when reordering so it doesn't paste.
+                    clipboard.isReordering = false
+                    _isReorderMode.wrappedValue = false
+                    
+                    if _reorderTarget.wrappedValue == .pinned {
+                        clipboard.saveHistory()
+                    } else if _reorderTarget.wrappedValue == .folders {
+                        clipboard.saveFolders()
+                    } else if case .items = _reorderTarget.wrappedValue {
+                        clipboard.saveHistory()
+                    }
+                    _reorderTarget.wrappedValue = .none
                     return nil
                 }
                 
