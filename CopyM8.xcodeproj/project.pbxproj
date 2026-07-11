@@ -23,6 +23,7 @@
 		8AB5D28EE56340269C17683B /* PillView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F21A4106C56434693922642 /* PillView.swift */; };
 		9567EBA87F926482E84BFF5C /* ClipboardManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 288D2FCD5D67DDA11FBF95F9 /* ClipboardManager.swift */; };
 		9A7DBBB05A39B362B9E45472 /* VisualEffectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3486ED9F9756BC5D247DDD19 /* VisualEffectView.swift */; };
+		B23B1EE3EF562707303599EC /* DeleteConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F851D5D659B1C932E26A2A3 /* DeleteConfirmationView.swift */; };
 		B2A562F1FDD17E7871E29E32 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D8932979B40E81239B375C /* ContentView.swift */; };
 		B77DFF34323F4E6B8A494A59 /* ClipboardListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24AB431B02264F44BE743B71 /* ClipboardListView.swift */; };
 		C5F4121F83FD454D8C274338 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A7404ABC5EE433FA787FDCD /* EmptyStateView.swift */; };
@@ -46,6 +47,7 @@
 		594382BF22D34FE680F6A563 /* ClipboardItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Components/ClipboardItemView.swift; sourceTree = "<group>"; };
 		65129A21AFFF93AC51E7515E /* UngroupConfirmationView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Views/Components/UngroupConfirmationView.swift; sourceTree = "<group>"; };
 		73803AE6B6674E679ECF6474 /* SearchBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Components/SearchBarView.swift; sourceTree = "<group>"; };
+		7F851D5D659B1C932E26A2A3 /* DeleteConfirmationView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Views/Components/DeleteConfirmationView.swift; sourceTree = "<group>"; };
 		8162541FBF9AAEDBC6767D29 /* CopyM8.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CopyM8.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8F21A4106C56434693922642 /* PillView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Components/PillView.swift; sourceTree = "<group>"; };
 		934FE6C60DD34D1E89208C85 /* ExpandedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/Components/ExpandedView.swift; sourceTree = "<group>"; };
@@ -126,6 +128,7 @@
 			isa = PBXGroup;
 			children = (
 				65129A21AFFF93AC51E7515E /* UngroupConfirmationView.swift */,
+				7F851D5D659B1C932E26A2A3 /* DeleteConfirmationView.swift */,
 			);
 			name = Components;
 			sourceTree = "<group>";
@@ -209,6 +212,7 @@
 				79A9E8EB1B0B35A7555E4DFD /* ShortcutManager.swift in Sources */,
 				9A7DBBB05A39B362B9E45472 /* VisualEffectView.swift in Sources */,
 				3252EB7B4C652FAC75A75204 /* UngroupConfirmationView.swift in Sources */,
+				B23B1EE3EF562707303599EC /* DeleteConfirmationView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

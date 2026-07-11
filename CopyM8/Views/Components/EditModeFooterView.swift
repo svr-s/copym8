@@ -138,18 +138,24 @@ struct EditModeFooterView: View {
                     .disabled(selectedItemsForDeletion.isEmpty)
                 }
             }
-            .alert("Delete selected items?", isPresented: $showingDeleteSelectedAlert) {
-                Button("Cancel", role: .cancel) { }
-                Button("Delete", role: .destructive) { deleteSelectedItems() }
-            } message: {
-                Text("Are you sure you want to delete \(selectedItemsForDeletion.count) items? This action cannot be undone.")
+            .sheet(isPresented: $showingDeleteSelectedAlert) {
+                DeleteConfirmationView(
+                    isFolderDeletion: false,
+                    itemCount: selectedItemsForDeletion.count,
+                    onConfirm: { _ in deleteSelectedItems() }
+                )
             }
-            .alert("Delete selected folders?", isPresented: $showingFolderDeleteAlert) {
-                Button("Keep Items", role: .none) { deleteFolders(keepItems: true) }
-                Button("Delete All", role: .destructive) { deleteFolders(keepItems: false) }
-                Button("Cancel", role: .cancel) { }
-            } message: {
-                Text("Do you want to keep the items inside the folders (move to Pinned) or delete them permanently?")
+            .sheet(isPresented: $showingFolderDeleteAlert) {
+                let folderIds = selectedItemsForDeletion.filter { id in clipboard.folders.contains(where: { $0.id == id }) }
+                DeleteConfirmationView(
+                    isFolderDeletion: true,
+                    itemCount: folderIds.count,
+                    onConfirm: { keepItems in
+                        if let keepItems = keepItems {
+                            deleteFolders(keepItems: keepItems)
+                        }
+                    }
+                )
             }
         }
         .padding(.horizontal, 12).padding(.vertical, 12).background(Color.primary.opacity(0.05))

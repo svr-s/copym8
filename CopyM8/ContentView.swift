@@ -217,6 +217,8 @@ struct ContentView: View {
                 showingDeleteSelectedAlert = false
                 showingFolderDeleteAlert = false
                 expandedFolderIds.removeAll()
+                isEditMode = false
+                selectedItemsForDeletion.removeAll()
             }
         }
         .onChange(of: activeTab) { _, _ in 
@@ -232,6 +234,7 @@ struct ContentView: View {
         .onChange(of: maxHistoryCount) { _, newValue in clipboard.truncateHistory(to: newValue) }
         .onChange(of: themePreference) { _, newTheme in applyTheme(newTheme) }
         .onChange(of: clipboard.history) { _, _ in restartKeyboardMonitor() }
+        .onChange(of: isEditMode) { _, _ in selectedItemsForDeletion.removeAll() }
         .onAppear { applyTheme(themePreference) }
         .environmentObject(clipboard)
         .sheet(item: $itemToAssignGroup) { payload in
