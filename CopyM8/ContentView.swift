@@ -133,6 +133,7 @@ struct ContentView: View {
     @State private var initialWindowPosition: NSPoint? = nil
     
     @State private var selectedIndex: Int = 0
+    @State private var selectionAnchorIndex: Int? = nil
     @State private var isResizing = false
     @State private var resizeStartMouse: NSPoint?
     @State private var resizeStartSize: NSSize?
@@ -160,6 +161,7 @@ struct ContentView: View {
                     maxHistoryCount: $maxHistoryCount,
                     activeTab: $activeTab,
                     selectedIndex: $selectedIndex,
+                    selectionAnchorIndex: $selectionAnchorIndex,
                     activeColor: activeColor,
                     searchText: $searchText,
                     isSearchFocused: $isSearchFocused,
@@ -208,6 +210,7 @@ struct ContentView: View {
                 searchText = ""
                 activeTab = "All"
                 selectedIndex = 0
+                selectionAnchorIndex = nil
                 expandedItemIndex = nil
                 setupKeyboardMonitor()
             } else {
@@ -227,6 +230,7 @@ struct ContentView: View {
         }
         .onChange(of: searchText) { _, _ in
             selectedIndex = 0
+            selectionAnchorIndex = nil
             expandedItemIndex = nil
             restartKeyboardMonitor()
         }
@@ -234,7 +238,16 @@ struct ContentView: View {
         .onChange(of: maxHistoryCount) { _, newValue in clipboard.truncateHistory(to: newValue) }
         .onChange(of: themePreference) { _, newTheme in applyTheme(newTheme) }
         .onChange(of: clipboard.history) { _, _ in restartKeyboardMonitor() }
-        .onChange(of: isEditMode) { _, _ in selectedItemsForDeletion.removeAll() }
+        .onChange(of: isEditMode) { _, editMode in 
+            selectedItemsForDeletion.removeAll() 
+            if activeTab == "Groups" {
+                if editMode {
+                    expandedFolderIds = Set(clipboard.folders.map { $0.id })
+                } else {
+                    expandedFolderIds.removeAll()
+                }
+            }
+        }
         .onAppear { applyTheme(themePreference) }
         .environmentObject(clipboard)
         .sheet(item: $itemToAssignGroup) { payload in
@@ -520,11 +533,25 @@ struct ContentView: View {
                 return nil
             case 126: // Up
                 let maxIndex = displayNodesLocal.count - 1
+                if isEditMode {
+                    if event.modifierFlags.contains(.shift) {
+                        if _selectionAnchorIndex.wrappedValue == nil { _selectionAnchorIndex.wrappedValue = selectedIndex }
+                    } else {
+                        _selectionAnchorIndex.wrappedValue = nil
+                    }
+                }
                 if selectedIndex > 0 { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue -= 1 } }
                 else { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue = maxIndex } }
                 return nil
             case 125: // Down
                 let maxIndex = displayNodesLocal.count - 1
+                if isEditMode {
+                    if event.modifierFlags.contains(.shift) {
+                        if _selectionAnchorIndex.wrappedValue == nil { _selectionAnchorIndex.wrappedValue = selectedIndex }
+                    } else {
+                        _selectionAnchorIndex.wrappedValue = nil
+                    }
+                }
                 if selectedIndex < maxIndex { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue += 1 } }
                 else { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue = 0 } }
                 return nil
@@ -577,9 +604,37 @@ struct ContentView: View {
                 return nil
             case 49: // Space
                 if isEditMode && selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
-                    let id = displayNodesLocal[selectedIndex].item?.id ?? displayNodesLocal[selectedIndex].folder?.id ?? UUID()
-                    if _selectedItemsForDeletion.wrappedValue.contains(id) { _selectedItemsForDeletion.wrappedValue.remove(id) }
-                    else { _selectedItemsForDeletion.wrappedValue.insert(id) }
+                    if let anchor = _selectionAnchorIndex.wrappedValue {
+                        let start = min(anchor, selectedIndex)
+                        let end = max(anchor, selectedIndex)
+                        
+                        var idsToToggle: [UUID] = []
+                        for i in start...end {
+                            if i < displayNodesLocal.count, !displayNodesLocal[i].isFolder, let id = displayNodesLocal[i].item?.id {
+                                idsToToggle.append(id)
+                            }
+                        }
+                        
+                        let allSelected = idsToToggle.allSatisfy { _selectedItemsForDeletion.wrappedValue.contains($0) }
+                        withAnimation {
+                            for id in idsToToggle {
+                                if allSelected {
+                                    _selectedItemsForDeletion.wrappedValue.remove(id)
+                                } else {
+                                    _selectedItemsForDeletion.wrappedValue.insert(id)
+                                }
+                            }
+                            _selectionAnchorIndex.wrappedValue = nil
+                        }
+                    } else {
+                        let node = displayNodesLocal[selectedIndex]
+                        if !node.isFolder, let id = node.item?.id {
+                            withAnimation {
+                                if _selectedItemsForDeletion.wrappedValue.contains(id) { _selectedItemsForDeletion.wrappedValue.remove(id) }
+                                else { _selectedItemsForDeletion.wrappedValue.insert(id) }
+                            }
+                        }
+                    }
                     return nil
                 }
                 return event

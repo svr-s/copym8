@@ -13,6 +13,7 @@ struct ExpandedView: View {
     @Binding var maxHistoryCount: Int
     @Binding var activeTab: String
     @Binding var selectedIndex: Int
+    @Binding var selectionAnchorIndex: Int?
     var activeColor: Color
     @Binding var searchText: String
     var isSearchFocused: FocusState<Bool>.Binding
@@ -64,6 +65,7 @@ struct ExpandedView: View {
                         displayNodes: displayNodes,
                         isDense: isDense,
                         selectedIndex: $selectedIndex,
+                        selectionAnchorIndex: $selectionAnchorIndex,
                         expandedItemIndex: $expandedItemIndex,
                         activeColorName: activeColorName,
                         activeColor: activeColor,

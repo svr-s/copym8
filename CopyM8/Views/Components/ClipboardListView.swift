@@ -5,6 +5,7 @@ struct ClipboardListView: View {
     var displayNodes: [DisplayNode]
     var isDense: Bool
     @Binding var selectedIndex: Int
+    @Binding var selectionAnchorIndex: Int?
     @Binding var expandedItemIndex: Int?
     var activeColorName: String
     var activeColor: Color
@@ -13,6 +14,13 @@ struct ClipboardListView: View {
     @Binding var expandedFolderIds: Set<UUID>
     var activeTab: String
     var pasteItem: (Int, Bool) -> Void
+    
+    private func isHighlighted(_ index: Int) -> Bool {
+        if let anchor = selectionAnchorIndex {
+            return index >= min(anchor, selectedIndex) && index <= max(anchor, selectedIndex)
+        }
+        return index == selectedIndex
+    }
     
     var body: some View {
         ScrollView {
@@ -23,7 +31,7 @@ struct ClipboardListView: View {
                             ClipboardFolderView(
                                 folder: folder,
                                 shortcutIndex: clipboard.folders.firstIndex(where: { $0.id == folder.id }),
-                                isSelected: index == selectedIndex,
+                                isSelected: isHighlighted(index),
                                 isDense: isDense,
                                 activeColor: activeColor,
                                 isEditMode: isEditMode,
@@ -51,7 +59,7 @@ struct ClipboardListView: View {
                                 ClipboardItemView(
                                     item: item,
                                     shortcutIndex: getRelativeIndex(for: node.id),
-                                    isSelected: index == selectedIndex,
+                                    isSelected: isHighlighted(index),
                                     isExpanded: index == expandedItemIndex,
                                     isDense: isDense,
                                     activeColor: activeColorName == "Black" ? .primary : activeColor,
