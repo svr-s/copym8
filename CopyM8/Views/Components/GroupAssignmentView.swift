@@ -3,7 +3,7 @@ import SwiftUI
 struct GroupAssignmentView: View {
     @EnvironmentObject var clipboard: ClipboardManager
     @Environment(\.dismiss) var dismiss
-    let itemId: UUID
+    let itemIds: Set<UUID>
     
     @State private var newFolderName: String = ""
     @State private var isCreatingNew = false
@@ -148,8 +148,11 @@ struct GroupAssignmentView: View {
     }
     
     private func assignToFolder(_ folderId: UUID) {
-        if let idx = clipboard.history.firstIndex(where: { $0.id == itemId }) {
-            clipboard.history[idx].folderId = folderId
+        for itemId in itemIds {
+            if let idx = clipboard.history.firstIndex(where: { $0.id == itemId }) {
+                clipboard.history[idx].folderId = folderId
+                clipboard.history[idx].isPinned = false
+            }
         }
         dismiss()
     }
@@ -163,5 +166,10 @@ struct GroupAssignmentView: View {
         
         assignToFolder(newFolder.id)
     }
+}
+
+struct GroupAssignmentPayload: Identifiable, Equatable {
+    let id = UUID()
+    let itemIds: Set<UUID>
 }
 

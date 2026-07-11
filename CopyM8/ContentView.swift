@@ -38,7 +38,7 @@ struct ContentView: View {
     @State private var expandedItemIndex: Int? = nil
     @State private var showingSettings = false
     @State private var showingGroupAssignment = false
-    @State private var itemToAssignGroup: UUID? = nil
+    @State private var itemToAssignGroup: GroupAssignmentPayload? = nil
     @State private var draftHistoryCount: Int = 25
     @State private var searchText: String = ""
     @FocusState private var isSearchFocused: Bool
@@ -166,6 +166,7 @@ struct ContentView: View {
                     activeColorName: activeColorName,
                     showingDeleteSelectedAlert: $showingDeleteSelectedAlert,
                     showingFolderDeleteAlert: $showingFolderDeleteAlert,
+                    itemToAssignGroup: $itemToAssignGroup,
                     isResizing: $isResizing,
                     resizeStartMouse: $resizeStartMouse,
                     resizeStartSize: $resizeStartSize,
@@ -226,8 +227,8 @@ struct ContentView: View {
         .onChange(of: clipboard.history) { _, _ in restartKeyboardMonitor() }
         .onAppear { applyTheme(themePreference) }
         .environmentObject(clipboard)
-        .sheet(item: $itemToAssignGroup) { id in
-            GroupAssignmentView(itemId: id)
+        .sheet(item: $itemToAssignGroup) { payload in
+            GroupAssignmentView(itemIds: payload.itemIds)
                 .environmentObject(clipboard)
         }
     }
@@ -452,7 +453,7 @@ struct ContentView: View {
                     if !isEditMode && selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
                         let node = displayNodesLocal[selectedIndex]
                         if !node.isFolder, let item = node.item {
-                            _itemToAssignGroup.wrappedValue = item.id
+                            _itemToAssignGroup.wrappedValue = GroupAssignmentPayload(itemIds: [item.id])
                         }
                     }
                 }
