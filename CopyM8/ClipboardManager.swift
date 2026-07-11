@@ -106,6 +106,9 @@ class ClipboardManager: ObservableObject {
     private var timer: Timer?
     private let storageKey = "copym8_clipboard_history"
     private let foldersKey = "copym8_clipboard_folders"
+    private let queue = DispatchQueue(label: "com.copym8.clipboard", qos: .userInteractive)
+    
+    var isReordering: Bool = false
     
     init() {
         loadHistory()
@@ -140,13 +143,15 @@ class ClipboardManager: ObservableObject {
         }
     }
     
-    private func saveHistory() {
+    func saveHistory() {
+        if isReordering { return }
         if let encoded = try? JSONEncoder().encode(history) {
             UserDefaults.standard.set(encoded, forKey: storageKey)
         }
     }
     
-    private func saveFolders() {
+    func saveFolders() {
+        if isReordering { return }
         if let encoded = try? JSONEncoder().encode(folders) {
             UserDefaults.standard.set(encoded, forKey: foldersKey)
         }
@@ -196,8 +201,7 @@ class ClipboardManager: ObservableObject {
         
         var maxIndexToFreeze = -1
         for (i, item) in items.enumerated() { if item.orderIndex > 0 { maxIndexToFreeze = max(maxIndexToFreeze, i) } }
-        for i in source { maxIndexToFreeze = max(maxIndexToFreeze, i) }
-        maxIndexToFreeze = max(maxIndexToFreeze, destination - (destination > source.first! ? 1 : 0))
+        maxIndexToFreeze = max(maxIndexToFreeze, destination - (destination > (source.first ?? 0) ? 1 : 0))
         
         items.move(fromOffsets: source, toOffset: destination)
         

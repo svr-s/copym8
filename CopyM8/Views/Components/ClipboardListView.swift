@@ -170,7 +170,7 @@ struct ClipboardListView: View {
         } else {
             var count = 0
             for node in displayNodes {
-                if !node.isFolder {
+                if !node.isFolder && !node.isDivider {
                     if node.id == nodeId { return count < 10 ? count : nil }
                     count += 1
                 }

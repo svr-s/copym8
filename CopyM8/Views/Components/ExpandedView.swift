@@ -12,6 +12,14 @@ struct ExpandedView: View {
     @Binding var draftHistoryCount: Int
     @Binding var maxHistoryCount: Int
     @Binding var activeTab: String
+    
+    @Binding var isReorderMode: Bool
+    @Binding var reorderTarget: ReorderTarget?
+    @Binding var reorderFreezeLimit: String
+    @Binding var reorderBackupHistory: [ClipboardItem]
+    @Binding var reorderBackupFolders: [ClipboardFolder]
+    var isFreezeFieldFocused: FocusState<Bool>.Binding
+    
     @Binding var selectedIndex: Int
     @Binding var selectionAnchorIndex: Int?
     var activeColor: Color
@@ -69,7 +77,7 @@ struct ExpandedView: View {
                         expandedItemIndex: $expandedItemIndex,
                         activeColorName: activeColorName,
                         activeColor: activeColor,
-                        isEditMode: isEditMode,
+                        isEditMode: isEditMode || isReorderMode,
                         selectedItemsForDeletion: $selectedItemsForDeletion,
                         expandedFolderIds: $expandedFolderIds,
                         activeTab: activeTab,
@@ -87,6 +95,18 @@ struct ExpandedView: View {
                         displayNodes: displayNodes,
                         itemToAssignGroup: $itemToAssignGroup,
                         activeTab: activeTab
+                    )
+                }
+                
+                if isReorderMode {
+                    ReorderFooterView(
+                        isReorderMode: $isReorderMode,
+                        reorderTarget: $reorderTarget,
+                        reorderFreezeLimit: $reorderFreezeLimit,
+                        isFreezeFieldFocused: isFreezeFieldFocused,
+                        reorderBackupHistory: $reorderBackupHistory,
+                        reorderBackupFolders: $reorderBackupFolders,
+                        selectedItemsForDeletion: $selectedItemsForDeletion
                     )
                 }
             }
