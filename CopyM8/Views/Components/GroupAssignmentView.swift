@@ -25,9 +25,10 @@ struct GroupAssignmentView: View {
                     .padding(.vertical, 8)
             } else {
                 ScrollView {
-                    VStack(spacing: 8) {
-                        ForEach(Array(clipboard.folders.enumerated()), id: \.element.id) { index, folder in
-                            let letter = String(UnicodeScalar(UInt8(65 + index)))
+                    ScrollViewReader { proxy in
+                        VStack(spacing: 8) {
+                            ForEach(Array(clipboard.folders.enumerated()), id: \.element.id) { index, folder in
+                                let letter = String(UnicodeScalar(UInt8(65 + index)))
                             Button(action: {
                                 assignToFolder(folder.id)
                             }) {
@@ -50,6 +51,13 @@ struct GroupAssignmentView: View {
                             .buttonStyle(PlainButtonStyle())
                             .onHover { hovering in
                                 if hovering { selectedIndex = index }
+                            }
+                                .id(index)
+                            }
+                        }
+                        .onChange(of: selectedIndex) { _, newIndex in
+                            withAnimation(.easeOut(duration: 0.15)) {
+                                proxy.scrollTo(newIndex, anchor: nil)
                             }
                         }
                     }
@@ -125,10 +133,14 @@ struct GroupAssignmentView: View {
             
             switch event.keyCode {
             case 126: // Up
+                if clipboard.folders.isEmpty { return nil }
                 if selectedIndex > 0 { selectedIndex -= 1 }
+                else { selectedIndex = clipboard.folders.count - 1 }
                 return nil
             case 125: // Down
+                if clipboard.folders.isEmpty { return nil }
                 if selectedIndex < clipboard.folders.count - 1 { selectedIndex += 1 }
+                else { selectedIndex = 0 }
                 return nil
             case 36, 76: // Enter / Return
                 if selectedIndex >= 0 && selectedIndex < clipboard.folders.count {
