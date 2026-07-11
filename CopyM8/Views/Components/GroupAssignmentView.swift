@@ -56,9 +56,7 @@ struct GroupAssignmentView: View {
                             }
                         }
                         .onChange(of: selectedIndex) { _, newIndex in
-                            withAnimation(.easeOut(duration: 0.15)) {
-                                proxy.scrollTo(newIndex, anchor: nil)
-                            }
+                            proxy.scrollTo(newIndex, anchor: nil)
                         }
                     }
                 }
