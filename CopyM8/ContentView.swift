@@ -347,13 +347,24 @@ struct ContentView: View {
         
         switch dockEdge {
         case .right:
-            frame.origin.x -= (newSize.width - oldWidth)
             frame.origin.y -= (newSize.height - oldHeight) / 2
+            if !expanded, let screenRect = window.screen?.visibleFrame {
+                frame.origin.x = screenRect.maxX - newSize.width
+            } else {
+                frame.origin.x -= (newSize.width - oldWidth)
+            }
         case .left:
             frame.origin.y -= (newSize.height - oldHeight) / 2
+            if !expanded, let screenRect = window.screen?.visibleFrame {
+                frame.origin.x = screenRect.minX
+            }
         case .top:
             frame.origin.x -= (newSize.width - oldWidth) / 2
-            frame.origin.y -= (newSize.height - oldHeight)
+            if !expanded, let screenRect = window.screen?.visibleFrame {
+                frame.origin.y = screenRect.maxY - newSize.height
+            } else {
+                frame.origin.y -= (newSize.height - oldHeight)
+            }
         }
         frame.size = newSize
         
