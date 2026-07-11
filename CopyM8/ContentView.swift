@@ -483,22 +483,16 @@ struct ContentView: View {
             case 35: // P
                 if event.modifierFlags.contains(.command) {
                     if isEditMode {
-                        if activeTab == "Pinned" {
-                            for id in _selectedItemsForDeletion.wrappedValue {
-                                if let idx = clipboard.history.firstIndex(where: { $0.id == id }) {
-                                    clipboard.history[idx].isPinned = false
-                                }
-                            }
-                        } else {
+                        if activeTab != "Pinned" {
                             for id in _selectedItemsForDeletion.wrappedValue {
                                 if let idx = clipboard.history.firstIndex(where: { $0.id == id }) {
                                     clipboard.history[idx].isPinned = true
                                     clipboard.history[idx].folderId = nil
                                 }
                             }
+                            _selectedItemsForDeletion.wrappedValue.removeAll()
+                            _isEditMode.wrappedValue = false
                         }
-                        _selectedItemsForDeletion.wrappedValue.removeAll()
-                        _isEditMode.wrappedValue = false
                     } else if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
                         if let id = displayNodesLocal[selectedIndex].item?.id { clipboard.togglePin(for: id) }
                     }
@@ -523,10 +517,20 @@ struct ContentView: View {
                 return nil
             case 32: // U
                 if event.modifierFlags.contains(.command) {
-                    if isEditMode && activeTab == "Groups" {
-                        let hasGroupedItem = clipboard.history.contains { item in _selectedItemsForDeletion.wrappedValue.contains(item.id) && item.folderId != nil }
-                        if hasGroupedItem {
-                            _showingUngroupAlert.wrappedValue = true
+                    if isEditMode {
+                        if activeTab == "Pinned" {
+                            for id in _selectedItemsForDeletion.wrappedValue {
+                                if let idx = clipboard.history.firstIndex(where: { $0.id == id }) {
+                                    clipboard.history[idx].isPinned = false
+                                }
+                            }
+                            _selectedItemsForDeletion.wrappedValue.removeAll()
+                            _isEditMode.wrappedValue = false
+                        } else if activeTab == "Groups" {
+                            let hasGroupedItem = clipboard.history.contains { item in _selectedItemsForDeletion.wrappedValue.contains(item.id) && item.folderId != nil }
+                            if hasGroupedItem {
+                                _showingUngroupAlert.wrappedValue = true
+                            }
                         }
                     }
                 }
