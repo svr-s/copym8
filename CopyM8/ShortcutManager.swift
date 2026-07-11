@@ -1,21 +1,38 @@
 import Foundation
-import HotKey
+import KeyboardShortcuts
 import Combine
 import AppKit
 import SwiftUI
 
+extension KeyboardShortcuts.Name {
+    static let toggleApp = Self("toggleApp", default: .init(.space, modifiers: [.command, .shift]))
+    static let openPinned = Self("openPinned")
+    static let openGroups = Self("openGroups")
+}
+
 class ShortcutManager: ObservableObject {
     @Published var isExpanded: Bool = false
-    private var hotKey: HotKey?
+    @Published var requestedTab: String? = nil
     private var eventMonitor: Any?
     
     init() {
-        // Super+Shift+Space on Mac (Command+Shift+Space)
-        hotKey = HotKey(key: .space, modifiers: [.command, .shift])
-        
-        hotKey?.keyDownHandler = { [weak self] in
+        KeyboardShortcuts.onKeyUp(for: .toggleApp) { [weak self] in
             DispatchQueue.main.async {
                 self?.isExpanded.toggle()
+            }
+        }
+        
+        KeyboardShortcuts.onKeyUp(for: .openPinned) { [weak self] in
+            DispatchQueue.main.async {
+                self?.requestedTab = "Pinned"
+                self?.isExpanded = true
+            }
+        }
+        
+        KeyboardShortcuts.onKeyUp(for: .openGroups) { [weak self] in
+            DispatchQueue.main.async {
+                self?.requestedTab = "Groups"
+                self?.isExpanded = true
             }
         }
         

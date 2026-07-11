@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import KeyboardShortcuts
 
 struct SettingsView: View {
     @EnvironmentObject var clipboard: ClipboardManager
@@ -213,6 +214,31 @@ struct SettingsView: View {
     private var shortcutsTab: some View {
         ScrollView {
             VStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Global Launch Shortcuts")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.secondary)
+                        .padding(.top, 4)
+                        
+                    KeyboardShortcuts.Recorder("Open CopyM8:", name: .toggleApp)
+                    KeyboardShortcuts.Recorder("Open Pinned Tab:", name: .openPinned)
+                    KeyboardShortcuts.Recorder("Open Groups Tab:", name: .openGroups)
+                    
+                    Text("Tip: Use Cmd+Opt+P and Cmd+Opt+G for tabs!")
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                        .padding(.bottom, 8)
+                }
+                .padding(10)
+                .background(Color.primary.opacity(0.05))
+                .cornerRadius(8)
+                
+                Text("In-App Shortcuts")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 4)
+
                 shortcutRow(action: "Open Search", key: "Cmd + F")
                 shortcutRow(action: "Toggle Layout", key: "Cmd + D")
                 shortcutRow(action: "Cycle Colors", key: "Cmd + K")

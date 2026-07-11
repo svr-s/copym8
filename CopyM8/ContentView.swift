@@ -248,6 +248,12 @@ struct ContentView: View {
                 }
             }
         }
+        .onChange(of: shortcut.requestedTab) { _, newTab in
+            if let newTab = newTab {
+                activeTab = newTab
+                shortcut.requestedTab = nil
+            }
+        }
         .onAppear { applyTheme(themePreference) }
         .environmentObject(clipboard)
         .sheet(item: $itemToAssignGroup) { payload in
