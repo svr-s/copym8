@@ -205,8 +205,8 @@ struct ContentView: View {
             adjustWindowFrame(expanded: expanded, animate: true)
             if expanded {
                 previousApp = NSWorkspace.shared.frontmostApplication
-                NSApp.activate()
-                NSApp.windows.first?.makeKeyAndOrderFront(nil)
+                NSApp.activate(ignoringOtherApps: true)
+                NSApp.windows.first(where: { $0 is CopyM8Window })?.makeKeyAndOrderFront(nil)
                 searchText = ""
                 activeTab = "All"
                 selectedIndex = 0
@@ -293,7 +293,7 @@ struct ContentView: View {
         let calculatedHeight = windowHeight
         var finalWidth = max(340, windowWidth)
         var finalHeight = calculatedHeight
-        if let screenRect = NSApp.windows.first?.screen?.visibleFrame {
+        if let screenRect = NSApp.windows.first(where: { $0 is CopyM8Window })?.screen?.visibleFrame {
             finalWidth = min(finalWidth, screenRect.width)
             finalHeight = min(finalHeight, screenRect.height)
         }
@@ -301,7 +301,7 @@ struct ContentView: View {
     }
     
     private func snapToEdge() {
-        guard let window = NSApp.windows.first, let screen = window.screen else { return }
+        guard let window = NSApp.windows.first(where: { $0 is CopyM8Window }) ?? NSApp.windows.first, let screen = window.screen else { return }
         let screenRect = screen.visibleFrame
         let windowRect = window.frame
         let center = NSPoint(x: windowRect.midX, y: windowRect.midY)
@@ -336,7 +336,7 @@ struct ContentView: View {
     }
     
     private func adjustWindowFrame(expanded: Bool, animate: Bool = true) {
-        guard let window = NSApp.windows.first else { return }
+        guard let window = NSApp.windows.first(where: { $0 is CopyM8Window }) ?? NSApp.windows.first else { return }
         let isTop = dockEdge == .top
         let pillWidth: CGFloat = isTop ? 40 : 28
         let pillHeight: CGFloat = isTop ? 28 : 40
