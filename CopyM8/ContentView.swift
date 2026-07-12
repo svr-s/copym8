@@ -759,7 +759,7 @@ struct ContentView: View {
                     let itemIds = idsToMove.filter { !$0.isFolder }.map { $0.id }
                     if !folderIds.isEmpty { clipboard.moveFolders(up: true, ids: folderIds) }
                     if !itemIds.isEmpty { clipboard.moveItems(up: true, ids: itemIds) }
-                    if selectedIndex > 0 { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue -= 1 } }
+                    if selectedIndex > 0 { _selectedIndex.wrappedValue -= 1 }
                     return nil
                 }
                 
@@ -774,9 +774,9 @@ struct ContentView: View {
                 if selectedIndex > 0 {
                     var nextIndex = selectedIndex - 1
                     if nextIndex > 0 && displayNodesLocal[nextIndex].isDivider { nextIndex -= 1 }
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue = nextIndex }
+                    _selectedIndex.wrappedValue = nextIndex
                 }
-                else { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue = maxIndex } }
+                else { _selectedIndex.wrappedValue = maxIndex }
                 return nil
             case 125: // Down
                 if _isFreezeFieldFocused.wrappedValue {
@@ -803,7 +803,7 @@ struct ContentView: View {
                     let itemIds = idsToMove.filter { !$0.isFolder }.map { $0.id }
                     if !folderIds.isEmpty { clipboard.moveFolders(up: false, ids: folderIds) }
                     if !itemIds.isEmpty { clipboard.moveItems(up: false, ids: itemIds) }
-                    if selectedIndex < displayNodesLocal.count - 1 { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue += 1 } }
+                    if selectedIndex < displayNodesLocal.count - 1 { _selectedIndex.wrappedValue += 1 }
                     return nil
                 }
                 
@@ -818,9 +818,9 @@ struct ContentView: View {
                 if selectedIndex < maxIndex {
                     var nextIndex = selectedIndex + 1
                     if nextIndex < maxIndex && displayNodesLocal[nextIndex].isDivider { nextIndex += 1 }
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue = nextIndex }
+                    _selectedIndex.wrappedValue = nextIndex
                 }
-                else { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue = 0 } }
+                else { _selectedIndex.wrappedValue = 0 }
                 return nil
             case 36: // Enter
                 if _isFreezeFieldFocused.wrappedValue {
