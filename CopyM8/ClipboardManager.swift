@@ -403,13 +403,19 @@ private func checkForChanges() {
                 if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], let url = urls.first {
                     let path = url.path
                     let text = url.lastPathComponent
-                    newItem = ClipboardItem(text: text, timestamp: Date(), sourceApp: appName, rtfData: nil, isPinned: false, itemType: .file, fileURL: path)
+                    let ext = url.pathExtension.lowercased()
+                    let imageExts = ["png", "jpg", "jpeg", "gif", "tiff", "webp", "heic"]
+                    let type: ItemType = imageExts.contains(ext) ? .image : .file
+                    newItem = ClipboardItem(text: text, timestamp: Date(), sourceApp: appName, rtfData: nil, isPinned: false, itemType: type, fileURL: path)
                 } else if let str = pasteboard.string(forType: vsCodeFileType) {
                     let lines = str.components(separatedBy: .newlines).filter { !$0.isEmpty }
                     if let first = lines.first, let url = URL(string: first) {
                         let path = url.path
                         let text = url.lastPathComponent
-                        newItem = ClipboardItem(text: text, timestamp: Date(), sourceApp: appName, rtfData: nil, isPinned: false, itemType: .file, fileURL: path)
+                        let ext = url.pathExtension.lowercased()
+                        let imageExts = ["png", "jpg", "jpeg", "gif", "tiff", "webp", "heic"]
+                        let type: ItemType = imageExts.contains(ext) ? .image : .file
+                        newItem = ClipboardItem(text: text, timestamp: Date(), sourceApp: appName, rtfData: nil, isPinned: false, itemType: type, fileURL: path)
                     }
                 }
             }

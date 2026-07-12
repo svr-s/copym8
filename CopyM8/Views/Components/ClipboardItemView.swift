@@ -49,12 +49,20 @@ struct ClipboardItemView: View {
                 }
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    if item.itemType == .image, let nsImage = LocalImageStore.shared.loadImage(id: item.id) {
-                        Image(nsImage: nsImage)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxHeight: isExpanded ? 200 : 40)
-                            .cornerRadius(4)
+                    if item.itemType == .image {
+                        if let nsImage = LocalImageStore.shared.loadImage(id: item.id) {
+                            Image(nsImage: nsImage)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxHeight: isExpanded ? 200 : 40)
+                                .cornerRadius(4)
+                        } else if let path = item.fileURL, let nsImage = NSImage(contentsOfFile: path) {
+                            Image(nsImage: nsImage)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxHeight: isExpanded ? 200 : 40)
+                                .cornerRadius(4)
+                        }
                     } else if item.itemType == .file, let path = item.fileURL {
                         HStack(spacing: 6) {
                             Image(nsImage: NSWorkspace.shared.icon(forFile: path))
