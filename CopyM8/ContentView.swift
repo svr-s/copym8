@@ -586,7 +586,7 @@ struct ContentView: View {
                 }
             }
             
-            if event.modifierFlags.contains(.option) && event.keyCode != 48 && event.keyCode != 123 {
+            if !_isReorderMode.wrappedValue && event.modifierFlags.contains(.option) && event.keyCode != 48 && event.keyCode != 123 {
                 var newTab: String? = nil
                 switch event.keyCode {
                 case 35, 19: newTab = "Pinned" // P or 2
@@ -975,6 +975,7 @@ struct ContentView: View {
                 return nil
             case 48: // Tab
                 if event.modifierFlags.contains(.option) {
+                    if _isReorderMode.wrappedValue { return nil }
                     let isShift = event.modifierFlags.contains(.shift)
                     let visibleTabs = self.getVisibleTabs()
                     if let currentIndex = visibleTabs.firstIndex(of: activeTab) {
