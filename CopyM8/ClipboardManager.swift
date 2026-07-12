@@ -405,7 +405,7 @@ private func checkForChanges() {
                     let text = url.lastPathComponent
                     let ext = url.pathExtension.lowercased()
                     let imageExts = ["png", "jpg", "jpeg", "gif", "tiff", "webp", "heic"]
-                    let type: ItemType = imageExts.contains(ext) ? .image : .file
+                    let type: ItemType = (isImage || imageExts.contains(ext)) ? .image : .file
                     newItem = ClipboardItem(text: text, timestamp: Date(), sourceApp: appName, rtfData: nil, isPinned: false, itemType: type, fileURL: path)
                 } else if let str = pasteboard.string(forType: vsCodeFileType) {
                     let lines = str.components(separatedBy: .newlines).filter { !$0.isEmpty }
@@ -414,7 +414,7 @@ private func checkForChanges() {
                         let text = url.lastPathComponent
                         let ext = url.pathExtension.lowercased()
                         let imageExts = ["png", "jpg", "jpeg", "gif", "tiff", "webp", "heic"]
-                        let type: ItemType = imageExts.contains(ext) ? .image : .file
+                        let type: ItemType = (isImage || imageExts.contains(ext)) ? .image : .file
                         newItem = ClipboardItem(text: text, timestamp: Date(), sourceApp: appName, rtfData: nil, isPinned: false, itemType: type, fileURL: path)
                     }
                 }
