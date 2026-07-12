@@ -586,7 +586,8 @@ struct ContentView: View {
                 }
             }
             
-            if !_isReorderMode.wrappedValue && event.modifierFlags.contains(.option) && event.keyCode != 48 && event.keyCode != 123 {
+            if event.modifierFlags.contains(.option) && event.keyCode != 48 && event.keyCode != 123 {
+                if _isReorderMode.wrappedValue { return nil }
                 var newTab: String? = nil
                 switch event.keyCode {
                 case 35, 19: newTab = "Pinned" // P or 2
