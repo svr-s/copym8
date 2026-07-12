@@ -17,10 +17,6 @@ let colors: [(name: String, color: Color)] = [
     ("Black", Color.black)
 ]
 
-extension UUID: Identifiable {
-    public var id: UUID { self }
-}
-
 
 
 struct DisplayNode: Identifiable {
@@ -508,7 +504,6 @@ struct ContentView: View {
         let clipboard = self.clipboard
         let pasteItem = self.pasteItem
         let _isDense = self._isDense
-        let _searchText = self._searchText
         let _expandedFolderIds = self._expandedFolderIds
         
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
@@ -863,7 +858,7 @@ struct ContentView: View {
                 if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
                     let node = displayNodesLocal[selectedIndex]
                     if node.isFolder, let folder = node.folder {
-                        withAnimation { _expandedFolderIds.wrappedValue.insert(folder.id) }
+                        withAnimation { _ = _expandedFolderIds.wrappedValue.insert(folder.id) }
                     } else {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _expandedItemIndex.wrappedValue = selectedIndex }
                     }
@@ -883,7 +878,7 @@ struct ContentView: View {
                         return nil
                     }
                     if node.isFolder, let folder = node.folder {
-                        withAnimation { _expandedFolderIds.wrappedValue.remove(folder.id) }
+                        withAnimation { _ = _expandedFolderIds.wrappedValue.remove(folder.id) }
                     } else if expandedItemIndex == selectedIndex {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _expandedItemIndex.wrappedValue = nil }
                     } else if activeTab == "Groups", let parentId = node.parentFolderId {

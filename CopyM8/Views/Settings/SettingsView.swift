@@ -115,7 +115,7 @@ struct SettingsView: View {
                 TextField("", value: $maxItemSizeMB, format: .number)
                     .frame(width: 50)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .onChange(of: maxItemSizeMB) { newValue in
+                    .onChange(of: maxItemSizeMB) { _, newValue in
                         if newValue > 20 { maxItemSizeMB = 20 }
                         else if newValue < 1 { maxItemSizeMB = 1 }
                     }
@@ -130,7 +130,7 @@ struct SettingsView: View {
                 TextField("", value: $maxTotalStorageMB, format: .number)
                     .frame(width: 50)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .onChange(of: maxTotalStorageMB) { newValue in
+                    .onChange(of: maxTotalStorageMB) { _, newValue in
                         if newValue > 100 { maxTotalStorageMB = 100 }
                         else if newValue < 1 { maxTotalStorageMB = 1 }
                     }
