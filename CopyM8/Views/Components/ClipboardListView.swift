@@ -15,7 +15,10 @@ struct ClipboardListView: View {
     var activeTab: String
     var pasteItem: (Int, Bool) -> Void
     
-    private func isHighlighted(_ index: Int) -> Bool {
+    private func isHighlighted(_ index: Int, id: UUID?) -> Bool {
+        if let id = id, selectedItemsForDeletion.contains(id) {
+            return true
+        }
         if let anchor = selectionAnchorIndex {
             return index >= min(anchor, selectedIndex) && index <= max(anchor, selectedIndex)
         }
@@ -31,19 +34,35 @@ struct ClipboardListView: View {
                             ClipboardFolderView(
                                 folder: folder,
                                 shortcutIndex: clipboard.folders.firstIndex(where: { $0.id == folder.id }),
-                                isSelected: isHighlighted(index),
+                                isSelected: isHighlighted(index, id: folder.id),
                                 isDense: isDense,
                                 activeColor: activeColor,
                                 isEditMode: isEditMode,
                                 isChecked: selectedItemsForDeletion.contains(folder.id),
                                 onTap: {
-                                    if !isEditMode {
+                                if !isEditMode {
                                         withAnimation {
                                             if expandedFolderIds.contains(folder.id) {
                                                 expandedFolderIds.remove(folder.id)
                                             } else {
                                                 expandedFolderIds.insert(folder.id)
                                             }
+                                            selectedIndex = index
+                                        }
+                                    } else {
+                                        if NSEvent.modifierFlags.contains(.shift), let anchor = selectionAnchorIndex {
+                                            let start = min(anchor, index)
+                                            let end = max(anchor, index)
+                                            for i in start...end {
+                                                let n = displayNodes[i]
+                                                if let id = n.item?.id { selectedItemsForDeletion.insert(id) }
+                                                if let id = n.folder?.id { selectedItemsForDeletion.insert(id) }
+                                            }
+                                            selectedIndex = index
+                                        } else {
+                                            if selectedItemsForDeletion.contains(folder.id) { selectedItemsForDeletion.remove(folder.id) }
+                                            else { selectedItemsForDeletion.insert(folder.id) }
+                                            selectionAnchorIndex = index
                                             selectedIndex = index
                                         }
                                     }
@@ -65,7 +84,7 @@ struct ClipboardListView: View {
                                 ClipboardItemView(
                                     item: item,
                                     shortcutIndex: getRelativeIndex(for: node.id),
-                                    isSelected: isHighlighted(index),
+                                    isSelected: isHighlighted(index, id: item.id),
                                     isExpanded: index == expandedItemIndex,
                                     isDense: isDense,
                                     activeColor: activeColorName == "Black" ? .primary : activeColor,
@@ -74,8 +93,21 @@ struct ClipboardListView: View {
                                     folderIdentifier: getFolderIdentifier(for: item),
                                     onPaste: {
                                         if isEditMode {
-                                            if selectedItemsForDeletion.contains(item.id) { selectedItemsForDeletion.remove(item.id) }
-                                            else { selectedItemsForDeletion.insert(item.id) }
+                                            if NSEvent.modifierFlags.contains(.shift), let anchor = selectionAnchorIndex {
+                                                let start = min(anchor, index)
+                                                let end = max(anchor, index)
+                                                for i in start...end {
+                                                    let n = displayNodes[i]
+                                                    if let id = n.item?.id { selectedItemsForDeletion.insert(id) }
+                                                    if let id = n.folder?.id { selectedItemsForDeletion.insert(id) }
+                                                }
+                                                selectedIndex = index
+                                            } else {
+                                                if selectedItemsForDeletion.contains(item.id) { selectedItemsForDeletion.remove(item.id) }
+                                                else { selectedItemsForDeletion.insert(item.id) }
+                                                selectionAnchorIndex = index
+                                                selectedIndex = index
+                                            }
                                         } else {
                                             let isCmd = NSEvent.modifierFlags.contains(.command)
                                             pasteItem(index, isCmd)

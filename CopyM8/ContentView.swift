@@ -538,7 +538,9 @@ struct ContentView: View {
                         if _isReorderMode.wrappedValue {
                             _isReorderMode.wrappedValue = false
                         } else {
+                            _isEditMode.wrappedValue = false
                             clipboard.isReordering = true
+                            _isReorderMode.wrappedValue = true
                             _reorderBackupHistory.wrappedValue = clipboard.history
                             _reorderBackupFolders.wrappedValue = clipboard.folders
                             
@@ -611,8 +613,8 @@ struct ContentView: View {
             
             if let chars = event.charactersIgnoringModifiers, chars.count == 1 {
                 let char = chars.uppercased()
-                if _isReorderMode.wrappedValue && char == "F" && !event.modifierFlags.contains(.command) && !event.modifierFlags.contains(.control) && !event.modifierFlags.contains(.option) {
-                    _isFreezeFieldFocused.wrappedValue = true
+                if _isReorderMode.wrappedValue && char == "F" && event.modifierFlags.contains(.command) && event.modifierFlags.contains(.shift) {
+                    _isFreezeFieldFocused.wrappedValue.toggle()
                     return nil
                 }
                 
@@ -641,6 +643,7 @@ struct ContentView: View {
             
             switch event.keyCode {
             case 18...29:
+                if _isFreezeFieldFocused.wrappedValue { return nil }
                 let keyMap: [UInt16: Int] = [18: 0, 19: 1, 20: 2, 21: 3, 23: 4, 22: 5, 26: 6, 28: 7, 25: 8, 29: 9]
                 if let relativeIndex = keyMap[event.keyCode] {
                     let isCmd = event.modifierFlags.contains(.command)
@@ -729,16 +732,16 @@ struct ContentView: View {
                 }
                 return nil
             case 126: // Up
+                if _isFreezeFieldFocused.wrappedValue {
+                    let current = Int(_reorderFreezeLimit.wrappedValue) ?? 0
+                    if current < 10 { _reorderFreezeLimit.wrappedValue = "\(current + 1)" }
+                    return nil
+                }
                 if event.modifierFlags.contains(.command) && (activeTab == "Pinned" || activeTab == "Groups") {
                     var idsToMove: [(index: Int, id: UUID, isFolder: Bool)] = []
                     if _selectedItemsForDeletion.wrappedValue.isEmpty {
-                        if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
-                            let node = displayNodesLocal[selectedIndex]
-                            if !node.isDivider {
-                                if node.isFolder, let fid = node.folder?.id { idsToMove.append((selectedIndex, fid, true)) }
-                                else if let iid = node.item?.id { idsToMove.append((selectedIndex, iid, false)) }
-                            }
-                        }
+                        return nil
+
                     } else {
                         for (i, node) in displayNodesLocal.enumerated() {
                             if node.isFolder, let fid = node.folder?.id, _selectedItemsForDeletion.wrappedValue.contains(fid) {
@@ -749,11 +752,10 @@ struct ContentView: View {
                         }
                     }
                     
-                    idsToMove.sort { $0.index < $1.index }
-                    for target in idsToMove {
-                        if target.isFolder { clipboard.moveFolder(up: true, id: target.id) }
-                        else { clipboard.moveItem(up: true, id: target.id) }
-                    }
+                    let folderIds = idsToMove.filter { $0.isFolder }.map { $0.id }
+                    let itemIds = idsToMove.filter { !$0.isFolder }.map { $0.id }
+                    if !folderIds.isEmpty { clipboard.moveFolders(up: true, ids: folderIds) }
+                    if !itemIds.isEmpty { clipboard.moveItems(up: true, ids: itemIds) }
                     if selectedIndex > 0 { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue -= 1 } }
                     return nil
                 }
@@ -774,16 +776,16 @@ struct ContentView: View {
                 else { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue = maxIndex } }
                 return nil
             case 125: // Down
+                if _isFreezeFieldFocused.wrappedValue {
+                    let current = Int(_reorderFreezeLimit.wrappedValue) ?? 0
+                    if current > 0 { _reorderFreezeLimit.wrappedValue = "\(current - 1)" }
+                    return nil
+                }
                 if event.modifierFlags.contains(.command) && (activeTab == "Pinned" || activeTab == "Groups") {
                     var idsToMove: [(index: Int, id: UUID, isFolder: Bool)] = []
                     if _selectedItemsForDeletion.wrappedValue.isEmpty {
-                        if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
-                            let node = displayNodesLocal[selectedIndex]
-                            if !node.isDivider {
-                                if node.isFolder, let fid = node.folder?.id { idsToMove.append((selectedIndex, fid, true)) }
-                                else if let iid = node.item?.id { idsToMove.append((selectedIndex, iid, false)) }
-                            }
-                        }
+                        return nil
+
                     } else {
                         for (i, node) in displayNodesLocal.enumerated() {
                             if node.isFolder, let fid = node.folder?.id, _selectedItemsForDeletion.wrappedValue.contains(fid) {
@@ -794,11 +796,10 @@ struct ContentView: View {
                         }
                     }
                     
-                    idsToMove.sort { $0.index > $1.index } // Descending for down
-                    for target in idsToMove {
-                        if target.isFolder { clipboard.moveFolder(up: false, id: target.id) }
-                        else { clipboard.moveItem(up: false, id: target.id) }
-                    }
+                    let folderIds = idsToMove.filter { $0.isFolder }.map { $0.id }
+                    let itemIds = idsToMove.filter { !$0.isFolder }.map { $0.id }
+                    if !folderIds.isEmpty { clipboard.moveFolders(up: false, ids: folderIds) }
+                    if !itemIds.isEmpty { clipboard.moveItems(up: false, ids: itemIds) }
                     if selectedIndex < displayNodesLocal.count - 1 { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue += 1 } }
                     return nil
                 }
@@ -819,18 +820,19 @@ struct ContentView: View {
                 else { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _selectedIndex.wrappedValue = 0 } }
                 return nil
             case 36: // Enter
+                if _isFreezeFieldFocused.wrappedValue {
+                    _isFreezeFieldFocused.wrappedValue = false
+                    return nil
+                }
                 if _isReorderMode.wrappedValue {
                     clipboard.isReordering = false
                     _isReorderMode.wrappedValue = false
                     
-                    if _reorderTarget.wrappedValue == .pinned {
-                        clipboard.saveHistory()
-                    } else if _reorderTarget.wrappedValue == .folders {
-                        clipboard.saveFolders()
-                    } else if case .items = _reorderTarget.wrappedValue {
-                        clipboard.saveHistory()
-                    }
+                    let freezeLimit = Int(_reorderFreezeLimit.wrappedValue) ?? 0
+                    clipboard.applyReorder(target: _reorderTarget.wrappedValue, freezeLimit: freezeLimit)
+                    
                     _reorderTarget.wrappedValue = .none
+                    _selectedItemsForDeletion.wrappedValue.removeAll()
                     return nil
                 }
                 
@@ -917,8 +919,24 @@ struct ContentView: View {
                     return nil
                 }
                 return event
+
             case 14: // E
-                if event.modifierFlags.contains(.command) { withAnimation { _isEditMode.wrappedValue.toggle() }; return nil }
+                if event.modifierFlags.contains(.command) {
+                    withAnimation {
+                        _isEditMode.wrappedValue.toggle()
+                        if _isEditMode.wrappedValue {
+                            if _isReorderMode.wrappedValue {
+                                clipboard.history = _reorderBackupHistory.wrappedValue
+                                clipboard.folders = _reorderBackupFolders.wrappedValue
+                                clipboard.isReordering = false
+                                _isReorderMode.wrappedValue = false
+                            }
+                        } else {
+                            _selectedItemsForDeletion.wrappedValue.removeAll()
+                        }
+                    }
+                    return nil
+                }
                 return event
             case 0: // A
                 if (isEditMode || _isReorderMode.wrappedValue) && event.modifierFlags.contains(.command) {
@@ -931,12 +949,21 @@ struct ContentView: View {
                 }
                 return event
             case 53: // Esc
+                if _isFreezeFieldFocused.wrappedValue {
+                    _isFreezeFieldFocused.wrappedValue = false
+                    return nil
+                }
                 if isSearchFocused { _isSearchFocused.wrappedValue = false }
                 else if _isReorderMode.wrappedValue {
                     clipboard.history = _reorderBackupHistory.wrappedValue
                     clipboard.folders = _reorderBackupFolders.wrappedValue
                     clipboard.isReordering = false
                     _isReorderMode.wrappedValue = false
+                    _selectedItemsForDeletion.wrappedValue.removeAll()
+                }
+                else if isEditMode {
+                    _isEditMode.wrappedValue = false
+                    _selectedItemsForDeletion.wrappedValue.removeAll()
                 }
                 else { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { shortcut.isExpanded = false } }
                 return nil

@@ -50,7 +50,8 @@ struct ReorderFooterView: View {
                     .padding(.vertical, 2)
                     .background(Color.black.opacity(0.3))
                     .cornerRadius(4)
-                    .foregroundColor(.white)
+                    .foregroundColor(isFreezeFieldFocused.wrappedValue ? .blue : .white)
+                    .allowsHitTesting(false)
                     
                     Text("Rows")
                         .font(.system(size: 11, weight: .medium))
@@ -90,50 +91,12 @@ struct ReorderFooterView: View {
     private func saveReorder() {
         let freezeLimit = Int(reorderFreezeLimit) ?? 0
         
-        switch reorderTarget {
-        case .pinned:
-            var pinned = clipboard.history.filter { $0.isPinned && $0.folderId == nil }
-            pinned.sort { item1, item2 in
-                if item1.orderIndex > 0 && item2.orderIndex > 0 { return item1.orderIndex < item2.orderIndex }
-                if item1.orderIndex > 0 { return true }
-                if item2.orderIndex > 0 { return false }
-                return item1.timestamp > item2.timestamp
-            }
-            
-            for (i, item) in pinned.enumerated() {
-                if let idx = clipboard.history.firstIndex(where: { $0.id == item.id }) {
-                    clipboard.history[idx].orderIndex = i < freezeLimit ? (i + 1) : 0
-                }
-            }
-            
-        case .items(let folderId):
-            var items = clipboard.history.filter { $0.folderId == folderId }
-            items.sort { item1, item2 in
-                if item1.orderIndex > 0 && item2.orderIndex > 0 { return item1.orderIndex < item2.orderIndex }
-                if item1.orderIndex > 0 { return true }
-                if item2.orderIndex > 0 { return false }
-                return item1.timestamp > item2.timestamp
-            }
-            
-            for (i, item) in items.enumerated() {
-                if let idx = clipboard.history.firstIndex(where: { $0.id == item.id }) {
-                    clipboard.history[idx].orderIndex = i < freezeLimit ? (i + 1) : 0
-                }
-            }
-            
-        case .folders:
-            // Folders are strictly manually ordered, so orderIndex is just sequential
-            for i in 0..<clipboard.folders.count {
-                clipboard.folders[i].orderIndex = i + 1
-            }
-        case .none:
-            break
-        }
-        
-        clipboard.isReordering = false
-        clipboard.saveHistory()
-        clipboard.saveFolders()
+        clipboard.applyReorder(target: reorderTarget, freezeLimit: freezeLimit)
         selectedItemsForDeletion.removeAll()
-        isReorderMode = false
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            clipboard.isReordering = false
+            isReorderMode = false
+        }
     }
 }
