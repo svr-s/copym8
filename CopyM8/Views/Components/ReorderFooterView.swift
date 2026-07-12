@@ -77,8 +77,8 @@ struct ReorderFooterView: View {
             .buttonStyle(PlainButtonStyle())
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(Color.black.opacity(0.5))
+        .padding(.vertical, 12)
+        .background(Color.primary.opacity(0.05))
     }
     
     private func cancelReorder() {

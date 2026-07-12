@@ -333,6 +333,7 @@ struct ContentView: View {
         .onChange(of: activeTab) { _, _ in 
             restartKeyboardMonitor() 
             selectedItemsForDeletion.removeAll()
+            selectionAnchorIndex = nil
         }
         .onChange(of: searchText) { _, _ in
             selectedIndex = 0
@@ -346,6 +347,7 @@ struct ContentView: View {
         .onChange(of: clipboard.history) { _, _ in restartKeyboardMonitor() }
         .onChange(of: isEditMode) { _, editMode in 
             selectedItemsForDeletion.removeAll() 
+            selectionAnchorIndex = nil
             if activeTab == "Groups" {
                 if editMode {
                     expandedFolderIds = Set(clipboard.folders.map { $0.id })
