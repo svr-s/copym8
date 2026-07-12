@@ -169,9 +169,7 @@ struct ClipboardListView: View {
                 .onChange(of: selectedIndex) { _, newIndex in
                     if newIndex >= 0 && newIndex < displayNodes.count {
                         let targetId = displayNodes[newIndex].id
-                        withAnimation(.easeOut(duration: 0.15)) {
-                            proxy.scrollTo(targetId, anchor: nil)
-                        }
+                        proxy.scrollTo(targetId, anchor: nil)
                     }
                 }
             }
