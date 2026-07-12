@@ -740,6 +740,10 @@ struct ContentView: View {
                     if current < 10 { _reorderFreezeLimit.wrappedValue = "\(current + 1)" }
                     return nil
                 }
+                if event.modifierFlags.contains(.command) && event.modifierFlags.contains(.shift) && activeTab == "Groups" {
+                    _expandedFolderIds.wrappedValue.removeAll()
+                    return nil
+                }
                 if event.modifierFlags.contains(.command) && (activeTab == "Pinned" || activeTab == "Groups") {
                     var idsToMove: [(index: Int, id: UUID, isFolder: Bool)] = []
                     if _selectedItemsForDeletion.wrappedValue.isEmpty {
@@ -782,6 +786,10 @@ struct ContentView: View {
                 if _isFreezeFieldFocused.wrappedValue {
                     let current = Int(_reorderFreezeLimit.wrappedValue) ?? 0
                     if current > 0 { _reorderFreezeLimit.wrappedValue = "\(current - 1)" }
+                    return nil
+                }
+                if event.modifierFlags.contains(.command) && event.modifierFlags.contains(.shift) && activeTab == "Groups" {
+                    _expandedFolderIds.wrappedValue = Set(clipboard.folders.map { $0.id })
                     return nil
                 }
                 if event.modifierFlags.contains(.command) && (activeTab == "Pinned" || activeTab == "Groups") {
