@@ -74,7 +74,8 @@ struct ClipboardListView: View {
                             Divider()
                                 .background(activeColorName == "Black" ? .primary.opacity(0.2) : activeColor.opacity(0.3))
                                 .padding(.vertical, 4)
-                                .padding(.horizontal, 16)
+                                .padding(.leading, node.parentFolderId != nil ? 16 + 24 : 16)
+                                .padding(.trailing, 16)
                                 .id(node.id)
                         } else if let item = node.item {
                             HStack {

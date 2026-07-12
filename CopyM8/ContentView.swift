@@ -105,7 +105,7 @@ struct ContentView: View {
                 let freezeLimit = Int(reorderFreezeLimit) ?? 0
                 for (i, item) in items.enumerated() {
                     if i == freezeLimit && freezeLimit > 0 {
-                        nodes.append(DisplayNode(id: "divider_reorder", isFolder: false, folder: nil, item: nil, parentFolderId: nil, isDivider: true))
+                        nodes.append(DisplayNode(id: "divider_reorder", isFolder: false, folder: nil, item: nil, parentFolderId: folderId, isDivider: true))
                     }
                     nodes.append(DisplayNode(id: "item_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: folderId))
                 }
