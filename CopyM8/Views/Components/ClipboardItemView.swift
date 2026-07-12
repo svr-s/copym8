@@ -87,7 +87,7 @@ struct ClipboardItemView: View {
                     Group {
                         if item.isPinned {
                             Image(systemName: "pin.fill")
-                                .foregroundColor(activeColor)
+                                .foregroundColor(isSelected && isWindowActive ? .white.opacity(0.8) : .primary.opacity(0.4))
                                 .font(.system(size: 10))
                         }
                     }
@@ -97,7 +97,7 @@ struct ClipboardItemView: View {
                         if let folderId = folderIdentifier {
                             Text("[\(folderId)]")
                                 .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                .foregroundColor(activeColor)
+                                .foregroundColor(isSelected && isWindowActive ? .white.opacity(0.8) : .primary.opacity(0.4))
                         }
                     }
                     .frame(width: 24, alignment: .trailing)
