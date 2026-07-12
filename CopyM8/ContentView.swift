@@ -569,6 +569,7 @@ struct ContentView: View {
                                 }
                             }
                             _selectedItemsForDeletion.wrappedValue.removeAll()
+                            _selectedIndex.wrappedValue = 0
                             _isReorderMode.wrappedValue = true
                         }
                     }
