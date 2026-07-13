@@ -40,6 +40,11 @@ class ShortcutManager: ObservableObject {
         eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
             DispatchQueue.main.async {
                 if self?.isExpanded == true {
+                    if let window = NSApplication.shared.windows.first(where: { $0.isKeyWindow || $0.isVisible }),
+                       window.frame.contains(NSEvent.mouseLocation) {
+                        return
+                    }
+                    
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                         self?.isExpanded = false
                     }
