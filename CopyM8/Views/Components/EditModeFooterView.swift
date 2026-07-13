@@ -138,14 +138,14 @@ struct EditModeFooterView: View {
                     .disabled(selectedItemsForDeletion.isEmpty)
                 }
             }
-            .sheet(isPresented: $showingDeleteSelectedAlert) {
+            .popover(isPresented: $showingDeleteSelectedAlert, arrowEdge: .bottom) {
                 DeleteConfirmationView(
                     isFolderDeletion: false,
                     itemCount: selectedItemsForDeletion.count,
                     onConfirm: { _ in deleteSelectedItems() }
                 )
             }
-            .sheet(isPresented: $showingFolderDeleteAlert) {
+            .popover(isPresented: $showingFolderDeleteAlert, arrowEdge: .bottom) {
                 let folderIds = selectedItemsForDeletion.filter { id in clipboard.folders.contains(where: { $0.id == id }) }
                 DeleteConfirmationView(
                     isFolderDeletion: true,

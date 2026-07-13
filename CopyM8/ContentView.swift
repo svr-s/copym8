@@ -360,11 +360,11 @@ struct ContentView: View {
         }
         .onAppear { applyTheme(themePreference) }
         .environmentObject(clipboard)
-        .sheet(item: $itemToAssignGroup) { payload in
+        .popover(item: $itemToAssignGroup, arrowEdge: .bottom) { payload in
             GroupAssignmentView(itemIds: payload.itemIds, onComplete: payload.onComplete)
                 .environmentObject(clipboard)
         }
-        .sheet(isPresented: $showingUngroupAlert) {
+        .popover(isPresented: $showingUngroupAlert, arrowEdge: .bottom) {
             UngroupConfirmationView(onConfirm: ungroupSelectedItems)
         }
     }
@@ -500,6 +500,8 @@ struct ContentView: View {
         let _itemToAssignGroup = self._itemToAssignGroup
         let _showingSettings = self._showingSettings
         let _showingDeleteSelectedAlert = self._showingDeleteSelectedAlert
+        let _showingFolderDeleteAlert = self._showingFolderDeleteAlert
+        let _showingUngroupAlert = self._showingUngroupAlert
         
         let clipboard = self.clipboard
         let pasteItem = self.pasteItem
@@ -507,7 +509,7 @@ struct ContentView: View {
         let _expandedFolderIds = self._expandedFolderIds
         
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            if _showingSettings.wrappedValue || _showingDeleteSelectedAlert.wrappedValue || _itemToAssignGroup.wrappedValue != nil {
+            if _showingSettings.wrappedValue || _showingDeleteSelectedAlert.wrappedValue || _showingFolderDeleteAlert.wrappedValue || _showingUngroupAlert.wrappedValue || _itemToAssignGroup.wrappedValue != nil {
                 if event.keyCode == 53 {
                     if _itemToAssignGroup.wrappedValue != nil { _itemToAssignGroup.wrappedValue = nil }
                     return event
