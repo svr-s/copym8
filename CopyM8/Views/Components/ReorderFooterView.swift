@@ -15,10 +15,10 @@ struct ReorderFooterView: View {
             Button(action: cancelReorder) {
                 Text("Cancel")
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .background(Color.white.opacity(0.1))
+                    .background(Color.primary.opacity(0.1))
                     .cornerRadius(6)
             }
             .buttonStyle(PlainButtonStyle())
@@ -29,7 +29,7 @@ struct ReorderFooterView: View {
                 HStack(spacing: 6) {
                     Text("Freeze Top")
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.white.opacity(0.8))
+                        .foregroundColor(.primary.opacity(0.8))
                     
                     TextField("0", text: Binding(
                         get: { reorderFreezeLimit },
@@ -48,19 +48,19 @@ struct ReorderFooterView: View {
                     .multilineTextAlignment(.center)
                     .frame(width: 30)
                     .padding(.vertical, 2)
-                    .background(Color.black.opacity(0.3))
+                    .background(Color.primary.opacity(0.1))
                     .cornerRadius(4)
-                    .foregroundColor(isFreezeFieldFocused.wrappedValue ? .blue : .white)
+                    .foregroundColor(isFreezeFieldFocused.wrappedValue ? .primary : .primary.opacity(0.8))
                     .allowsHitTesting(false)
                     
                     Text("Rows")
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.white.opacity(0.8))
+                        .foregroundColor(.primary.opacity(0.8))
                 }
             } else {
                 Text("Reorder Folders")
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(.primary.opacity(0.8))
             }
             
             Spacer()
@@ -68,10 +68,10 @@ struct ReorderFooterView: View {
             Button(action: saveReorder) {
                 Text("Save")
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .background(Color.blue)
+                    .background(Color.primary.opacity(0.1))
                     .cornerRadius(6)
             }
             .buttonStyle(PlainButtonStyle())
