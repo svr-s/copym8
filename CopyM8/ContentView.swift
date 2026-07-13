@@ -368,6 +368,7 @@ struct ContentView: View {
                             .onTapGesture { itemToAssignGroup = nil }
                         GroupAssignmentView(itemIds: payload.itemIds, onComplete: payload.onComplete)
                             .environmentObject(clipboard)
+                            .frame(width: 280)
                             .padding(20)
                             .background(Color(NSColor.windowBackgroundColor))
                             .cornerRadius(12)
@@ -378,6 +379,7 @@ struct ContentView: View {
                         Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
                             .onTapGesture { showingUngroupAlert = false }
                         UngroupConfirmationView(onConfirm: ungroupSelectedItems)
+                            .frame(width: 280)
                             .padding(20)
                             .background(Color(NSColor.windowBackgroundColor))
                             .cornerRadius(12)
@@ -392,6 +394,7 @@ struct ContentView: View {
                             itemCount: selectedItemsForDeletion.count,
                             onConfirm: { _ in deleteSelectedItems() }
                         )
+                        .frame(width: 280)
                         .padding(20)
                         .background(Color(NSColor.windowBackgroundColor))
                         .cornerRadius(12)
@@ -411,6 +414,7 @@ struct ContentView: View {
                                 }
                             }
                         )
+                        .frame(width: 280)
                         .padding(20)
                         .background(Color(NSColor.windowBackgroundColor))
                         .cornerRadius(12)
