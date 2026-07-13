@@ -138,61 +138,8 @@ struct EditModeFooterView: View {
                     .disabled(selectedItemsForDeletion.isEmpty)
                 }
             }
-            .popover(isPresented: $showingDeleteSelectedAlert, arrowEdge: .bottom) {
-                DeleteConfirmationView(
-                    isFolderDeletion: false,
-                    itemCount: selectedItemsForDeletion.count,
-                    onConfirm: { _ in deleteSelectedItems() }
-                )
-            }
-            .popover(isPresented: $showingFolderDeleteAlert, arrowEdge: .bottom) {
-                let folderIds = selectedItemsForDeletion.filter { id in clipboard.folders.contains(where: { $0.id == id }) }
-                DeleteConfirmationView(
-                    isFolderDeletion: true,
-                    itemCount: folderIds.count,
-                    onConfirm: { keepItems in
-                        if let keepItems = keepItems {
-                            deleteFolders(keepItems: keepItems)
-                        }
-                    }
-                )
-            }
         }
         .padding(.horizontal, 12).padding(.vertical, 12).background(Color.primary.opacity(0.05))
     }
-    
-    
-    private func deleteSelectedItems() {
-        clipboard.history.removeAll { selectedItemsForDeletion.contains($0.id) }
-        selectedItemsForDeletion.removeAll()
-        isEditMode = false
-    }
-    
-    private func deleteFolders(keepItems: Bool) {
-        let folderIds = selectedItemsForDeletion.filter { id in clipboard.folders.contains(where: { $0.id == id }) }
-        
-        if keepItems {
-            for i in 0..<clipboard.history.count {
-                if let fId = clipboard.history[i].folderId, folderIds.contains(fId) {
-                    clipboard.history[i].folderId = nil
-                }
-            }
-        } else {
-            clipboard.history.removeAll { item in
-                if let fId = item.folderId { return folderIds.contains(fId) }
-                return false
-            }
-        }
-        
-        clipboard.folders.removeAll { folderIds.contains($0.id) }
-        
-        // Also delete any regular items that were selected
-        let itemIds = selectedItemsForDeletion.subtracting(folderIds)
-        if !itemIds.isEmpty {
-            clipboard.history.removeAll { itemIds.contains($0.id) }
-        }
-        
-        selectedItemsForDeletion.removeAll()
-        isEditMode = false
     }
 }

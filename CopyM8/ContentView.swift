@@ -360,13 +360,65 @@ struct ContentView: View {
         }
         .onAppear { applyTheme(themePreference) }
         .environmentObject(clipboard)
-        .popover(item: $itemToAssignGroup, arrowEdge: .bottom) { payload in
-            GroupAssignmentView(itemIds: payload.itemIds, onComplete: payload.onComplete)
-                .environmentObject(clipboard)
-        }
-        .popover(isPresented: $showingUngroupAlert, arrowEdge: .bottom) {
-            UngroupConfirmationView(onConfirm: ungroupSelectedItems)
-        }
+        .overlay(
+            Group {
+                if let payload = itemToAssignGroup {
+                    ZStack {
+                        Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
+                            .onTapGesture { itemToAssignGroup = nil }
+                        GroupAssignmentView(itemIds: payload.itemIds, onComplete: payload.onComplete)
+                            .environmentObject(clipboard)
+                            .padding(20)
+                            .background(Color(NSColor.windowBackgroundColor))
+                            .cornerRadius(12)
+                            .shadow(color: Color.black.opacity(0.3), radius: 20, x: 0, y: 10)
+                    }
+                } else if showingUngroupAlert {
+                    ZStack {
+                        Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
+                            .onTapGesture { showingUngroupAlert = false }
+                        UngroupConfirmationView(onConfirm: ungroupSelectedItems)
+                            .padding(20)
+                            .background(Color(NSColor.windowBackgroundColor))
+                            .cornerRadius(12)
+                            .shadow(color: Color.black.opacity(0.3), radius: 20, x: 0, y: 10)
+                    }
+                } else if showingDeleteSelectedAlert {
+                    ZStack {
+                        Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
+                            .onTapGesture { showingDeleteSelectedAlert = false }
+                        DeleteConfirmationView(
+                            isFolderDeletion: false,
+                            itemCount: selectedItemsForDeletion.count,
+                            onConfirm: { _ in deleteSelectedItems() }
+                        )
+                        .padding(20)
+                        .background(Color(NSColor.windowBackgroundColor))
+                        .cornerRadius(12)
+                        .shadow(color: Color.black.opacity(0.3), radius: 20, x: 0, y: 10)
+                    }
+                } else if showingFolderDeleteAlert {
+                    ZStack {
+                        Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
+                            .onTapGesture { showingFolderDeleteAlert = false }
+                        let folderIds = selectedItemsForDeletion.filter { id in clipboard.folders.contains(where: { $0.id == id }) }
+                        DeleteConfirmationView(
+                            isFolderDeletion: true,
+                            itemCount: folderIds.count,
+                            onConfirm: { keepItems in
+                                if let keepItems = keepItems {
+                                    deleteFolders(keepItems: keepItems)
+                                }
+                            }
+                        )
+                        .padding(20)
+                        .background(Color(NSColor.windowBackgroundColor))
+                        .cornerRadius(12)
+                        .shadow(color: Color.black.opacity(0.3), radius: 20, x: 0, y: 10)
+                    }
+                }
+            }
+        )
     }
     
     private func ungroupSelectedItems(pin: Bool) {
@@ -1062,5 +1114,38 @@ struct ContentView: View {
         
         clipboard.folders.swapAt(selectedIndex, targetIndex)
         selectedIndex = targetIndex
+    }
+    
+    private func deleteSelectedItems() {
+        clipboard.history.removeAll { _selectedItemsForDeletion.wrappedValue.contains($0.id) }
+        _selectedItemsForDeletion.wrappedValue.removeAll()
+        _isEditMode.wrappedValue = false
+    }
+    
+    private func deleteFolders(keepItems: Bool) {
+        let folderIds = _selectedItemsForDeletion.wrappedValue.filter { id in clipboard.folders.contains(where: { $0.id == id }) }
+        
+        if keepItems {
+            for i in 0..<clipboard.history.count {
+                if let fId = clipboard.history[i].folderId, folderIds.contains(fId) {
+                    clipboard.history[i].folderId = nil
+                }
+            }
+        } else {
+            clipboard.history.removeAll { item in
+                if let fId = item.folderId { return folderIds.contains(fId) }
+                return false
+            }
+        }
+        
+        clipboard.folders.removeAll { folderIds.contains($0.id) }
+        
+        let itemIds = _selectedItemsForDeletion.wrappedValue.subtracting(folderIds)
+        if !itemIds.isEmpty {
+            clipboard.history.removeAll { itemIds.contains($0.id) }
+        }
+        
+        _selectedItemsForDeletion.wrappedValue.removeAll()
+        _isEditMode.wrappedValue = false
     }
 }
