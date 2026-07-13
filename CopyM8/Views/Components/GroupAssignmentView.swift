@@ -102,6 +102,7 @@ struct GroupAssignmentView: View {
                     onCancel()
                 }
                 .keyboardShortcut(.cancelAction)
+                .buttonStyle(.automatic)
             }
         }
         .padding()
