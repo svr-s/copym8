@@ -1,6 +1,8 @@
 import SwiftUI
 import AppKit
 
+
+
 enum DockEdge {
     case left, right, top
 }
@@ -35,32 +37,32 @@ enum ReorderTarget: Equatable {
 }
 
 struct ContentView: View {
-    @StateObject private var clipboard = ClipboardManager()
-    @StateObject private var shortcut = ShortcutManager()
-    @State private var isHovering = false
-    @State private var showingDeleteSelectedAlert = false
-    @State private var showingFolderDeleteAlert = false
-    @State private var showingUngroupAlert = false
-    @State private var expandedItemIndex: Int? = nil
-    @State private var showingSettings = false
-    @State private var showingGroupAssignment = false
-    @State private var itemToAssignGroup: GroupAssignmentPayload? = nil
-    @State private var draftHistoryCount: Int = 25
-    @State private var searchText: String = ""
+    @StateObject var clipboard = ClipboardManager()
+    @StateObject var shortcut = ShortcutManager()
+    @State var isHovering = false
+    @State var showingDeleteSelectedAlert = false
+    @State var showingFolderDeleteAlert = false
+    @State var showingUngroupAlert = false
+    @State var expandedItemIndex: Int? = nil
+    @State var showingSettings = false
+    @State var showingGroupAssignment = false
+    @State var itemToAssignGroup: GroupAssignmentPayload? = nil
+    @State var draftHistoryCount: Int = 25
+    @State var searchText: String = ""
     @FocusState private var isSearchFocused: Bool
     
-    @State private var isEditMode: Bool = false
-    @State private var selectedItemsForDeletion: Set<UUID> = []
+    @State var isEditMode: Bool = false
+    @State var selectedItemsForDeletion: Set<UUID> = []
     
-    @State private var isReorderMode: Bool = false
-    @State private var reorderTarget: ReorderTarget? = nil
-    @State private var reorderFreezeLimit: String = "0"
-    @State private var reorderBackupHistory: [ClipboardItem] = []
-    @State private var reorderBackupFolders: [ClipboardFolder] = []
+    @State var isReorderMode: Bool = false
+    @State var reorderTarget: ReorderTarget? = nil
+    @State var reorderFreezeLimit: String = "0"
+    @State var reorderBackupHistory: [ClipboardItem] = []
+    @State var reorderBackupFolders: [ClipboardFolder] = []
     @FocusState private var isFreezeFieldFocused: Bool
     
-    @State private var activeTab: String = "All"
-    @State private var selectedFolderId: UUID? = nil
+    @State var activeTab: String = "All"
+    @State var selectedFolderId: UUID? = nil
     
     @AppStorage("activeColorName") private var activeColorName: String = "Glacier"
     @AppStorage("themePreference") private var themePreference: String = "System"
@@ -82,7 +84,7 @@ struct ContentView: View {
         colors.first(where: { $0.name == activeColorName })?.color ?? .cyan
     }
     
-    @State private var expandedFolderIds: Set<UUID> = []
+    @State var expandedFolderIds: Set<UUID> = []
     
     private var displayNodes: [DisplayNode] {
         if isReorderMode {
@@ -217,16 +219,16 @@ struct ContentView: View {
         }
     }
     
-    @State private var dragOffset: CGSize = .zero
-    @State private var initialWindowPosition: NSPoint? = nil
+    @State var dragOffset: CGSize = .zero
+    @State var initialWindowPosition: NSPoint? = nil
     
-    @State private var selectedIndex: Int = 0
-    @State private var selectionAnchorIndex: Int? = nil
-    @State private var isResizing = false
-    @State private var resizeStartMouse: NSPoint?
-    @State private var resizeStartSize: NSSize?
+    @State var selectedIndex: Int = 0
+    @State var selectionAnchorIndex: Int? = nil
+    @State var isResizing = false
+    @State var resizeStartMouse: NSPoint?
+    @State var resizeStartSize: NSSize?
     
-    @State private var isHoveringClose = false
+    @State var isHoveringClose = false
     
     private func cycleColor() {
         if let idx = colors.firstIndex(where: { $0.name == activeColorName }) {
@@ -556,9 +558,112 @@ struct ContentView: View {
         }
     }
     
-    @State private var eventMonitor: Any?
-    @State private var previousApp: NSRunningApplication?
+    @State var eventMonitor: Any?
+    @State var previousApp: NSRunningApplication?
     
+
+    
+    private func teardownKeyboardMonitor() {
+        if let monitor = eventMonitor {
+            NSEvent.removeMonitor(monitor)
+            eventMonitor = nil
+        }
+    }
+    
+    private func restartKeyboardMonitor() {
+        teardownKeyboardMonitor()
+        if shortcut.isExpanded {
+            setupKeyboardMonitor()
+        }
+    }
+    
+    private func pasteItem(index: Int, isFormatted: Bool = false) {
+        if index >= 0 && index < displayNodes.count {
+            if let item = displayNodes[index].item {
+                clipboard.prepareForPaste(item, isFormatted: isFormatted)
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { shortcut.isExpanded = false }
+                previousApp?.activate(options: [])
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { clipboard.triggerPasteKeystroke() }
+            }
+        }
+    }
+    
+    private func getVisibleTabs() -> [String] {
+        let tabs = ["All", "Pinned", "Groups", "Text", "Links", "Images", "Files"]
+        return tabs.filter { t in
+            switch t {
+            case "All", "Pinned", "Groups": return true
+            case "Text": return UserDefaults.standard.object(forKey: "saveText") as? Bool ?? true
+            case "Links": return UserDefaults.standard.object(forKey: "saveLinks") as? Bool ?? true
+            case "Images": return UserDefaults.standard.object(forKey: "saveImages") as? Bool ?? true
+            case "Files": return UserDefaults.standard.object(forKey: "saveFiles") as? Bool ?? true
+            default: return false
+            }
+        }
+    }
+    
+    private func moveSelectedItem(up: Bool) {
+        let nodes = displayNodes
+        guard selectedIndex >= 0 && selectedIndex < nodes.count else { return }
+        
+        let targetIndex = up ? selectedIndex - 1 : selectedIndex + 1
+        guard targetIndex >= 0 && targetIndex < nodes.count else { return }
+        
+        if let item1 = nodes[selectedIndex].item, let item2 = nodes[targetIndex].item {
+            if let idx1 = clipboard.history.firstIndex(where: { $0.id == item1.id }),
+               let idx2 = clipboard.history.firstIndex(where: { $0.id == item2.id }) {
+                clipboard.history.swapAt(idx1, idx2)
+                selectedIndex = targetIndex
+            }
+        }
+    }
+    
+    private func moveSelectedFolder(up: Bool) {
+        guard selectedIndex >= 0 && selectedIndex < clipboard.folders.count else { return }
+        let targetIndex = up ? selectedIndex - 1 : selectedIndex + 1
+        guard targetIndex >= 0 && targetIndex < clipboard.folders.count else { return }
+        
+        clipboard.folders.swapAt(selectedIndex, targetIndex)
+        selectedIndex = targetIndex
+    }
+    
+    private func deleteSelectedItems() {
+        clipboard.history.removeAll { _selectedItemsForDeletion.wrappedValue.contains($0.id) }
+        _selectedItemsForDeletion.wrappedValue.removeAll()
+        _isEditMode.wrappedValue = false
+    }
+    
+    private func deleteFolders(keepItems: Bool) {
+        let folderIds = _selectedItemsForDeletion.wrappedValue.filter { id in clipboard.folders.contains(where: { $0.id == id }) }
+        
+        if keepItems {
+            for i in 0..<clipboard.history.count {
+                if let fId = clipboard.history[i].folderId, folderIds.contains(fId) {
+                    clipboard.history[i].folderId = nil
+                }
+            }
+        } else {
+            clipboard.history.removeAll { item in
+                if let fId = item.folderId { return folderIds.contains(fId) }
+                return false
+            }
+        }
+        
+        clipboard.folders.removeAll { folderIds.contains($0.id) }
+        
+        let itemIds = _selectedItemsForDeletion.wrappedValue.subtracting(folderIds)
+        if !itemIds.isEmpty {
+            clipboard.history.removeAll { itemIds.contains($0.id) }
+        }
+        
+        _selectedItemsForDeletion.wrappedValue.removeAll()
+        _isEditMode.wrappedValue = false
+    }
+}
+
+
+
+extension ContentView {
     private func setupKeyboardMonitor() {
         let _activeTab = self._activeTab
         let _selectedIndex = self._selectedIndex
@@ -1067,102 +1172,5 @@ struct ContentView: View {
                 return event
             }
         }
-    }
-    
-    private func teardownKeyboardMonitor() {
-        if let monitor = eventMonitor {
-            NSEvent.removeMonitor(monitor)
-            eventMonitor = nil
-        }
-    }
-    
-    private func restartKeyboardMonitor() {
-        teardownKeyboardMonitor()
-        if shortcut.isExpanded {
-            setupKeyboardMonitor()
-        }
-    }
-    
-    private func pasteItem(index: Int, isFormatted: Bool = false) {
-        if index >= 0 && index < displayNodes.count {
-            if let item = displayNodes[index].item {
-                clipboard.prepareForPaste(item, isFormatted: isFormatted)
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { shortcut.isExpanded = false }
-                previousApp?.activate(options: [])
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { clipboard.triggerPasteKeystroke() }
-            }
-        }
-    }
-    
-    private func getVisibleTabs() -> [String] {
-        let tabs = ["All", "Pinned", "Groups", "Text", "Links", "Images", "Files"]
-        return tabs.filter { t in
-            switch t {
-            case "All", "Pinned", "Groups": return true
-            case "Text": return UserDefaults.standard.object(forKey: "saveText") as? Bool ?? true
-            case "Links": return UserDefaults.standard.object(forKey: "saveLinks") as? Bool ?? true
-            case "Images": return UserDefaults.standard.object(forKey: "saveImages") as? Bool ?? true
-            case "Files": return UserDefaults.standard.object(forKey: "saveFiles") as? Bool ?? true
-            default: return false
-            }
-        }
-    }
-    
-    private func moveSelectedItem(up: Bool) {
-        let nodes = displayNodes
-        guard selectedIndex >= 0 && selectedIndex < nodes.count else { return }
-        
-        let targetIndex = up ? selectedIndex - 1 : selectedIndex + 1
-        guard targetIndex >= 0 && targetIndex < nodes.count else { return }
-        
-        if let item1 = nodes[selectedIndex].item, let item2 = nodes[targetIndex].item {
-            if let idx1 = clipboard.history.firstIndex(where: { $0.id == item1.id }),
-               let idx2 = clipboard.history.firstIndex(where: { $0.id == item2.id }) {
-                clipboard.history.swapAt(idx1, idx2)
-                selectedIndex = targetIndex
-            }
-        }
-    }
-    
-    private func moveSelectedFolder(up: Bool) {
-        guard selectedIndex >= 0 && selectedIndex < clipboard.folders.count else { return }
-        let targetIndex = up ? selectedIndex - 1 : selectedIndex + 1
-        guard targetIndex >= 0 && targetIndex < clipboard.folders.count else { return }
-        
-        clipboard.folders.swapAt(selectedIndex, targetIndex)
-        selectedIndex = targetIndex
-    }
-    
-    private func deleteSelectedItems() {
-        clipboard.history.removeAll { _selectedItemsForDeletion.wrappedValue.contains($0.id) }
-        _selectedItemsForDeletion.wrappedValue.removeAll()
-        _isEditMode.wrappedValue = false
-    }
-    
-    private func deleteFolders(keepItems: Bool) {
-        let folderIds = _selectedItemsForDeletion.wrappedValue.filter { id in clipboard.folders.contains(where: { $0.id == id }) }
-        
-        if keepItems {
-            for i in 0..<clipboard.history.count {
-                if let fId = clipboard.history[i].folderId, folderIds.contains(fId) {
-                    clipboard.history[i].folderId = nil
-                }
-            }
-        } else {
-            clipboard.history.removeAll { item in
-                if let fId = item.folderId { return folderIds.contains(fId) }
-                return false
-            }
-        }
-        
-        clipboard.folders.removeAll { folderIds.contains($0.id) }
-        
-        let itemIds = _selectedItemsForDeletion.wrappedValue.subtracting(folderIds)
-        if !itemIds.isEmpty {
-            clipboard.history.removeAll { itemIds.contains($0.id) }
-        }
-        
-        _selectedItemsForDeletion.wrappedValue.removeAll()
-        _isEditMode.wrappedValue = false
     }
 }
