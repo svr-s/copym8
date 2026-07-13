@@ -141,5 +141,4 @@ struct EditModeFooterView: View {
         }
         .padding(.horizontal, 12).padding(.vertical, 12).background(Color.primary.opacity(0.05))
     }
-    }
 }
