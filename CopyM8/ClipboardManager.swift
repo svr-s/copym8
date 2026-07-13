@@ -116,44 +116,86 @@ class ClipboardManager: ObservableObject {
         startPolling()
     }
     
-    private func loadHistory() {
-        if let data = UserDefaults.standard.data(forKey: storageKey),
-           let decoded = try? JSONDecoder().decode([ClipboardItem].self, from: data) {
-            
-            var updated = decoded
-            for i in 0..<updated.count {
-                if updated[i].itemType == .text {
-                    let str = updated[i].text.lowercased()
-                    if str.hasPrefix("http://") || str.hasPrefix("https://") {
-                        updated[i].itemType = .link
-                    }
-                }
-                
-                // Migration: Items in folders shouldn't be artificially pinned anymore
-                if updated[i].folderId != nil && updated[i].isPinned {
-                    updated[i].isPinned = false
+    private var historyFileURL: URL? {
+        guard let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return nil }
+        let dir = appSupport.appendingPathComponent("CopyM8/Data")
+        if !FileManager.default.fileExists(atPath: dir.path) {
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        }
+        return dir.appendingPathComponent("history.json")
+    }
+    
+    private var foldersFileURL: URL? {
+        guard let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return nil }
+        let dir = appSupport.appendingPathComponent("CopyM8/Data")
+        if !FileManager.default.fileExists(atPath: dir.path) {
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        }
+        return dir.appendingPathComponent("folders.json")
+    }
+    
+    private func processLoadedHistory(_ decoded: [ClipboardItem]) -> [ClipboardItem] {
+        var updated = decoded
+        for i in 0..<updated.count {
+            if updated[i].itemType == .text {
+                let str = updated[i].text.lowercased()
+                if str.hasPrefix("http://") || str.hasPrefix("https://") {
+                    updated[i].itemType = .link
                 }
             }
-            self.history = updated
+            if updated[i].folderId != nil && updated[i].isPinned {
+                updated[i].isPinned = false
+            }
+        }
+        return updated
+    }
+    
+    private func loadHistory() {
+        var didMigrateHistory = false
+        if let url = historyFileURL, let data = try? Data(contentsOf: url) {
+            if let decoded = try? JSONDecoder().decode([ClipboardItem].self, from: data) {
+                self.history = processLoadedHistory(decoded)
+            }
+        } else if let data = UserDefaults.standard.data(forKey: storageKey) {
+            if let decoded = try? JSONDecoder().decode([ClipboardItem].self, from: data) {
+                self.history = processLoadedHistory(decoded)
+                didMigrateHistory = true
+            }
         }
         
-        if let folderData = UserDefaults.standard.data(forKey: foldersKey),
-           let decodedFolders = try? JSONDecoder().decode([ClipboardFolder].self, from: folderData) {
-            self.folders = decodedFolders
+        var didMigrateFolders = false
+        if let url = foldersFileURL, let folderData = try? Data(contentsOf: url) {
+            if let decodedFolders = try? JSONDecoder().decode([ClipboardFolder].self, from: folderData) {
+                self.folders = decodedFolders
+            }
+        } else if let folderData = UserDefaults.standard.data(forKey: foldersKey) {
+            if let decodedFolders = try? JSONDecoder().decode([ClipboardFolder].self, from: folderData) {
+                self.folders = decodedFolders
+                didMigrateFolders = true
+            }
+        }
+        
+        if didMigrateHistory {
+            saveHistory()
+            UserDefaults.standard.removeObject(forKey: storageKey)
+        }
+        if didMigrateFolders {
+            saveFolders()
+            UserDefaults.standard.removeObject(forKey: foldersKey)
         }
     }
     
     func saveHistory() {
         if isReordering { return }
-        if let encoded = try? JSONEncoder().encode(history) {
-            UserDefaults.standard.set(encoded, forKey: storageKey)
+        if let encoded = try? JSONEncoder().encode(history), let url = historyFileURL {
+            try? encoded.write(to: url, options: .atomic)
         }
     }
     
     func saveFolders() {
         if isReordering { return }
-        if let encoded = try? JSONEncoder().encode(folders) {
-            UserDefaults.standard.set(encoded, forKey: foldersKey)
+        if let encoded = try? JSONEncoder().encode(folders), let url = foldersFileURL {
+            try? encoded.write(to: url, options: .atomic)
         }
     }
     
