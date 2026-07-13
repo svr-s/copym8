@@ -1,10 +1,10 @@
 import SwiftUI
 
 struct DeleteConfirmationView: View {
-    @Environment(\.dismiss) var dismiss
     let isFolderDeletion: Bool
     let itemCount: Int
     var onConfirm: (Bool?) -> Void
+    var onCancel: () -> Void
     
     @State private var selectedIndex: Int = 0
     @State private var localEventMonitor: Any?
@@ -84,15 +84,15 @@ struct DeleteConfirmationView: View {
     
     private func handleSelection(_ index: Int) {
         if options[index].title == "Cancel" {
-            dismiss()
+            onCancel()
         } else if isFolderDeletion {
             // Index 0: Keep Items, Index 1: Delete All
             onConfirm(index == 0)
-            dismiss()
+            onCancel()
         } else {
             // Index 0: Delete
             onConfirm(nil) // nil means normal deletion
-            dismiss()
+            onCancel()
         }
     }
     
@@ -109,7 +109,7 @@ struct DeleteConfirmationView: View {
                 handleSelection(selectedIndex)
                 return nil
             case 53: // Esc
-                dismiss()
+                onCancel()
                 return nil
             default:
                 break

@@ -2,9 +2,9 @@ import SwiftUI
 
 struct GroupAssignmentView: View {
     @EnvironmentObject var clipboard: ClipboardManager
-    @Environment(\.dismiss) var dismiss
     let itemIds: Set<UUID>
     var onComplete: (() -> Void)? = nil
+    var onCancel: () -> Void
     
     @State private var newFolderName: String = ""
     @State private var isCreatingNew = false
@@ -99,7 +99,7 @@ struct GroupAssignmentView: View {
             HStack {
                 Spacer()
                 Button("Cancel") {
-                    dismiss()
+                    onCancel()
                 }
                 .keyboardShortcut(.cancelAction)
             }
@@ -168,7 +168,7 @@ struct GroupAssignmentView: View {
             }
         }
         onComplete?()
-        dismiss()
+        onCancel()
     }
     
     private func createNewFolder() {

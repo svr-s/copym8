@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct UngroupConfirmationView: View {
-    @Environment(\.dismiss) var dismiss
     var onConfirm: (Bool) -> Void
+    var onCancel: () -> Void
     
     @State private var selectedIndex: Int = 0
     @State private var localEventMonitor: Any?
@@ -29,10 +29,10 @@ struct UngroupConfirmationView: View {
                 ForEach(0..<options.count, id: \.self) { index in
                     Button(action: {
                         if index == 2 {
-                            dismiss()
+                            onCancel()
                         } else {
                             onConfirm(index == 0)
-                            dismiss()
+                            onCancel()
                         }
                     }) {
                         HStack {
@@ -75,14 +75,14 @@ struct UngroupConfirmationView: View {
                 return nil
             case 36, 76: // Enter / Return
                 if selectedIndex == 2 {
-                    dismiss()
+                    onCancel()
                 } else {
                     onConfirm(selectedIndex == 0)
-                    dismiss()
+                    onCancel()
                 }
                 return nil
             case 53: // Esc
-                dismiss()
+                onCancel()
                 return nil
             default:
                 break

@@ -366,7 +366,11 @@ struct ContentView: View {
                     ZStack {
                         Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
                             .onTapGesture { itemToAssignGroup = nil }
-                        GroupAssignmentView(itemIds: payload.itemIds, onComplete: payload.onComplete)
+                        GroupAssignmentView(
+                            itemIds: payload.itemIds, 
+                            onComplete: payload.onComplete,
+                            onCancel: { itemToAssignGroup = nil }
+                        )
                             .environmentObject(clipboard)
                             .frame(width: 280)
                             .padding(20)
@@ -378,7 +382,10 @@ struct ContentView: View {
                     ZStack {
                         Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
                             .onTapGesture { showingUngroupAlert = false }
-                        UngroupConfirmationView(onConfirm: ungroupSelectedItems)
+                        UngroupConfirmationView(
+                            onConfirm: ungroupSelectedItems,
+                            onCancel: { showingUngroupAlert = false }
+                        )
                             .frame(width: 280)
                             .padding(20)
                             .background(Color(NSColor.windowBackgroundColor))
@@ -392,7 +399,8 @@ struct ContentView: View {
                         DeleteConfirmationView(
                             isFolderDeletion: false,
                             itemCount: selectedItemsForDeletion.count,
-                            onConfirm: { _ in deleteSelectedItems() }
+                            onConfirm: { _ in deleteSelectedItems() },
+                            onCancel: { showingDeleteSelectedAlert = false }
                         )
                         .frame(width: 280)
                         .padding(20)
@@ -412,7 +420,8 @@ struct ContentView: View {
                                 if let keepItems = keepItems {
                                     deleteFolders(keepItems: keepItems)
                                 }
-                            }
+                            },
+                            onCancel: { showingFolderDeleteAlert = false }
                         )
                         .frame(width: 280)
                         .padding(20)
