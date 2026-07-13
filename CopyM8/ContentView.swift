@@ -374,9 +374,10 @@ struct ContentView: View {
                             .environmentObject(clipboard)
                             .frame(width: 280)
                             .padding(20)
-                            .background(Color(NSColor.windowBackgroundColor))
+                            .background(.regularMaterial)
                             .cornerRadius(12)
-                            .shadow(color: Color.black.opacity(0.3), radius: 20, x: 0, y: 10)
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
+                            .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
                     }
                 } else if showingUngroupAlert {
                     ZStack {
@@ -388,9 +389,10 @@ struct ContentView: View {
                         )
                             .frame(width: 280)
                             .padding(20)
-                            .background(Color(NSColor.windowBackgroundColor))
+                            .background(.regularMaterial)
                             .cornerRadius(12)
-                            .shadow(color: Color.black.opacity(0.3), radius: 20, x: 0, y: 10)
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
+                            .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
                     }
                 } else if showingDeleteSelectedAlert {
                     ZStack {
@@ -404,9 +406,10 @@ struct ContentView: View {
                         )
                         .frame(width: 280)
                         .padding(20)
-                        .background(Color(NSColor.windowBackgroundColor))
+                        .background(.regularMaterial)
                         .cornerRadius(12)
-                        .shadow(color: Color.black.opacity(0.3), radius: 20, x: 0, y: 10)
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
+                        .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
                     }
                 } else if showingFolderDeleteAlert {
                     ZStack {
@@ -425,9 +428,10 @@ struct ContentView: View {
                         )
                         .frame(width: 280)
                         .padding(20)
-                        .background(Color(NSColor.windowBackgroundColor))
+                        .background(.regularMaterial)
                         .cornerRadius(12)
-                        .shadow(color: Color.black.opacity(0.3), radius: 20, x: 0, y: 10)
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
+                        .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
                     }
                 }
             }
