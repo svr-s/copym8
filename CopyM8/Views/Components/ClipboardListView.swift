@@ -131,7 +131,7 @@ struct ClipboardListView: View {
                     }
                     .onMove { source, destination in
                         if activeTab == "Pinned" {
-                            var currentIds = displayNodes.filter { !$0.isDivider }.compactMap { $0.item?.id }
+                            let currentIds = displayNodes.filter { !$0.isDivider }.compactMap { $0.item?.id }
                             // We need to adjust source and destination to ignore the divider
                             let sourceIndices = source.compactMap { idx -> Int? in
                                 let node = displayNodes[idx]
@@ -156,7 +156,7 @@ struct ClipboardListView: View {
                                 }
                             } else if let fId = firstNode.parentFolderId {
                                 // Moving items inside folder
-                                var itemsInFolder = displayNodes.filter { $0.parentFolderId == fId }.compactMap { $0.item?.id }
+                                let itemsInFolder = displayNodes.filter { $0.parentFolderId == fId }.compactMap { $0.item?.id }
                                 if let iId = firstNode.item?.id, let iIndex = itemsInFolder.firstIndex(of: iId) {
                                     let adjustedDest = displayNodes.prefix(destination).filter { $0.parentFolderId == fId }.count
                                     clipboard.reorderGroupItems(folderId: fId, source: IndexSet(integer: iIndex), destination: adjustedDest)
