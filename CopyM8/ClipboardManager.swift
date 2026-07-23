@@ -20,6 +20,7 @@ struct ClipboardItem: Identifiable, Equatable, Codable {
     let timestamp: Date
     var sourceApp: String?
     var rtfData: Data?
+    var htmlData: Data?
     var isPinned: Bool = false
     var itemType: ItemType = .text
     var fileURL: String?
@@ -487,25 +488,32 @@ private func checkForChanges() {
                 }
                 
                 if let newString = extractedString {
-                var rtfData: Data? = nil
-                if let rtf = pasteboard.data(forType: .rtf) {
-                    if rtf.count <= maxItemSizeMB * 1024 * 1024 {
-                        rtfData = rtf
+                    var rtfData: Data? = nil
+                    if let rtf = pasteboard.data(forType: .rtf) {
+                        if rtf.count <= maxItemSizeMB * 1024 * 1024 {
+                            rtfData = rtf
+                        }
                     }
-                }
-                
-                var type: ItemType = .text
-                let trimmedStr = newString.trimmingCharacters(in: .whitespacesAndNewlines)
-                let lowerStr = trimmedStr.lowercased()
-                
-                // Browsers often attach a .URL type to regular text copies.
-                // We should only classify it as a link if the text itself is actually a URL.
-                let isActuallyURL = lowerStr.hasPrefix("http://") || lowerStr.hasPrefix("https://") || 
-                                    (isURL && !trimmedStr.contains(" ") && URL(string: trimmedStr) != nil)
-                                    
-                if isActuallyURL { type = .link }
-                
-                newItem = ClipboardItem(text: newString, timestamp: Date(), sourceApp: appName, rtfData: rtfData, isPinned: false, itemType: type, fileURL: nil)
+                    
+                    var htmlData: Data? = nil
+                    if let html = pasteboard.data(forType: .html) ?? pasteboard.data(forType: NSPasteboard.PasteboardType("public.html")) {
+                        if html.count <= maxItemSizeMB * 1024 * 1024 {
+                            htmlData = html
+                        }
+                    }
+                    
+                    var type: ItemType = .text
+                    let trimmedStr = newString.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let lowerStr = trimmedStr.lowercased()
+                    
+                    // Browsers often attach a .URL type to regular text copies.
+                    // We should only classify it as a link if the text itself is actually a URL.
+                    let isActuallyURL = lowerStr.hasPrefix("http://") || lowerStr.hasPrefix("https://") || 
+                                        (isURL && !trimmedStr.contains(" ") && URL(string: trimmedStr) != nil)
+                                        
+                    if isActuallyURL { type = .link }
+                    
+                    newItem = ClipboardItem(text: newString, timestamp: Date(), sourceApp: appName, rtfData: rtfData, htmlData: htmlData, isPinned: false, itemType: type, fileURL: nil)
                 }
             }
             
@@ -515,8 +523,13 @@ private func checkForChanges() {
             if let existingIndex = history.firstIndex(where: { $0.text == itemToSave.text && $0.itemType == itemToSave.itemType }) {
                 DispatchQueue.main.async {
                     var item = self.history.remove(at: existingIndex)
-                    if item.itemType == .text, let rtf = itemToSave.rtfData {
-                        item.rtfData = rtf
+                    if item.itemType == .text {
+                        if let rtf = itemToSave.rtfData {
+                            item.rtfData = rtf
+                        }
+                        if let html = itemToSave.htmlData {
+                            item.htmlData = html
+                        }
                     }
                     self.history.insert(item, at: 0)
                 }
@@ -589,8 +602,13 @@ var maxHistoryCount: Int {
         ignoreNextChange = true
         pasteboard.clearContents()
         
-        if isFormatted, let rtfData = item.rtfData {
-            pasteboard.setData(rtfData, forType: .rtf)
+        if isFormatted {
+            if let rtfData = item.rtfData {
+                pasteboard.setData(rtfData, forType: .rtf)
+            }
+            if let htmlData = item.htmlData {
+                pasteboard.setData(htmlData, forType: .html)
+            }
             // also set plain text as fallback
             pasteboard.setString(item.text, forType: .string)
         } else {
