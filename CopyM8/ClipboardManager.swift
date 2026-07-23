@@ -477,7 +477,16 @@ private func checkForChanges() {
                 }
             }
             
-            if newItem == nil, let newString = pasteboard.string(forType: .string) {
+            if newItem == nil {
+                var extractedString: String? = pasteboard.string(forType: .string)
+                if extractedString == nil {
+                    extractedString = pasteboard.string(forType: NSPasteboard.PasteboardType("public.utf8-plain-text"))
+                }
+                if extractedString == nil {
+                    extractedString = pasteboard.string(forType: NSPasteboard.PasteboardType("NSStringPboardType"))
+                }
+                
+                if let newString = extractedString {
                 var rtfData: Data? = nil
                 if let rtf = pasteboard.data(forType: .rtf) {
                     if rtf.count <= maxItemSizeMB * 1024 * 1024 {
@@ -486,10 +495,18 @@ private func checkForChanges() {
                 }
                 
                 var type: ItemType = .text
-                let lowerStr = newString.lowercased()
-                if isURL || lowerStr.hasPrefix("http://") || lowerStr.hasPrefix("https://") { type = .link }
+                let trimmedStr = newString.trimmingCharacters(in: .whitespacesAndNewlines)
+                let lowerStr = trimmedStr.lowercased()
+                
+                // Browsers often attach a .URL type to regular text copies.
+                // We should only classify it as a link if the text itself is actually a URL.
+                let isActuallyURL = lowerStr.hasPrefix("http://") || lowerStr.hasPrefix("https://") || 
+                                    (isURL && !trimmedStr.contains(" ") && URL(string: trimmedStr) != nil)
+                                    
+                if isActuallyURL { type = .link }
                 
                 newItem = ClipboardItem(text: newString, timestamp: Date(), sourceApp: appName, rtfData: rtfData, isPinned: false, itemType: type, fileURL: nil)
+                }
             }
             
             guard let itemToSave = newItem else { return }
