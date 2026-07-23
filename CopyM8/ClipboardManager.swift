@@ -618,19 +618,21 @@ var maxHistoryCount: Int {
             pasteboard.setString(item.text, forType: .string)
             
         case .richNoLinks:
-            if let rtfData = item.rtfData,
-               let attrString = try? NSMutableAttributedString(data: rtfData, options: [.documentType: NSAttributedString.DocumentType.rtf], documentAttributes: nil) {
-                
-                attrString.enumerateAttribute(.link, in: NSRange(location: 0, length: attrString.length), options: []) { value, range, _ in
-                    if value != nil {
-                        attrString.removeAttribute(.link, range: range)
-                        attrString.removeAttribute(.foregroundColor, range: range)
-                        attrString.removeAttribute(.underlineStyle, range: range)
+            let stripRtfLinks = {
+                if let rtfData = item.rtfData,
+                   let attrString = try? NSMutableAttributedString(data: rtfData, options: [.documentType: NSAttributedString.DocumentType.rtf], documentAttributes: nil) {
+                    
+                    attrString.enumerateAttribute(.link, in: NSRange(location: 0, length: attrString.length), options: []) { value, range, _ in
+                        if value != nil {
+                            attrString.removeAttribute(.link, range: range)
+                            attrString.removeAttribute(.foregroundColor, range: range)
+                            attrString.removeAttribute(.underlineStyle, range: range)
+                        }
                     }
-                }
-                
-                if let cleanedRtfData = try? attrString.data(from: NSRange(location: 0, length: attrString.length), documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf]) {
-                    pasteboard.setData(cleanedRtfData, forType: .rtf)
+                    
+                    if let cleanedRtfData = try? attrString.data(from: NSRange(location: 0, length: attrString.length), documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf]) {
+                        self.pasteboard.setData(cleanedRtfData, forType: .rtf)
+                    }
                 }
             }
             
@@ -655,9 +657,13 @@ var maxHistoryCount: Int {
                     pasteboard.setData(cleanedHtmlData, forType: .html)
                 } else {
                     pasteboard.setData(htmlData, forType: .html)
+                    stripRtfLinks()
                 }
             } else if let htmlData = item.htmlData {
                 pasteboard.setData(htmlData, forType: .html)
+                stripRtfLinks()
+            } else {
+                stripRtfLinks()
             }
             
             pasteboard.setString(item.text, forType: .string)
