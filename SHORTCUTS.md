@@ -56,3 +56,10 @@ Here is a comprehensive list of all keyboard shortcuts available in CopyM8, grou
 | **Select All in Tab** | `Cmd + A` | Selects or deselects all visible items in the current tab. |
 | **Unpin / Ungroup** | `Cmd + U` | Unpins items (Pinned tab) or triggers the Ungroup modal (Groups tab) for selected items. |
 | **Delete Selected** | `Backspace` | Triggers the "Delete Selected" action for checked items. |
+
+### 🖱 Mouse Interactions
+| Action | Shortcut | Description |
+| :--- | :--- | :--- |
+| **Paste Plain Text** | `Left Click` | Pastes the clicked item as plain text into the previous application. |
+| **Paste Rich Text** | `Cmd + Click` | Pastes the clicked item with its original Rich Text Formatting preserved. |
+| **Paste Rich (No Links)** | `Option + Click` | Pastes the clicked item with Rich Text Formatting but without any hyperlinks. |

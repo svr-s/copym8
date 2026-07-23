@@ -9,7 +9,7 @@ CopyM8 is a modern, buttery-smooth, and lightweight clipboard manager built nati
 - **Dynamic Adaptive Layouts & Resizing**: Resize the window horizontally or vertically and the UI gracefully adapts. Press `Cmd + D` to instantly toggle between *Dense* and *Spaced* layouts.
 - **Smart Categorization (Tabs)**: Your clipboard history is automatically organized into *Text*, *Links*, *Images*, and *Files*. Use `Option + 1-6` to instantly switch tabs!
 - **Image & File Support**: Natively extracts copied images into local storage (with automatic disk-space pruning caps) and reads raw `.fileURL` references directly from macOS Finder and IDEs without duplicating the actual files.
-- **Rich & Plain Paste**: Press `Enter` (or `1-0`) to strip formatting and paste plain text, hold `Cmd` to inject exact Rich Text formats with styles intact, or hold `Cmd + Control` to paste Rich Text with all hyperlinks cleanly stripped out. 
+- **Rich & Plain Paste**: Press `Enter` (or `1-0`) or `Left Click` to strip formatting and paste plain text, hold `Cmd` while clicking or pressing Enter to inject exact Rich Text formats with styles intact, or hold `Option` while clicking (or `Cmd + Control + Enter` on keyboard) to paste Rich Text with all hyperlinks cleanly stripped out. 
 - **Context Capture**: Captures the source application (e.g., Safari, Xcode) and exact timestamp of every copy.
 - **Live Search & Re-indexing**: Search by text *or* source application. The `1-0` quick-paste keyboard shortcuts dynamically re-index to map perfectly to your filtered search results.
 - **Pinning**: Press `Cmd + P` or right-click to pin items to save them forever. In Edit Mode, press `Cmd + U` to instantly unpin selected items.

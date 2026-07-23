@@ -288,6 +288,13 @@ struct SettingsView: View {
                     shortcutRow(action: "Select All in Tab", key: "Cmd + A")
                     shortcutRow(action: "Unpin / Ungroup", key: "Cmd + U")
                 }
+                
+                Group {
+                    shortcutCategory("Mouse Interactions")
+                    shortcutRow(action: "Paste Plain Text", key: "Left Click")
+                    shortcutRow(action: "Paste Rich Text", key: "Cmd + Click")
+                    shortcutRow(action: "Paste Rich (No Links)", key: "Opt + Click")
+                }
                 shortcutRow(action: "Toggle Selection (Edit)", key: "Space")
                 shortcutRow(action: "Expand Item/Folder", key: "Right")
                 shortcutRow(action: "Collapse/Jump Up", key: "Left")
