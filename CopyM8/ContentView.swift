@@ -577,10 +577,10 @@ struct ContentView: View {
         }
     }
     
-    private func pasteItem(index: Int, isFormatted: Bool = false) {
+    private func pasteItem(index: Int, format: PasteFormatType = .plain) {
         if index >= 0 && index < displayNodes.count {
             if let item = displayNodes[index].item {
-                clipboard.prepareForPaste(item, isFormatted: isFormatted)
+                clipboard.prepareForPaste(item, formatType: format)
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { shortcut.isExpanded = false }
                 previousApp?.activate(options: [])
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { clipboard.triggerPasteKeystroke() }
@@ -821,7 +821,9 @@ extension ContentView {
                 if _isFreezeFieldFocused.wrappedValue { return nil }
                 let keyMap: [UInt16: Int] = [18: 0, 19: 1, 20: 2, 21: 3, 23: 4, 22: 5, 26: 6, 28: 7, 25: 8, 29: 9]
                 if let relativeIndex = keyMap[event.keyCode] {
-                    let isCmd = event.modifierFlags.contains(.command)
+                    let hasCmd = event.modifierFlags.contains(.command)
+                    let hasOpt = event.modifierFlags.contains(.option)
+                    let format: PasteFormatType = (hasCmd && hasOpt) ? .richNoLinks : (hasCmd ? .rich : .plain)
                     if activeTab == "Groups" {
                         var targetFolderId: UUID? = nil
                         if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
@@ -831,12 +833,12 @@ extension ContentView {
                         if let targetFolderId = targetFolderId {
                             let folderItemIndices = displayNodesLocal.indices.filter { displayNodesLocal[$0].parentFolderId == targetFolderId }
                             if relativeIndex < folderItemIndices.count {
-                                pasteItem(folderItemIndices[relativeIndex], isCmd)
+                                pasteItem(folderItemIndices[relativeIndex], format)
                             }
                         }
                     } else {
                         if relativeIndex < displayNodesLocal.count {
-                            pasteItem(relativeIndex, isCmd)
+                            pasteItem(relativeIndex, format)
                         }
                     }
                 }
@@ -1027,7 +1029,10 @@ extension ContentView {
                             else { _expandedFolderIds.wrappedValue.insert(folder.id) }
                         }
                     } else {
-                        pasteItem(selectedIndex, event.modifierFlags.contains(.command))
+                        let hasCmd = event.modifierFlags.contains(.command)
+                        let hasOpt = event.modifierFlags.contains(.option)
+                        let format: PasteFormatType = (hasCmd && hasOpt) ? .richNoLinks : (hasCmd ? .rich : .plain)
+                        pasteItem(selectedIndex, format)
                     }
                 }
                 return nil

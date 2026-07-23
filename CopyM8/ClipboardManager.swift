@@ -8,6 +8,12 @@ enum ItemType: String, Codable {
     case file
 }
 
+enum PasteFormatType {
+    case plain
+    case rich
+    case richNoLinks
+}
+
 struct ClipboardFolder: Identifiable, Equatable, Codable {
     var id = UUID()
     var name: String
@@ -598,20 +604,58 @@ var maxHistoryCount: Int {
         }
     }
     
-    func prepareForPaste(_ item: ClipboardItem, isFormatted: Bool = false) {
+    func prepareForPaste(_ item: ClipboardItem, formatType: PasteFormatType = .plain) {
         ignoreNextChange = true
         pasteboard.clearContents()
         
-        if isFormatted {
-            if let rtfData = item.rtfData {
-                pasteboard.setData(rtfData, forType: .rtf)
-            }
-            if let htmlData = item.htmlData {
-                pasteboard.setData(htmlData, forType: .html)
-            }
-            // also set plain text as fallback
+        switch formatType {
+        case .plain:
             pasteboard.setString(item.text, forType: .string)
-        } else {
+            
+        case .rich:
+            if let rtfData = item.rtfData { pasteboard.setData(rtfData, forType: .rtf) }
+            if let htmlData = item.htmlData { pasteboard.setData(htmlData, forType: .html) }
+            pasteboard.setString(item.text, forType: .string)
+            
+        case .richNoLinks:
+            if let rtfData = item.rtfData,
+               let attrString = try? NSMutableAttributedString(data: rtfData, options: [.documentType: NSAttributedString.DocumentType.rtf], documentAttributes: nil) {
+                
+                attrString.enumerateAttribute(.link, in: NSRange(location: 0, length: attrString.length), options: []) { value, range, _ in
+                    if value != nil {
+                        attrString.removeAttribute(.link, range: range)
+                        attrString.removeAttribute(.foregroundColor, range: range)
+                        attrString.removeAttribute(.underlineStyle, range: range)
+                    }
+                }
+                
+                if let cleanedRtfData = try? attrString.data(from: NSRange(location: 0, length: attrString.length), documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf]) {
+                    pasteboard.setData(cleanedRtfData, forType: .rtf)
+                }
+            }
+            
+            if let htmlData = item.htmlData,
+               let htmlDoc = try? XMLDocument(data: htmlData, options: .documentTidyHTML) {
+                
+                if let links = try? htmlDoc.nodes(forXPath: "//a") {
+                    for link in links {
+                        let textNode = XMLNode(kind: .text)
+                        textNode.stringValue = link.stringValue
+                        if let parent = link.parent as? XMLElement {
+                            let index = link.index
+                            parent.replaceChild(at: index, with: textNode)
+                        }
+                    }
+                }
+                
+                let cleanedHtmlData = htmlDoc.xmlData
+                if !cleanedHtmlData.isEmpty {
+                    pasteboard.setData(cleanedHtmlData, forType: .html)
+                } else {
+                    pasteboard.setData(htmlData, forType: .html)
+                }
+            }
+            
             pasteboard.setString(item.text, forType: .string)
         }
         

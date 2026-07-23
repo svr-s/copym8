@@ -41,7 +41,7 @@ struct ExpandedView: View {
     
     var adjustWindowFrame: () -> Void
     var snapToEdge: () -> Void
-    var pasteItem: (Int, Bool) -> Void
+    var pasteItem: (Int, PasteFormatType) -> Void
     
     var body: some View {
         ZStack {

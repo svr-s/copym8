@@ -13,7 +13,7 @@ struct ClipboardListView: View {
     @Binding var selectedItemsForDeletion: Set<UUID>
     @Binding var expandedFolderIds: Set<UUID>
     var activeTab: String
-    var pasteItem: (Int, Bool) -> Void
+    var pasteItem: (Int, PasteFormatType) -> Void
     
     private func isHighlighted(_ index: Int, id: UUID?) -> Bool {
         if let id = id, selectedItemsForDeletion.contains(id) {
@@ -110,8 +110,10 @@ struct ClipboardListView: View {
                                                 selectedIndex = index
                                             }
                                         } else {
-                                            let isCmd = NSEvent.modifierFlags.contains(.command)
-                                            pasteItem(index, isCmd)
+                                            let hasCmd = NSEvent.modifierFlags.contains(.command)
+                                            let hasOpt = NSEvent.modifierFlags.contains(.option)
+                                            let format: PasteFormatType = (hasCmd && hasOpt) ? .richNoLinks : (hasCmd ? .rich : .plain)
+                                            pasteItem(index, format)
                                         }
                                     },
                                     onExpandToggle: {
