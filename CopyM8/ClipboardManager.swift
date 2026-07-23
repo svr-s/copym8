@@ -635,7 +635,8 @@ var maxHistoryCount: Int {
             }
             
             if let htmlData = item.htmlData,
-               let htmlDoc = try? XMLDocument(data: htmlData, options: .documentTidyHTML) {
+               let htmlString = String(data: htmlData, encoding: .utf8),
+               let htmlDoc = try? XMLDocument(xmlString: htmlString, options: .documentTidyHTML) {
                 
                 if let links = try? htmlDoc.nodes(forXPath: "//a") {
                     for link in links {
@@ -648,12 +649,15 @@ var maxHistoryCount: Int {
                     }
                 }
                 
-                let cleanedHtmlData = htmlDoc.xmlData
-                if !cleanedHtmlData.isEmpty {
+                let xmlStr = htmlDoc.xmlString
+                let cleanHtmlStr = xmlStr.replacingOccurrences(of: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n", with: "")
+                if let cleanedHtmlData = cleanHtmlStr.data(using: .utf8), !cleanedHtmlData.isEmpty {
                     pasteboard.setData(cleanedHtmlData, forType: .html)
                 } else {
                     pasteboard.setData(htmlData, forType: .html)
                 }
+            } else if let htmlData = item.htmlData {
+                pasteboard.setData(htmlData, forType: .html)
             }
             
             pasteboard.setString(item.text, forType: .string)
