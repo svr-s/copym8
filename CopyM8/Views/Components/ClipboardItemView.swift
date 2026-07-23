@@ -113,6 +113,7 @@ struct ClipboardItemView: View {
             }
             .padding(.vertical, isDense ? 4 : 8)
             .padding(.horizontal, 12)
+            .contentShape(Rectangle())
             .background(
                 isSelected 
                 ? (isWindowActive ? Color(nsColor: .selectedContentBackgroundColor) : Color(nsColor: .unemphasizedSelectedContentBackgroundColor)) 

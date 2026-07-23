@@ -67,6 +67,7 @@ struct ClipboardFolderView: View {
             }
             .padding(.vertical, isDense ? 6 : 10)
             .padding(.horizontal, 12)
+            .contentShape(Rectangle())
             .background(
                 isSelected 
                 ? (isWindowActive ? Color(nsColor: .selectedContentBackgroundColor) : Color(nsColor: .unemphasizedSelectedContentBackgroundColor)) 
