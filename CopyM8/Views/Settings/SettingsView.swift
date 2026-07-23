@@ -245,6 +245,7 @@ struct SettingsView: View {
                     shortcutRow(action: "Toggle Layout", key: "Cmd + D")
                     shortcutRow(action: "Cycle Colors", key: "Cmd + K")
                     shortcutRow(action: "Settings", key: "Cmd + ,")
+                    shortcutRow(action: "Close Window", key: "Esc")
                 }
                 
                 Group {
@@ -295,23 +296,18 @@ struct SettingsView: View {
                     shortcutRow(action: "Paste Rich Text", key: "Cmd + Click")
                     shortcutRow(action: "Paste Rich (No Links)", key: "Opt + Click")
                 }
-                shortcutRow(action: "Toggle Selection (Edit)", key: "Space")
-                shortcutRow(action: "Expand Item/Folder", key: "Right")
-                shortcutRow(action: "Collapse/Jump Up", key: "Left")
-                shortcutRow(action: "Super Collapse", key: "Opt + Left")
-                shortcutRow(action: "Close Window", key: "Esc")
             }
             .padding(.trailing, 12)
         }
     }
     
     private func shortcutCategory(_ title: String) -> some View {
-        Text(title)
-            .font(.system(size: 11, weight: .bold))
+        Text(title.uppercased())
+            .font(.system(size: 12, weight: .heavy, design: .default))
             .foregroundColor(.primary)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.top, 12)
-            .padding(.bottom, 2)
+            .padding(.top, 16)
+            .padding(.bottom, 4)
     }
     
     private func shortcutRow(action: String, key: String) -> some View {
