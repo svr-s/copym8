@@ -111,8 +111,8 @@ struct ClipboardListView: View {
                                             }
                                         } else {
                                             let hasCmd = NSEvent.modifierFlags.contains(.command)
-                                            let hasOpt = NSEvent.modifierFlags.contains(.option)
-                                            let format: PasteFormatType = (hasCmd && hasOpt) ? .richNoLinks : (hasCmd ? .rich : .plain)
+                                            let hasCtrl = NSEvent.modifierFlags.contains(.control)
+                                            let format: PasteFormatType = (hasCmd && hasCtrl) ? .richNoLinks : (hasCmd ? .rich : .plain)
                                             pasteItem(index, format)
                                         }
                                     },

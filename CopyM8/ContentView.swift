@@ -822,8 +822,8 @@ extension ContentView {
                 let keyMap: [UInt16: Int] = [18: 0, 19: 1, 20: 2, 21: 3, 23: 4, 22: 5, 26: 6, 28: 7, 25: 8, 29: 9]
                 if let relativeIndex = keyMap[event.keyCode] {
                     let hasCmd = event.modifierFlags.contains(.command)
-                    let hasOpt = event.modifierFlags.contains(.option)
-                    let format: PasteFormatType = (hasCmd && hasOpt) ? .richNoLinks : (hasCmd ? .rich : .plain)
+                    let hasCtrl = event.modifierFlags.contains(.control)
+                    let format: PasteFormatType = (hasCmd && hasCtrl) ? .richNoLinks : (hasCmd ? .rich : .plain)
                     if activeTab == "Groups" {
                         var targetFolderId: UUID? = nil
                         if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
@@ -1030,8 +1030,8 @@ extension ContentView {
                         }
                     } else {
                         let hasCmd = event.modifierFlags.contains(.command)
-                        let hasOpt = event.modifierFlags.contains(.option)
-                        let format: PasteFormatType = (hasCmd && hasOpt) ? .richNoLinks : (hasCmd ? .rich : .plain)
+                        let hasCtrl = event.modifierFlags.contains(.control)
+                        let format: PasteFormatType = (hasCmd && hasCtrl) ? .richNoLinks : (hasCmd ? .rich : .plain)
                         pasteItem(selectedIndex, format)
                     }
                 }

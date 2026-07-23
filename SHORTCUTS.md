@@ -27,10 +27,10 @@ Here is a comprehensive list of all keyboard shortcuts available in CopyM8, grou
 | **Expand / Collapse Item** | `Right / Left Arrow` | Expands the selected item (to show its full text) or collapses it. |
 | **Paste Plain Text** | `Enter` | Pastes the currently highlighted item into the previous application. |
 | **Paste Rich Text** | `Cmd + Enter` | Pastes the currently highlighted item with its original Rich Text Formatting preserved. |
-| **Paste Rich (No Links)** | `Cmd + Option + Enter` | Pastes the currently highlighted item with Rich Text Formatting but without any hyperlinks. |
+| **Paste Rich (No Links)** | `Cmd + Control + Enter` | Pastes the currently highlighted item with Rich Text Formatting but without any hyperlinks. |
 | **Quick Paste (1st-10th)** | `1` - `0` | Instantly pastes the plain text of the corresponding item. |
 | **Quick Paste Rich (1st-10th)**| `Cmd + 1-0` | Instantly pastes the rich text of the corresponding item. |
-| **Quick Paste Rich (No Links) (1st-10th)**| `Cmd + Option + 1-0` | Instantly pastes the rich text of the corresponding item without any hyperlinks. |
+| **Quick Paste Rich (No Links) (1st-10th)**| `Cmd + Control + 1-0` | Instantly pastes the rich text of the corresponding item without any hyperlinks. |
 | **Pin Item** | `Cmd + P` | Instantly pins the currently highlighted item. |
 | **Delete Item** | `Backspace` | Instantly deletes the currently highlighted item. |
 

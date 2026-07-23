@@ -260,10 +260,10 @@ struct SettingsView: View {
                     shortcutRow(action: "Expand / Collapse Item", key: "Right / Left")
                     shortcutRow(action: "Paste Plain Text", key: "Enter")
                     shortcutRow(action: "Paste Rich Text", key: "Cmd + Enter")
-                    shortcutRow(action: "Paste Rich (No Links)", key: "Cmd + Opt + Enter")
+                    shortcutRow(action: "Paste Rich (No Links)", key: "Cmd + Ctrl + Enter")
                     shortcutRow(action: "Quick Paste (1st-10th)", key: "1 - 0")
                     shortcutRow(action: "Quick Paste Rich (1st-10th)", key: "Cmd + 1 - 0")
-                    shortcutRow(action: "Quick Paste Rich (No Links)", key: "Cmd + Opt + 1 - 0")
+                    shortcutRow(action: "Quick Paste Rich (No Links)", key: "Cmd + Ctrl + 1 - 0")
                     shortcutRow(action: "Pin Item", key: "Cmd + P")
                     shortcutRow(action: "Delete Item", key: "⌫ Delete")
                 }
