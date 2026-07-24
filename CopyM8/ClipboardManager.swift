@@ -450,22 +450,11 @@ private func checkForChanges() {
             
             if isFile {
                 if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], !urls.isEmpty {
-                    let paths = urls.map { $0.path }
-                    let text = urls.count == 1 ? urls.first!.lastPathComponent : "\(urls.count) files"
-                    let ext = urls.first!.pathExtension.lowercased()
-                    let imageExts = ["png", "jpg", "jpeg", "gif", "tiff", "webp", "heic"]
-                    let type: ItemType = (isImage || imageExts.contains(ext)) ? .image : .file
-                    newItem = ClipboardItem(text: text, timestamp: Date(), sourceApp: appName, rtfData: nil, isPinned: false, itemType: type, fileURLs: paths)
+                    newItem = createFileClipboardItem(urls: urls, appName: appName, isImage: isImage)
                 } else if let str = pasteboard.string(forType: vsCodeFileType) {
                     let lines = str.components(separatedBy: .newlines).filter { !$0.isEmpty }
-                    if let first = lines.first, let url = URL(string: first) {
-                        let path = url.path
-                        let text = url.lastPathComponent
-                        let ext = url.pathExtension.lowercased()
-                        let imageExts = ["png", "jpg", "jpeg", "gif", "tiff", "webp", "heic"]
-                        let type: ItemType = (isImage || imageExts.contains(ext)) ? .image : .file
-                        newItem = ClipboardItem(text: text, timestamp: Date(), sourceApp: appName, rtfData: nil, isPinned: false, itemType: type, fileURLs: [path])
-                    }
+                    let urls = lines.compactMap { URL(string: $0) }
+                    newItem = createFileClipboardItem(urls: urls, appName: appName, isImage: isImage)
                 }
             }
             
@@ -585,6 +574,41 @@ var maxHistoryCount: Int {
         }
     }
     
+    private func createFileClipboardItem(urls: [URL], appName: String?, isImage: Bool) -> ClipboardItem? {
+        guard let firstUrl = urls.first, !urls.isEmpty else { return nil }
+        
+        let paths = urls.map { $0.path }
+        
+        var totalSize: Int64 = 0
+        for path in paths {
+            if let attr = try? FileManager.default.attributesOfItem(atPath: path),
+               let size = attr[.size] as? Int64 {
+                totalSize += size
+            }
+        }
+        let sizeStr = ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
+        
+        let firstName = firstUrl.lastPathComponent
+        let ext = firstUrl.pathExtension
+        let base = firstUrl.deletingPathExtension().lastPathComponent
+        
+        var displayName = firstName
+        if base.count > 10 {
+            let truncated = String(base.prefix(10)) + "..."
+            displayName = ext.isEmpty ? truncated : "\(truncated).\(ext)"
+        }
+        
+        let text = paths.count == 1 ? "\(displayName) (\(sizeStr))" : "\(displayName) + \(paths.count - 1) more (\(sizeStr))"
+        
+        let parentFolder = firstUrl.deletingLastPathComponent().lastPathComponent
+        let finalAppName = "\(parentFolder) • \(appName ?? "Finder")"
+        
+        let imageExts = ["png", "jpg", "jpeg", "gif", "tiff", "webp", "heic"]
+        let type: ItemType = (isImage || imageExts.contains(ext.lowercased())) ? .image : .file
+        
+        return ClipboardItem(text: text, timestamp: Date(), sourceApp: finalAppName, rtfData: nil, isPinned: false, itemType: type, fileURLs: paths)
+    }
+
     func truncateHistory(to limit: Int) {
         let unpinnedCount = history.filter { !$0.isPinned && $0.folderId == nil }.count
         if unpinnedCount > limit {
