@@ -608,14 +608,26 @@ var maxHistoryCount: Int {
         ignoreNextChange = true
         pasteboard.clearContents()
         
+        let hasFiles = item.fileURLs != nil && !item.fileURLs!.isEmpty
+        
         switch formatType {
         case .plain:
-            pasteboard.setString(item.text, forType: .string)
+            if hasFiles {
+                let nsUrls = item.fileURLs!.map { NSURL(fileURLWithPath: $0) }
+                pasteboard.writeObjects(nsUrls)
+            } else {
+                pasteboard.setString(item.text, forType: .string)
+            }
             
         case .rich:
             if let rtfData = item.rtfData { pasteboard.setData(rtfData, forType: .rtf) }
             if let htmlData = item.htmlData { pasteboard.setData(htmlData, forType: .html) }
-            pasteboard.setString(item.text, forType: .string)
+            if hasFiles {
+                let nsUrls = item.fileURLs!.map { NSURL(fileURLWithPath: $0) }
+                pasteboard.writeObjects(nsUrls)
+            } else {
+                pasteboard.setString(item.text, forType: .string)
+            }
             
         case .richNoLinks:
             let stripRtfLinks = {
@@ -666,8 +678,8 @@ var maxHistoryCount: Int {
                 stripRtfLinks()
             }
             
-            if let paths = item.fileURLs, !paths.isEmpty {
-                let nsUrls = paths.map { NSURL(fileURLWithPath: $0) }
+            if hasFiles {
+                let nsUrls = item.fileURLs!.map { NSURL(fileURLWithPath: $0) }
                 pasteboard.writeObjects(nsUrls)
             } else {
                 pasteboard.setString(item.text, forType: .string)
