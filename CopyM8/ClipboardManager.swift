@@ -29,7 +29,7 @@ struct ClipboardItem: Identifiable, Equatable, Codable {
     var htmlData: Data?
     var isPinned: Bool = false
     var itemType: ItemType = .text
-    var fileURL: String?
+    var fileURLs: [String]?
     var folderId: UUID? = nil
     var orderIndex: Int = 0
 }
@@ -449,13 +449,13 @@ private func checkForChanges() {
             var newItem: ClipboardItem? = nil
             
             if isFile {
-                if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], let url = urls.first {
-                    let path = url.path
-                    let text = url.lastPathComponent
-                    let ext = url.pathExtension.lowercased()
+                if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], !urls.isEmpty {
+                    let paths = urls.map { $0.path }
+                    let text = urls.count == 1 ? urls.first!.lastPathComponent : "\(urls.count) files"
+                    let ext = urls.first!.pathExtension.lowercased()
                     let imageExts = ["png", "jpg", "jpeg", "gif", "tiff", "webp", "heic"]
                     let type: ItemType = (isImage || imageExts.contains(ext)) ? .image : .file
-                    newItem = ClipboardItem(text: text, timestamp: Date(), sourceApp: appName, rtfData: nil, isPinned: false, itemType: type, fileURL: path)
+                    newItem = ClipboardItem(text: text, timestamp: Date(), sourceApp: appName, rtfData: nil, isPinned: false, itemType: type, fileURLs: paths)
                 } else if let str = pasteboard.string(forType: vsCodeFileType) {
                     let lines = str.components(separatedBy: .newlines).filter { !$0.isEmpty }
                     if let first = lines.first, let url = URL(string: first) {
@@ -464,7 +464,7 @@ private func checkForChanges() {
                         let ext = url.pathExtension.lowercased()
                         let imageExts = ["png", "jpg", "jpeg", "gif", "tiff", "webp", "heic"]
                         let type: ItemType = (isImage || imageExts.contains(ext)) ? .image : .file
-                        newItem = ClipboardItem(text: text, timestamp: Date(), sourceApp: appName, rtfData: nil, isPinned: false, itemType: type, fileURL: path)
+                        newItem = ClipboardItem(text: text, timestamp: Date(), sourceApp: appName, rtfData: nil, isPinned: false, itemType: type, fileURLs: [path])
                     }
                 }
             }
@@ -478,7 +478,7 @@ private func checkForChanges() {
                             let formatter = DateFormatter()
                             formatter.timeStyle = .short
                             let name = "Screenshot at \(formatter.string(from: Date()))"
-                            newItem = ClipboardItem(id: id, text: name, timestamp: Date(), sourceApp: appName, rtfData: nil, isPinned: false, itemType: .image, fileURL: nil)
+                            newItem = ClipboardItem(id: id, text: name, timestamp: Date(), sourceApp: appName, rtfData: nil, isPinned: false, itemType: .image, fileURLs: nil)
                         }
                     }
                 }
@@ -519,7 +519,7 @@ private func checkForChanges() {
                                         
                     if isActuallyURL { type = .link }
                     
-                    newItem = ClipboardItem(text: newString, timestamp: Date(), sourceApp: appName, rtfData: rtfData, htmlData: htmlData, isPinned: false, itemType: type, fileURL: nil)
+                    newItem = ClipboardItem(text: newString, timestamp: Date(), sourceApp: appName, rtfData: rtfData, htmlData: htmlData, isPinned: false, itemType: type, fileURLs: nil)
                 }
             }
             
@@ -666,7 +666,12 @@ var maxHistoryCount: Int {
                 stripRtfLinks()
             }
             
-            pasteboard.setString(item.text, forType: .string)
+            if let paths = item.fileURLs, !paths.isEmpty {
+                let nsUrls = paths.map { NSURL(fileURLWithPath: $0) }
+                pasteboard.writeObjects(nsUrls)
+            } else {
+                pasteboard.setString(item.text, forType: .string)
+            }
         }
         
         // Ensure our internal state ignores this exact change we just made

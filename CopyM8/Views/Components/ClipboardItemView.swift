@@ -56,18 +56,26 @@ struct ClipboardItemView: View {
                                 .scaledToFit()
                                 .frame(maxHeight: isExpanded ? 200 : 40)
                                 .cornerRadius(4)
-                        } else if let path = item.fileURL, let nsImage = NSImage(contentsOfFile: path) {
+                        } else if let paths = item.fileURLs, let path = paths.first, let nsImage = NSImage(contentsOfFile: path) {
                             Image(nsImage: nsImage)
                                 .resizable()
                                 .scaledToFit()
                                 .frame(maxHeight: isExpanded ? 200 : 40)
                                 .cornerRadius(4)
                         }
-                    } else if item.itemType == .file, let path = item.fileURL {
+                    } else if item.itemType == .file, let paths = item.fileURLs, let path = paths.first {
                         HStack(spacing: 6) {
-                            Image(nsImage: NSWorkspace.shared.icon(forFile: path))
-                                .resizable()
-                                .frame(width: 16, height: 16)
+                            if paths.count > 1 {
+                                Image(systemName: "doc.on.doc.fill")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 16, height: 16)
+                                    .foregroundColor(.secondary)
+                            } else {
+                                Image(nsImage: NSWorkspace.shared.icon(forFile: path))
+                                    .resizable()
+                                    .frame(width: 16, height: 16)
+                            }
                             Text(item.text)
                                 .lineLimit(isExpanded ? nil : 1)
                                 .font(.system(size: 13, weight: .regular))
