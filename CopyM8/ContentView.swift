@@ -925,7 +925,7 @@ extension ContentView {
                     _expandedFolderIds.wrappedValue.removeAll()
                     return nil
                 }
-                if event.modifierFlags.contains(.command) && (activeTab == "Pinned" || activeTab == "Groups") {
+                if _isReorderMode.wrappedValue && event.modifierFlags.contains(.command) && (activeTab == "Pinned" || activeTab == "Groups") {
                     var idsToMove: [(index: Int, id: UUID, isFolder: Bool)] = []
                     if _selectedItemsForDeletion.wrappedValue.isEmpty {
                         return nil
@@ -973,7 +973,7 @@ extension ContentView {
                     _expandedFolderIds.wrappedValue = Set(clipboard.folders.map { $0.id })
                     return nil
                 }
-                if event.modifierFlags.contains(.command) && (activeTab == "Pinned" || activeTab == "Groups") {
+                if _isReorderMode.wrappedValue && event.modifierFlags.contains(.command) && (activeTab == "Pinned" || activeTab == "Groups") {
                     var idsToMove: [(index: Int, id: UUID, isFolder: Bool)] = []
                     if _selectedItemsForDeletion.wrappedValue.isEmpty {
                         return nil
