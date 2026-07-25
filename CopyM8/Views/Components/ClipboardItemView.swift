@@ -50,18 +50,33 @@ struct ClipboardItemView: View {
                 
                 VStack(alignment: .leading, spacing: 4) {
                     if item.itemType == .image {
-                        if let nsImage = LocalImageStore.shared.loadImage(id: item.id) {
-                            Image(nsImage: nsImage)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(maxHeight: isExpanded ? 200 : 40)
-                                .cornerRadius(4)
-                        } else if let paths = item.fileURLs, let path = paths.first, let nsImage = NSImage(contentsOfFile: path) {
-                            Image(nsImage: nsImage)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(maxHeight: isExpanded ? 200 : 40)
-                                .cornerRadius(4)
+                        if let paths = item.fileURLs, paths.count > 1 {
+                            HStack(spacing: 6) {
+                                Image(systemName: "photo.on.rectangle.angled")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 16, height: 16)
+                                    .foregroundColor(.secondary)
+                                Text(item.text)
+                                    .lineLimit(isExpanded ? nil : 1)
+                                    .font(.system(size: 13, weight: .regular))
+                                    .foregroundColor(primaryTextColor)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        } else {
+                            if let nsImage = LocalImageStore.shared.loadImage(id: item.id) {
+                                Image(nsImage: nsImage)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(maxHeight: isExpanded ? 200 : 40)
+                                    .cornerRadius(4)
+                            } else if let paths = item.fileURLs, let path = paths.first, let nsImage = NSImage(contentsOfFile: path) {
+                                Image(nsImage: nsImage)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(maxHeight: isExpanded ? 200 : 40)
+                                    .cornerRadius(4)
+                            }
                         }
                     } else if item.itemType == .file, let paths = item.fileURLs, let path = paths.first {
                         HStack(spacing: 6) {
