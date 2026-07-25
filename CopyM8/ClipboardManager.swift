@@ -689,6 +689,22 @@ var maxHistoryCount: Int {
             history.removeAll { idsToRemove.contains($0.id) }
         }
     }
+    private func formatSize(_ bytes: Int64) -> String {
+        let dBytes = Double(bytes)
+        let kb = dBytes / 1000.0
+        let mb = kb / 1000.0
+        let gb = mb / 1000.0
+        
+        if gb >= 1.0 {
+            return gb > 10.0 ? String(format: "%.0f GB", round(gb)) : String(format: "%.1f GB", gb)
+        } else if mb >= 1.0 {
+            return mb > 10.0 ? String(format: "%.0f MB", round(mb)) : String(format: "%.1f MB", mb)
+        } else if kb >= 1.0 {
+            return kb > 10.0 ? String(format: "%.0f KB", round(kb)) : String(format: "%.1f KB", kb)
+        } else {
+            return "\(bytes) bytes"
+        }
+    }
     
     private func createFileClipboardItem(urls: [URL], appName: String?, isImage: Bool) -> ClipboardItem? {
         guard let firstUrl = urls.first, !urls.isEmpty else { return nil }
@@ -702,17 +718,10 @@ var maxHistoryCount: Int {
                 totalSize += size
             }
         }
-        let sizeStr = ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
+        let sizeStr = formatSize(totalSize)
         
-        let firstName = firstUrl.lastPathComponent
+        let displayName = firstUrl.lastPathComponent
         let ext = firstUrl.pathExtension
-        let base = firstUrl.deletingPathExtension().lastPathComponent
-        
-        var displayName = firstName
-        if base.count > 10 {
-            let truncated = String(base.prefix(10)) + "..."
-            displayName = ext.isEmpty ? truncated : "\(truncated).\(ext)"
-        }
         
         let text = paths.count == 1 ? "\(displayName) (\(sizeStr))" : "\(displayName) + \(paths.count - 1) more (\(sizeStr))"
         

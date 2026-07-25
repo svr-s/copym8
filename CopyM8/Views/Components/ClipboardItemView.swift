@@ -29,6 +29,39 @@ struct ClipboardItemView: View {
         isSelected && isWindowActive ? .white.opacity(0.8) : .primary.opacity(0.6)
     }
     
+    private var titleText: String {
+        if (item.itemType == .file || item.itemType == .image), let range = item.text.range(of: " (", options: .backwards) {
+            return String(item.text[..<range.lowerBound])
+        }
+        return item.text
+    }
+    
+    private var metaText: String? {
+        if (item.itemType == .file || item.itemType == .image), let range = item.text.range(of: " (", options: .backwards) {
+            return String(item.text[range.lowerBound...])
+        }
+        return nil
+    }
+    
+    @ViewBuilder
+    private var titleAndMetaView: some View {
+        HStack(spacing: 4) {
+            Text(titleText)
+                .lineLimit(isExpanded ? nil : 1)
+                .truncationMode(.middle)
+            
+            if let meta = metaText {
+                Text(meta)
+                    .lineLimit(1)
+                    .layoutPriority(1)
+            }
+            Spacer(minLength: 0)
+        }
+        .font(.system(size: 13, weight: .regular))
+        .foregroundColor(primaryTextColor)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
     var body: some View {
         Button(action: onPaste) {
             HStack(spacing: 12) {
@@ -36,6 +69,7 @@ struct ClipboardItemView: View {
                     Image(systemName: isChecked ? "checkmark.circle.fill" : "circle")
                         .foregroundColor(isChecked ? .primary : .primary.opacity(0.3))
                         .font(.system(size: 14))
+                        .frame(width: 16, alignment: .leading)
                 } else {
                     if let sIndex = shortcutIndex {
                         let shortcutText = sIndex == 9 ? "0" : "\(sIndex + 1)"
@@ -50,33 +84,21 @@ struct ClipboardItemView: View {
                 
                 VStack(alignment: .leading, spacing: 4) {
                     if item.itemType == .image {
-                        if let paths = item.fileURLs, paths.count > 1 {
-                            HStack(spacing: 6) {
+                        HStack(spacing: 6) {
+                            if let paths = item.fileURLs, paths.count > 1 {
                                 Image(systemName: "photo.on.rectangle.angled")
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 16, height: 16)
                                     .foregroundColor(.secondary)
-                                Text(item.text)
-                                    .lineLimit(isExpanded ? nil : 1)
-                                    .font(.system(size: 13, weight: .regular))
-                                    .foregroundColor(primaryTextColor)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                        } else {
-                            if let nsImage = LocalImageStore.shared.loadImage(id: item.id) {
-                                Image(nsImage: nsImage)
+                            } else {
+                                Image(systemName: "photo.fill")
                                     .resizable()
                                     .scaledToFit()
-                                    .frame(maxHeight: isExpanded ? 200 : 40)
-                                    .cornerRadius(4)
-                            } else if let paths = item.fileURLs, let path = paths.first, let nsImage = NSImage(contentsOfFile: path) {
-                                Image(nsImage: nsImage)
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(maxHeight: isExpanded ? 200 : 40)
-                                    .cornerRadius(4)
+                                    .frame(width: 16, height: 16)
+                                    .foregroundColor(.secondary)
                             }
+                            titleAndMetaView
                         }
                     } else if item.itemType == .file, let paths = item.fileURLs, let path = paths.first {
                         HStack(spacing: 6) {
@@ -91,18 +113,10 @@ struct ClipboardItemView: View {
                                     .resizable()
                                     .frame(width: 16, height: 16)
                             }
-                            Text(item.text)
-                                .lineLimit(isExpanded ? nil : 1)
-                                .font(.system(size: 13, weight: .regular))
-                                .foregroundColor(primaryTextColor)
-                                .fixedSize(horizontal: false, vertical: true)
+                            titleAndMetaView
                         }
                     } else {
-                        Text(item.text)
-                            .lineLimit(isExpanded ? nil : 1)
-                            .font(.system(size: 13, weight: .regular))
-                            .foregroundColor(primaryTextColor)
-                            .fixedSize(horizontal: false, vertical: true)
+                        titleAndMetaView
                     }
                     
                     if !isDense, let app = item.sourceApp {
