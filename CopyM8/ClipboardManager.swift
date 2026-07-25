@@ -446,6 +446,13 @@ private func checkForChanges() {
             if !isURL && !isFile && !isImage && !saveText { return }
             
             let appName = NSWorkspace.shared.frontmostApplication?.localizedName
+            if let activeApp = appName {
+                let blacklisted = UserDefaults.standard.stringArray(forKey: "blacklistedApps") ?? ["1Password", "Bitwarden", "Keychain Access"]
+                if blacklisted.contains(activeApp) {
+                    return
+                }
+            }
+            
             var newItem: ClipboardItem? = nil
             
             if isFile {

@@ -20,6 +20,8 @@ struct SettingsView: View {
     @AppStorage("themePreference") private var themePreference: String = "System"
     @AppStorage("activeColorName") private var activeColorName: String = "Glacier"
     
+    @State private var blacklistedApps: [String] = []
+    
     @State private var selectedTab = "General"
     
     var body: some View {
@@ -27,6 +29,7 @@ struct SettingsView: View {
             Picker("", selection: $selectedTab) {
                 Text("General").tag("General")
                 Text("Types").tag("Types")
+                Text("Privacy").tag("Privacy")
                 Text("Shortcuts").tag("Shortcuts")
             }
             .pickerStyle(SegmentedPickerStyle())
@@ -41,6 +44,8 @@ struct SettingsView: View {
                         generalTab
                     case "Types":
                         typesTab
+                    case "Privacy":
+                        privacyTab
                     case "Shortcuts":
                         shortcutsTab
                     default:
@@ -209,6 +214,79 @@ struct SettingsView: View {
             
             Spacer()
         }
+    }
+    
+    private var privacyTab: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("App Blacklist")
+                .font(.system(size: 13, weight: .semibold))
+            
+            Text("Items copied from these apps will NOT be saved to CopyM8.")
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+            
+            List {
+                ForEach(blacklistedApps, id: \.self) { app in
+                    HStack {
+                        Text(app)
+                            .font(.system(size: 12))
+                        Spacer()
+                        Button(action: {
+                            removeBlacklistedApp(app)
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+            .frame(height: 150)
+            .cornerRadius(6)
+            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.primary.opacity(0.1), lineWidth: 1))
+            
+            HStack {
+                Button("Add App via Finder...") {
+                    addAppViaFinder()
+                }
+                .font(.system(size: 11))
+                
+                Spacer()
+            }
+            
+            Spacer()
+        }
+        .onAppear {
+            if let saved = UserDefaults.standard.stringArray(forKey: "blacklistedApps") {
+                blacklistedApps = saved
+            } else {
+                blacklistedApps = ["1Password", "Bitwarden", "Keychain Access"]
+                UserDefaults.standard.set(blacklistedApps, forKey: "blacklistedApps")
+            }
+        }
+    }
+    
+    private func addAppViaFinder() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.application]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        
+        if panel.runModal() == .OK, let url = panel.url {
+            let appName = url.deletingPathExtension().lastPathComponent
+            if !blacklistedApps.contains(appName) {
+                blacklistedApps.append(appName)
+                UserDefaults.standard.set(blacklistedApps, forKey: "blacklistedApps")
+            }
+        }
+    }
+    
+    private func removeBlacklistedApp(_ app: String) {
+        blacklistedApps.removeAll { $0 == app }
+        UserDefaults.standard.set(blacklistedApps, forKey: "blacklistedApps")
     }
     
     private var shortcutsTab: some View {
