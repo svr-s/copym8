@@ -22,6 +22,9 @@ struct SettingsView: View {
     
     @State private var blacklistedApps: [String] = []
     
+    @AppStorage("syncFolderPath") private var syncFolderPath: String = ""
+    @AppStorage("syncDeviceName") private var syncDeviceName: String = Host.current().localizedName ?? "My Mac"
+    
     @State private var selectedTab = "General"
     
     var body: some View {
@@ -29,6 +32,7 @@ struct SettingsView: View {
             Picker("", selection: $selectedTab) {
                 Text("General").tag("General")
                 Text("Types").tag("Types")
+                Text("Sync").tag("Sync")
                 Text("Privacy").tag("Privacy")
                 Text("Shortcuts").tag("Shortcuts")
             }
@@ -44,6 +48,8 @@ struct SettingsView: View {
                         generalTab
                     case "Types":
                         typesTab
+                    case "Sync":
+                        syncTab
                     case "Privacy":
                         privacyTab
                     case "Shortcuts":
@@ -213,6 +219,79 @@ struct SettingsView: View {
             Toggle("Save Files", isOn: $saveFiles)
             
             Spacer()
+        }
+    }
+    
+    private var syncTab: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Cloud Sync")
+                .font(.system(size: 13, weight: .semibold))
+            
+            Text("Keep your clipboard in sync across devices using your own iCloud, Dropbox, or Google Drive folder.")
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+            
+            Divider()
+            
+            Text("Device Name:")
+                .font(.system(size: 12))
+            TextField("e.g. MacBook Pro", text: $syncDeviceName)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .font(.system(size: 12))
+            
+            Text("Sync Folder:")
+                .font(.system(size: 12))
+                .padding(.top, 4)
+            
+            HStack {
+                Text(syncFolderPath.isEmpty ? "Not configured" : syncFolderPath)
+                    .font(.system(size: 11))
+                    .foregroundColor(syncFolderPath.isEmpty ? .secondary : .primary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(6)
+                    .background(Color.primary.opacity(0.05))
+                    .cornerRadius(4)
+                
+                Button("Choose...") {
+                    selectSyncFolder()
+                }
+                .font(.system(size: 11))
+            }
+            
+            if !syncFolderPath.isEmpty {
+                Button("Disable Sync") {
+                    syncFolderPath = ""
+                }
+                .font(.system(size: 11))
+                .foregroundColor(.red)
+                .buttonStyle(.plain)
+                .padding(.top, 4)
+            }
+            
+            Spacer()
+        }
+    }
+    
+    private func selectSyncFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        
+        if let window = NSApp.keyWindow {
+            panel.beginSheetModal(for: window) { response in
+                if response == .OK, let url = panel.url {
+                    DispatchQueue.main.async {
+                        self.syncFolderPath = url.path
+                    }
+                }
+            }
+        } else {
+            if panel.runModal() == .OK, let url = panel.url {
+                syncFolderPath = url.path
+            }
         }
     }
     

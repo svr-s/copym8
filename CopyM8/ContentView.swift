@@ -92,7 +92,7 @@ struct ContentView: View {
             case .folders:
                 return clipboard.folders.map { DisplayNode(id: "folder_\($0.id.uuidString)", isFolder: true, folder: $0, item: nil, parentFolderId: nil) }
             case .items(let folderId):
-                var items = clipboard.history.filter { $0.folderId == folderId }
+                var items = clipboard.activeHistory.filter { $0.folderId == folderId }
                 items.sort { item1, item2 in
                     if item1.orderIndex > 0 && item2.orderIndex > 0 { return item1.orderIndex < item2.orderIndex }
                     if item1.orderIndex > 0 { return true }
@@ -109,7 +109,7 @@ struct ContentView: View {
                 }
                 return nodes
             case .pinned:
-                var items = clipboard.history.filter { $0.isPinned && $0.folderId == nil }
+                var items = clipboard.activeHistory.filter { $0.isPinned && $0.folderId == nil }
                 items.sort { item1, item2 in
                     if item1.orderIndex > 0 && item2.orderIndex > 0 { return item1.orderIndex < item2.orderIndex }
                     if item1.orderIndex > 0 { return true }
@@ -138,7 +138,7 @@ struct ContentView: View {
                 nodes.append(DisplayNode(id: "folder_\(folder.id.uuidString)", isFolder: true, folder: folder, item: nil, parentFolderId: nil))
                 
                 if expandedFolderIds.contains(folder.id) {
-                    var items = clipboard.history.filter { $0.folderId == folder.id }
+                    var items = clipboard.activeHistory.filter { $0.folderId == folder.id }
                     if !searchText.isEmpty {
                         let bypassFilter = folder.name.localizedCaseInsensitiveContains(searchText)
                         if !bypassFilter {
@@ -171,7 +171,7 @@ struct ContentView: View {
             return nodes
         } else {
             // Re-use existing filteredHistory logic
-            var results = clipboard.history
+            var results = clipboard.activeHistory
             
             switch activeTab {
             case "Pinned": results = results.filter { $0.isPinned && $0.folderId == nil }

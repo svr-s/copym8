@@ -108,9 +108,25 @@ class ClipboardManager: ObservableObject {
         }
     }
     
+    @Published var remoteHistory: [ClipboardItem] = []
+    
+    var activeHistory: [ClipboardItem] {
+        return selectedDevice == "Local (This Mac)" ? history : remoteHistory
+    }
+    
+    @Published var availableDevices: [String] = []
+    @Published var selectedDevice: String = "Local (This Mac)" {
+        didSet {
+            if selectedDevice != "Local (This Mac)" {
+                fetchRemoteHistory(for: selectedDevice)
+            }
+        }
+    }
+    
     private let pasteboard = NSPasteboard.general
     private var lastChangeCount: Int = 0
     private var timer: Timer?
+    private var syncTimer: Timer?
     private let storageKey = "copym8_clipboard_history"
     private let foldersKey = "copym8_clipboard_folders"
     private let queue = DispatchQueue(label: "com.copym8.clipboard", qos: .userInteractive)
@@ -121,6 +137,7 @@ class ClipboardManager: ObservableObject {
         loadHistory()
         lastChangeCount = pasteboard.changeCount
         startPolling()
+        startSyncPolling()
     }
     
     private var historyFileURL: URL? {
@@ -194,8 +211,18 @@ class ClipboardManager: ObservableObject {
     
     func saveHistory() {
         if isReordering { return }
-        if let encoded = try? JSONEncoder().encode(history), let url = historyFileURL {
-            try? encoded.write(to: url, options: .atomic)
+        if let encoded = try? JSONEncoder().encode(history) {
+            if let url = historyFileURL {
+                try? encoded.write(to: url, options: .atomic)
+            }
+            
+            // Sync to Cloud Folder
+            if let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty {
+                let deviceName = UserDefaults.standard.string(forKey: "syncDeviceName") ?? (Host.current().localizedName ?? "My Mac")
+                let safeName = deviceName.replacingOccurrences(of: "/", with: "-")
+                let syncURL = URL(fileURLWithPath: syncPath).appendingPathComponent("\(safeName).json")
+                try? encoded.write(to: syncURL, options: .atomic)
+            }
         }
     }
     
@@ -400,6 +427,68 @@ class ClipboardManager: ObservableObject {
     private func startPolling() {
         timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             self?.checkForChanges()
+        }
+    }
+    
+    private func startSyncPolling() {
+        syncTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
+            self?.pollSyncFolder()
+        }
+    }
+    
+    private func pollSyncFolder() {
+        guard let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty else {
+            DispatchQueue.main.async {
+                if !self.availableDevices.isEmpty { self.availableDevices = [] }
+                if self.selectedDevice != "Local (This Mac)" { self.selectedDevice = "Local (This Mac)" }
+            }
+            return
+        }
+        
+        let localDeviceName = UserDefaults.standard.string(forKey: "syncDeviceName") ?? (Host.current().localizedName ?? "My Mac")
+        let url = URL(fileURLWithPath: syncPath)
+        
+        guard let files = try? FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil) else { return }
+        
+        let devices = files
+            .filter { $0.pathExtension == "json" }
+            .map { $0.deletingPathExtension().lastPathComponent }
+            .filter { $0 != localDeviceName }
+            .sorted()
+            
+        DispatchQueue.main.async {
+            if self.availableDevices != devices {
+                self.availableDevices = devices
+            }
+            // Auto-refresh remote history if currently viewing one
+            if self.selectedDevice != "Local (This Mac)" {
+                self.fetchRemoteHistory(for: self.selectedDevice)
+            }
+        }
+    }
+    
+    func fetchRemoteHistory(for deviceName: String) {
+        guard let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty else { return }
+        let url = URL(fileURLWithPath: syncPath).appendingPathComponent("\(deviceName).json")
+        
+        guard let data = try? Data(contentsOf: url) else { return }
+        
+        if let decoded = try? JSONDecoder().decode([ClipboardItem].self, from: data) {
+            // Filter out files/images since they rely on local UUIDs or paths
+            var filtered = decoded.filter { $0.itemType != .file && $0.itemType != .image }
+            
+            // We append a tag so users know it's remote
+            for i in 0..<filtered.count {
+                if let app = filtered[i].sourceApp {
+                    filtered[i].sourceApp = "\(app) (via \(deviceName))"
+                } else {
+                    filtered[i].sourceApp = "via \(deviceName)"
+                }
+            }
+            
+            DispatchQueue.main.async {
+                self.remoteHistory = filtered
+            }
         }
     }
     
