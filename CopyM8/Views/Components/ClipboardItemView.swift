@@ -36,6 +36,22 @@ struct ClipboardItemView: View {
         return item.text
     }
     
+    private var filenameText: String {
+        let title = titleText
+        if title.hasSuffix(" more"), let range = title.range(of: " + ", options: .backwards) {
+            return String(title[..<range.lowerBound])
+        }
+        return title
+    }
+    
+    private var suffixText: String? {
+        let title = titleText
+        if title.hasSuffix(" more"), let range = title.range(of: " + ", options: .backwards) {
+            return String(title[range.lowerBound...])
+        }
+        return nil
+    }
+    
     private var metaText: String? {
         if (item.itemType == .file || item.itemType == .image), let range = item.text.range(of: " (", options: .backwards) {
             return String(item.text[range.lowerBound...])
@@ -45,10 +61,16 @@ struct ClipboardItemView: View {
     
     @ViewBuilder
     private var titleAndMetaView: some View {
-        HStack(spacing: 4) {
-            Text(titleText)
+        HStack(spacing: 0) {
+            Text(filenameText)
                 .lineLimit(isExpanded ? nil : 1)
                 .truncationMode(.middle)
+            
+            if let suffix = suffixText {
+                Text(suffix)
+                    .lineLimit(1)
+                    .layoutPriority(1)
+            }
             
             if let meta = metaText {
                 Text(meta)
