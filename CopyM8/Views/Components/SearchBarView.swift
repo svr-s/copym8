@@ -14,6 +14,12 @@ struct SearchBarView: View {
                 .focused(isSearchFocused)
                 .font(.system(size: 12))
             
+            if !searchText.isEmpty {
+                Button(action: { searchText = "" }) {
+                    Image(systemName: "xmark.circle.fill").foregroundColor(.primary.opacity(0.5)).font(.system(size: 12))
+                }.buttonStyle(PlainButtonStyle())
+            }
+            
             if !clipboard.availableDevices.isEmpty {
                 Divider().frame(height: 12)
                 
@@ -29,11 +35,6 @@ struct SearchBarView: View {
                 .pickerStyle(MenuPickerStyle())
                 .font(.system(size: 11))
                 .frame(maxWidth: 140)
-            }
-            if !searchText.isEmpty {
-                Button(action: { searchText = "" }) {
-                    Image(systemName: "xmark.circle.fill").foregroundColor(.primary.opacity(0.5)).font(.system(size: 12))
-                }.buttonStyle(PlainButtonStyle())
             }
         }
         .padding(8).background(Color.primary.opacity(0.05)).cornerRadius(8)
