@@ -39,8 +39,8 @@ struct HeaderView: View {
                     .foregroundColor(isEditMode ? .primary : .primary.opacity(0.6))
             }
             .buttonStyle(PlainButtonStyle())
-            
-
+            .disabled(clipboard.selectedDevice != "Local (This Mac)")
+            .opacity(clipboard.selectedDevice != "Local (This Mac)" ? 0.3 : 1.0)
             
             Spacer()
             
@@ -57,7 +57,6 @@ struct HeaderView: View {
             }
             .pickerStyle(.segmented)
             .frame(width: 60)
-
             
             Button(action: { showingSettings.toggle() }) {
                 Image(systemName: "gearshape").font(.system(size: 11)).foregroundColor(.primary.opacity(0.6))
@@ -67,7 +66,7 @@ struct HeaderView: View {
             .onHover { hover in
                 if hover { NSCursor.arrow.push() } else { NSCursor.pop() }
             }
-            .popover(isPresented: $showingSettings, arrowEdge: .bottom) {
+            .sheet(isPresented: $showingSettings) {
                 SettingsView(draftHistoryCount: $draftHistoryCount, maxHistoryCount: $maxHistoryCount)
             }
             .onChange(of: showingSettings) { _, isShowing in
@@ -87,7 +86,9 @@ struct HeaderView: View {
                     .font(.system(size: 10)).foregroundColor(.primary.opacity(0.7))
             }.buttonStyle(PlainButtonStyle())
         }
-        .padding(.horizontal, 10).padding(.vertical, 8)
+        .padding(.horizontal, 10)
+        .padding(.top, 16)
+        .padding(.bottom, 8)
         .background(VisualEffectView(material: .windowBackground, blendingMode: .behindWindow))
     }
 }

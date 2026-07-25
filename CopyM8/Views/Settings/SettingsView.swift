@@ -2,12 +2,34 @@ import SwiftUI
 import AppKit
 import KeyboardShortcuts
 
+struct DevicePurgeItem: Identifiable {
+    let id: String
+}
+
+struct AntiPasteTextField: View {
+    let title: String
+    @Binding var text: String
+    
+    var body: some View {
+        TextField(title, text: Binding(
+            get: { text },
+            set: { newValue in
+                if newValue.count - text.count > 1 { return } // reject paste
+                text = newValue
+            }
+        ))
+    }
+}
+
 struct SettingsView: View {
     @EnvironmentObject var clipboard: ClipboardManager
     @Binding var draftHistoryCount: Int
     @Binding var maxHistoryCount: Int
     
     @State private var showingClearAlert = false
+    
+    @State private var deviceToPurge: DevicePurgeItem? = nil
+    @State private var purgeConfirmationText: String = ""
     
     @AppStorage("maxItemSizeMB") private var maxItemSizeMB: Int = 10
     @AppStorage("maxTotalStorageMB") private var maxTotalStorageMB: Int = 50
@@ -26,6 +48,8 @@ struct SettingsView: View {
     @AppStorage("syncDeviceName") private var syncDeviceName: String = Host.current().localizedName ?? "My Mac"
     
     @State private var selectedTab = "General"
+    
+    @Environment(\.dismiss) var dismiss
     
     var body: some View {
         VStack(spacing: 0) {
@@ -61,6 +85,17 @@ struct SettingsView: View {
                 .padding()
             }
             .frame(height: 380)
+            
+            Divider()
+            
+            HStack {
+                Spacer()
+                Button("Done") {
+                    dismiss()
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .padding(12)
         }
         .frame(width: 300)
     }
@@ -235,9 +270,16 @@ struct SettingsView: View {
             
             Text("Device Name:")
                 .font(.system(size: 12))
-            TextField("e.g. MacBook Pro", text: $syncDeviceName)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .font(.system(size: 12))
+            TextField("e.g. MacBook Pro", text: Binding(
+                get: { syncDeviceName },
+                set: { newValue in
+                    if !clipboard.availableDevices.contains(newValue) {
+                        syncDeviceName = newValue
+                    }
+                }
+            ))
+            .textFieldStyle(RoundedBorderTextFieldStyle())
+            .font(.system(size: 12))
             
             Text("Sync Folder:")
                 .font(.system(size: 12))
@@ -268,9 +310,86 @@ struct SettingsView: View {
                 .foregroundColor(.red)
                 .buttonStyle(.plain)
                 .padding(.top, 4)
+                
+                Divider().padding(.vertical, 4)
+                
+                Text("Manage Devices")
+                    .font(.system(size: 12, weight: .semibold))
+                
+                List {
+                    ForEach(clipboard.availableDevices, id: \.self) { device in
+                        HStack {
+                            Text(device).font(.system(size: 12))
+                            Spacer()
+                            Button(action: {
+                                // First fetch the remote history to make sure it's loaded
+                                clipboard.fetchRemoteHistory(for: device)
+                                // Then import everything from that device
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                    if !clipboard.remoteHistory.isEmpty {
+                                        clipboard.importItems(clipboard.remoteHistory)
+                                    }
+                                }
+                                dismiss()
+                            }) {
+                                Image(systemName: "square.and.arrow.down").foregroundColor(.blue)
+                            }
+                            .buttonStyle(.plain)
+                            .help("Import all items from this device")
+                            
+                            Button(action: {
+                                deviceToPurge = DevicePurgeItem(id: device)
+                                purgeConfirmationText = ""
+                            }) {
+                                Image(systemName: "trash").foregroundColor(.red)
+                            }
+                            .buttonStyle(.plain)
+                            .help("Purge this device data")
+                        }
+                    }
+                }
+                .frame(height: 100)
+                .cornerRadius(6)
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.primary.opacity(0.1), lineWidth: 1))
             }
             
             Spacer()
+        }
+        .sheet(item: $deviceToPurge) { deviceItem in
+            VStack(spacing: 16) {
+                Text("Purge Device Data")
+                    .font(.system(size: 14, weight: .bold))
+                
+                Text("Are you sure you want to permanently delete the synced data for **\(deviceItem.id)**? This will delete the JSON file from your Sync Folder.")
+                    .font(.system(size: 12))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+                
+                Text("Please type **permanently delete** to confirm:")
+                    .font(.system(size: 11, weight: .semibold))
+                
+                AntiPasteTextField(title: "permanently delete", text: $purgeConfirmationText)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .frame(width: 200)
+                
+                HStack(spacing: 12) {
+                    Button("Cancel") {
+                        deviceToPurge = nil
+                    }
+                    
+                    Button("Purge") {
+                        if purgeConfirmationText == "permanently delete" {
+                            clipboard.purgeRemoteDevice(deviceItem.id)
+                            deviceToPurge = nil
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                    .disabled(purgeConfirmationText != "permanently delete")
+                }
+            }
+            .padding(24)
+            .frame(width: 300)
         }
     }
     

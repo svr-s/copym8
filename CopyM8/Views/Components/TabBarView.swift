@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct TabBarView: View {
+    @EnvironmentObject var clipboard: ClipboardManager
     @Binding var activeTab: String
     @Binding var selectedIndex: Int
     @AppStorage("activeColorName") var activeColorName: String = "Glacier"
@@ -13,10 +14,15 @@ struct TabBarView: View {
                 HStack(spacing: 6) {
                     ForEach(["All", "Pinned", "Groups", "Text", "Links", "Images", "Files"], id: \.self) { tab in
                         if shouldShowTab(tab) {
+                            let isRemote = clipboard.selectedDevice != "Local (This Mac)"
+                            let isUnsupportedRemoteTab = isRemote && (tab == "Images" || tab == "Files")
+                            
                             Button(action: {
-                                withAnimation {
-                                    activeTab = tab
-                                    selectedIndex = 0
+                                if !isUnsupportedRemoteTab {
+                                    withAnimation {
+                                        activeTab = tab
+                                        selectedIndex = 0
+                                    }
                                 }
                             }) {
                                 let isActive = activeTab == tab
@@ -27,7 +33,7 @@ struct TabBarView: View {
                                     .fixedSize(horizontal: true, vertical: false)
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 4)
-                                    .foregroundColor(isActive ? .primary : .primary.opacity(0.6))
+                                    .foregroundColor(isActive ? .primary : (isUnsupportedRemoteTab ? .primary.opacity(0.2) : .primary.opacity(0.6)))
                                     .background(
                                         isActive 
                                         ? Color.primary.opacity(0.15) 
@@ -36,6 +42,7 @@ struct TabBarView: View {
                                     .cornerRadius(12)
                             }
                             .buttonStyle(PlainButtonStyle())
+                            .disabled(isUnsupportedRemoteTab)
                             .id(tab)
                         }
                     }

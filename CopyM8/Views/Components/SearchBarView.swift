@@ -16,15 +16,19 @@ struct SearchBarView: View {
             
             if !clipboard.availableDevices.isEmpty {
                 Divider().frame(height: 12)
+                
+                let localName = UserDefaults.standard.string(forKey: "syncDeviceName") ?? "Local"
+                let displayName = localName.isEmpty ? "Local" : "\(localName) (Local)"
+                
                 Picker("", selection: $clipboard.selectedDevice) {
-                    Text("Local (This Mac)").tag("Local (This Mac)")
+                    Text(displayName).tag("Local (This Mac)")
                     ForEach(clipboard.availableDevices, id: \.self) { device in
                         Text(device).tag(device)
                     }
                 }
                 .pickerStyle(MenuPickerStyle())
                 .font(.system(size: 11))
-                .frame(maxWidth: 120)
+                .frame(maxWidth: 140)
             }
             if !searchText.isEmpty {
                 Button(action: { searchText = "" }) {

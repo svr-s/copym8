@@ -438,6 +438,13 @@ struct ContentView: View {
                 }
             }
         )
+        .onChange(of: clipboard.selectedDevice) { _, newDevice in
+            if newDevice != "Local (This Mac)" {
+                if activeTab == "Images" || activeTab == "Files" {
+                    activeTab = "All"
+                }
+            }
+        }
     }
     
     private func ungroupSelectedItems(pin: Bool) {

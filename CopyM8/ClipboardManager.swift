@@ -109,6 +109,7 @@ class ClipboardManager: ObservableObject {
     }
     
     @Published var remoteHistory: [ClipboardItem] = []
+    @Published var remoteFolders: [ClipboardFolder] = []
     
     var activeHistory: [ClipboardItem] {
         return selectedDevice == "Local (This Mac)" ? history : remoteHistory
@@ -174,6 +175,8 @@ class ClipboardManager: ObservableObject {
         return updated
     }
     
+
+
     private func loadHistory() {
         var didMigrateHistory = false
         if let url = historyFileURL, let data = try? Data(contentsOf: url) {
@@ -228,8 +231,22 @@ class ClipboardManager: ObservableObject {
     
     func saveFolders() {
         if isReordering { return }
-        if let encoded = try? JSONEncoder().encode(folders), let url = foldersFileURL {
-            try? encoded.write(to: url, options: .atomic)
+        if let encoded = try? JSONEncoder().encode(folders) {
+            if let url = foldersFileURL {
+                try? encoded.write(to: url, options: .atomic)
+            }
+            
+            // Sync to Cloud Folder
+            if let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty {
+                let deviceName = UserDefaults.standard.string(forKey: "syncDeviceName") ?? (Host.current().localizedName ?? "My Mac")
+                let safeName = deviceName.replacingOccurrences(of: "/", with: "-")
+                let devicesFolder = URL(fileURLWithPath: syncPath).appendingPathComponent("Devices")
+                if !FileManager.default.fileExists(atPath: devicesFolder.path) {
+                    try? FileManager.default.createDirectory(at: devicesFolder, withIntermediateDirectories: true)
+                }
+                let syncURL = devicesFolder.appendingPathComponent("\(safeName)_folders.json")
+                try? encoded.write(to: syncURL, options: .atomic)
+            }
         }
     }
     
@@ -469,7 +486,8 @@ class ClipboardManager: ObservableObject {
     
     func fetchRemoteHistory(for deviceName: String) {
         guard let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty else { return }
-        let url = URL(fileURLWithPath: syncPath).appendingPathComponent("\(deviceName).json")
+        let devicesFolder = URL(fileURLWithPath: syncPath).appendingPathComponent("Devices")
+        let url = devicesFolder.appendingPathComponent("\(deviceName).json")
         
         guard let data = try? Data(contentsOf: url) else { return }
         
@@ -486,8 +504,15 @@ class ClipboardManager: ObservableObject {
                 }
             }
             
+            let foldersUrl = devicesFolder.appendingPathComponent("\(deviceName)_folders.json")
+            var fetchedFolders: [ClipboardFolder] = []
+            if let folderData = try? Data(contentsOf: foldersUrl) {
+                fetchedFolders = (try? JSONDecoder().decode([ClipboardFolder].self, from: folderData)) ?? []
+            }
+            
             DispatchQueue.main.async {
                 self.remoteHistory = filtered
+                self.remoteFolders = fetchedFolders
             }
         }
     }
@@ -821,5 +846,57 @@ var maxHistoryCount: Int {
         let vUp = CGEvent(keyboardEventSource: src, virtualKey: 0x09, keyDown: false)
         vUp?.flags = .maskCommand
         vUp?.post(tap: .cgAnnotatedSessionEventTap)
+    }
+    
+    func purgeRemoteDevice(_ deviceName: String) {
+        guard let folderPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !folderPath.isEmpty else { return }
+        let devicesFolder = URL(fileURLWithPath: folderPath).appendingPathComponent("Devices")
+        let fileURL = devicesFolder.appendingPathComponent("\(deviceName).json")
+        try? FileManager.default.removeItem(at: fileURL)
+        DispatchQueue.main.async {
+            self.availableDevices.removeAll { $0 == deviceName }
+            if self.selectedDevice == deviceName {
+                self.selectedDevice = "Local (This Mac)"
+            }
+        }
+    }
+    
+    func importItems(_ items: [ClipboardItem]) {
+        let remoteDevice = self.selectedDevice != "Local (This Mac)" ? self.selectedDevice : "Remote"
+        
+        for var item in items {
+            item.id = UUID()
+            
+            if let remoteFolderId = item.folderId {
+                if let remoteFolder = self.remoteFolders.first(where: { $0.id == remoteFolderId }) {
+                    let localFolderName = "\(remoteDevice) - \(remoteFolder.name)"
+                    
+                    if let existingLocalFolder = self.folders.first(where: { $0.name == localFolderName }) {
+                        item.folderId = existingLocalFolder.id
+                    } else {
+                        var newFolder = ClipboardFolder(name: localFolderName)
+                        newFolder.orderIndex = self.folders.count + 1
+                        self.folders.append(newFolder)
+                        item.folderId = newFolder.id
+                    }
+                } else {
+                    item.folderId = nil // Fallback
+                }
+            }
+            
+            self.history.insert(item, at: 0)
+        }
+        
+        if self.history.count > maxHistoryCount {
+            let removedItems = Array(self.history[maxHistoryCount...])
+            self.history = Array(self.history.prefix(maxHistoryCount))
+            for item in removedItems {
+                if item.itemType == .image {
+                    LocalImageStore.shared.deleteImage(id: item.id)
+                }
+            }
+        }
+        
+        self.selectedDevice = "Local (This Mac)"
     }
 }
