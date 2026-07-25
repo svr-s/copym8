@@ -85,17 +85,6 @@ struct SettingsView: View {
                 .padding()
             }
             .frame(height: 380)
-            
-            Divider()
-            
-            HStack {
-                Spacer()
-                Button("Done") {
-                    dismiss()
-                }
-                .buttonStyle(.borderedProminent)
-            }
-            .padding(12)
         }
         .frame(width: 300)
     }
