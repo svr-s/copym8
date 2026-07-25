@@ -66,7 +66,7 @@ struct HeaderView: View {
             .onHover { hover in
                 if hover { NSCursor.arrow.push() } else { NSCursor.pop() }
             }
-            .sheet(isPresented: $showingSettings) {
+            .popover(isPresented: $showingSettings) {
                 SettingsView(draftHistoryCount: $draftHistoryCount, maxHistoryCount: $maxHistoryCount)
             }
             .onChange(of: showingSettings) { _, isShowing in
