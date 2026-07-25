@@ -34,9 +34,7 @@ struct ClipboardFolderListView: View {
                         )
                         .id(index)
                     }
-                    .onMove { source, destination in
-                        clipboard.folders.move(fromOffsets: source, toOffset: destination)
-                    }
+
                 }
                 .padding(8)
                 .onChange(of: selectedIndex) { _, newIndex in

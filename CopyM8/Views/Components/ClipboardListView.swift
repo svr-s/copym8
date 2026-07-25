@@ -131,41 +131,7 @@ struct ClipboardListView: View {
                             .id(node.id)
                         }
                     }
-                    .onMove { source, destination in
-                        if activeTab == "Pinned" {
-                            let currentIds = displayNodes.filter { !$0.isDivider }.compactMap { $0.item?.id }
-                            // We need to adjust source and destination to ignore the divider
-                            let sourceIndices = source.compactMap { idx -> Int? in
-                                let node = displayNodes[idx]
-                                return currentIds.firstIndex(of: node.item!.id)
-                            }
-                            // destination is an index in displayNodes
-                            // We find how many dividers are before the destination
-                            let dividersBeforeDest = displayNodes.prefix(destination).filter { $0.isDivider }.count
-                            let adjustedDest = destination - dividersBeforeDest
-                            
-                            if let firstSource = sourceIndices.first {
-                                clipboard.reorderPinnedItems(source: IndexSet(integer: firstSource), destination: adjustedDest)
-                            }
-                        } else if activeTab == "Groups" {
-                            // If moving folders
-                            let firstNode = displayNodes[source.first!]
-                            if firstNode.isFolder {
-                                let folderIds = clipboard.folders.map { $0.id }
-                                if let fId = firstNode.folder?.id, let fIndex = folderIds.firstIndex(of: fId) {
-                                    let adjustedDest = displayNodes.prefix(destination).filter { $0.isFolder }.count
-                                    clipboard.reorderFolders(source: IndexSet(integer: fIndex), destination: adjustedDest)
-                                }
-                            } else if let fId = firstNode.parentFolderId {
-                                // Moving items inside folder
-                                let itemsInFolder = displayNodes.filter { $0.parentFolderId == fId }.compactMap { $0.item?.id }
-                                if let iId = firstNode.item?.id, let iIndex = itemsInFolder.firstIndex(of: iId) {
-                                    let adjustedDest = displayNodes.prefix(destination).filter { $0.parentFolderId == fId }.count
-                                    clipboard.reorderGroupItems(folderId: fId, source: IndexSet(integer: iIndex), destination: adjustedDest)
-                                }
-                            }
-                        }
-                    }
+
                 }
                 .padding(8)
                 .onChange(of: selectedIndex) { _, newIndex in
