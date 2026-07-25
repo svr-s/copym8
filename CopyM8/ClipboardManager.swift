@@ -240,11 +240,7 @@ class ClipboardManager: ObservableObject {
             if let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty {
                 let deviceName = UserDefaults.standard.string(forKey: "syncDeviceName") ?? (Host.current().localizedName ?? "My Mac")
                 let safeName = deviceName.replacingOccurrences(of: "/", with: "-")
-                let devicesFolder = URL(fileURLWithPath: syncPath).appendingPathComponent("Devices")
-                if !FileManager.default.fileExists(atPath: devicesFolder.path) {
-                    try? FileManager.default.createDirectory(at: devicesFolder, withIntermediateDirectories: true)
-                }
-                let syncURL = devicesFolder.appendingPathComponent("\(safeName)_folders.json")
+                let syncURL = URL(fileURLWithPath: syncPath).appendingPathComponent("\(safeName)_folders.json")
                 try? encoded.write(to: syncURL, options: .atomic)
             }
         }
@@ -486,8 +482,7 @@ class ClipboardManager: ObservableObject {
     
     func fetchRemoteHistory(for deviceName: String) {
         guard let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty else { return }
-        let devicesFolder = URL(fileURLWithPath: syncPath).appendingPathComponent("Devices")
-        let url = devicesFolder.appendingPathComponent("\(deviceName).json")
+        let url = URL(fileURLWithPath: syncPath).appendingPathComponent("\(deviceName).json")
         
         guard let data = try? Data(contentsOf: url) else { return }
         
@@ -504,7 +499,7 @@ class ClipboardManager: ObservableObject {
                 }
             }
             
-            let foldersUrl = devicesFolder.appendingPathComponent("\(deviceName)_folders.json")
+            let foldersUrl = URL(fileURLWithPath: syncPath).appendingPathComponent("\(deviceName)_folders.json")
             var fetchedFolders: [ClipboardFolder] = []
             if let folderData = try? Data(contentsOf: foldersUrl) {
                 fetchedFolders = (try? JSONDecoder().decode([ClipboardFolder].self, from: folderData)) ?? []
@@ -850,9 +845,10 @@ var maxHistoryCount: Int {
     
     func purgeRemoteDevice(_ deviceName: String) {
         guard let folderPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !folderPath.isEmpty else { return }
-        let devicesFolder = URL(fileURLWithPath: folderPath).appendingPathComponent("Devices")
-        let fileURL = devicesFolder.appendingPathComponent("\(deviceName).json")
+        let fileURL = URL(fileURLWithPath: folderPath).appendingPathComponent("\(deviceName).json")
+        let foldersURL = URL(fileURLWithPath: folderPath).appendingPathComponent("\(deviceName)_folders.json")
         try? FileManager.default.removeItem(at: fileURL)
+        try? FileManager.default.removeItem(at: foldersURL)
         DispatchQueue.main.async {
             self.availableDevices.removeAll { $0 == deviceName }
             if self.selectedDevice == deviceName {
