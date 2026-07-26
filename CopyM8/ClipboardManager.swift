@@ -723,6 +723,15 @@ private func checkForChanges() {
             
             // Deduplication
             if let existingIndex = history.firstIndex(where: { $0.text == itemToSave.text && $0.itemType == itemToSave.itemType }) {
+                let existingId = history[existingIndex].id
+                if itemToSave.hasRTF, let data = LocalPayloadStore.shared.loadPayload(id: itemToSave.id, type: .rtf) {
+                    let _ = LocalPayloadStore.shared.savePayload(data, id: existingId, type: .rtf)
+                }
+                if itemToSave.hasHTML, let data = LocalPayloadStore.shared.loadPayload(id: itemToSave.id, type: .html) {
+                    let _ = LocalPayloadStore.shared.savePayload(data, id: existingId, type: .html)
+                }
+                LocalPayloadStore.shared.deletePayloads(for: itemToSave.id)
+                
                 DispatchQueue.main.async {
                     var item = self.history.remove(at: existingIndex)
                     if item.itemType == .text {
