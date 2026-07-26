@@ -27,6 +27,9 @@ struct ClipboardItem: Identifiable, Equatable, Codable {
     var sourceApp: String?
     var hasRTF: Bool = false
     var hasHTML: Bool = false
+    var hasRTFD: Bool = false
+    var hasWebArchive: Bool = false
+    var hasPDF: Bool = false
     var isPinned: Bool = false
     var itemType: ItemType = .text
     var fileURLs: [String]?
@@ -98,6 +101,9 @@ class LocalImageStore {
 enum PayloadType: String {
     case rtf
     case html
+    case rtfd
+    case webArchive
+    case pdf
 }
 
 class LocalPayloadStore {
@@ -704,6 +710,30 @@ private func checkForChanges() {
                         }
                     }
                     
+                    var hasRTFD = false
+                    if let rtfd = pasteboard.data(forType: .rtfd) ?? pasteboard.data(forType: NSPasteboard.PasteboardType("com.apple.flat-rtfd")) {
+                        if rtfd.count <= maxItemSizeMB * 1024 * 1024 {
+                            let _ = LocalPayloadStore.shared.savePayload(rtfd, id: newItemId, type: .rtfd)
+                            hasRTFD = true
+                        }
+                    }
+                    
+                    var hasWebArchive = false
+                    if let webArchive = pasteboard.data(forType: NSPasteboard.PasteboardType("Apple Web Archive pasteboard type")) {
+                        if webArchive.count <= maxItemSizeMB * 1024 * 1024 {
+                            let _ = LocalPayloadStore.shared.savePayload(webArchive, id: newItemId, type: .webArchive)
+                            hasWebArchive = true
+                        }
+                    }
+                    
+                    var hasPDF = false
+                    if let pdf = pasteboard.data(forType: .pdf) ?? pasteboard.data(forType: NSPasteboard.PasteboardType("com.adobe.pdf")) {
+                        if pdf.count <= maxItemSizeMB * 1024 * 1024 {
+                            let _ = LocalPayloadStore.shared.savePayload(pdf, id: newItemId, type: .pdf)
+                            hasPDF = true
+                        }
+                    }
+                    
                     var type: ItemType = .text
                     let trimmedStr = newString.trimmingCharacters(in: .whitespacesAndNewlines)
                     let lowerStr = trimmedStr.lowercased()
@@ -715,7 +745,7 @@ private func checkForChanges() {
                                         
                     if isActuallyURL { type = .link }
                     
-                    newItem = ClipboardItem(id: newItemId, text: newString, timestamp: Date(), sourceApp: appName, hasRTF: hasRTF, hasHTML: hasHTML, isPinned: false, itemType: type, fileURLs: nil)
+                    newItem = ClipboardItem(id: newItemId, text: newString, timestamp: Date(), sourceApp: appName, hasRTF: hasRTF, hasHTML: hasHTML, hasRTFD: hasRTFD, hasWebArchive: hasWebArchive, hasPDF: hasPDF, isPinned: false, itemType: type, fileURLs: nil)
                 }
             }
             
@@ -730,6 +760,15 @@ private func checkForChanges() {
                 if itemToSave.hasHTML, let data = LocalPayloadStore.shared.loadPayload(id: itemToSave.id, type: .html) {
                     let _ = LocalPayloadStore.shared.savePayload(data, id: existingId, type: .html)
                 }
+                if itemToSave.hasRTFD, let data = LocalPayloadStore.shared.loadPayload(id: itemToSave.id, type: .rtfd) {
+                    let _ = LocalPayloadStore.shared.savePayload(data, id: existingId, type: .rtfd)
+                }
+                if itemToSave.hasWebArchive, let data = LocalPayloadStore.shared.loadPayload(id: itemToSave.id, type: .webArchive) {
+                    let _ = LocalPayloadStore.shared.savePayload(data, id: existingId, type: .webArchive)
+                }
+                if itemToSave.hasPDF, let data = LocalPayloadStore.shared.loadPayload(id: itemToSave.id, type: .pdf) {
+                    let _ = LocalPayloadStore.shared.savePayload(data, id: existingId, type: .pdf)
+                }
                 LocalPayloadStore.shared.deletePayloads(for: itemToSave.id)
                 
                 DispatchQueue.main.async {
@@ -740,6 +779,15 @@ private func checkForChanges() {
                         }
                         if itemToSave.hasHTML {
                             item.hasHTML = true
+                        }
+                        if itemToSave.hasRTFD {
+                            item.hasRTFD = true
+                        }
+                        if itemToSave.hasWebArchive {
+                            item.hasWebArchive = true
+                        }
+                        if itemToSave.hasPDF {
+                            item.hasPDF = true
                         }
                     }
                     self.history.insert(item, at: 0)
@@ -829,9 +877,9 @@ var maxHistoryCount: Int {
         let finalAppName = "\(parentFolder) • \(appName ?? "Finder")"
         
         let imageExts = ["png", "jpg", "jpeg", "gif", "tiff", "webp", "heic"]
-        let type: ItemType = (isImage || imageExts.contains(ext.lowercased())) ? .image : .file
+        let type: ItemType = imageExts.contains(ext.lowercased()) ? .image : .file
         
-        return ClipboardItem(text: text, timestamp: Date(), sourceApp: finalAppName, hasRTF: false, hasHTML: false, isPinned: false, itemType: type, fileURLs: paths)
+        return ClipboardItem(text: text, timestamp: Date(), sourceApp: finalAppName, hasRTF: false, hasHTML: false, hasRTFD: false, hasWebArchive: false, hasPDF: false, isPinned: false, itemType: type, fileURLs: paths)
     }
 
     func truncateHistory(to limit: Int) {
@@ -872,6 +920,9 @@ var maxHistoryCount: Int {
         case .rich:
             if item.hasRTF, let rtfData = LocalPayloadStore.shared.loadPayload(id: item.id, type: .rtf) { pasteboard.setData(rtfData, forType: .rtf) }
             if item.hasHTML, let htmlData = LocalPayloadStore.shared.loadPayload(id: item.id, type: .html) { pasteboard.setData(htmlData, forType: .html) }
+            if item.hasRTFD, let rtfdData = LocalPayloadStore.shared.loadPayload(id: item.id, type: .rtfd) { pasteboard.setData(rtfdData, forType: .rtfd) }
+            if item.hasWebArchive, let webArchiveData = LocalPayloadStore.shared.loadPayload(id: item.id, type: .webArchive) { pasteboard.setData(webArchiveData, forType: NSPasteboard.PasteboardType("Apple Web Archive pasteboard type")) }
+            if item.hasPDF, let pdfData = LocalPayloadStore.shared.loadPayload(id: item.id, type: .pdf) { pasteboard.setData(pdfData, forType: .pdf) }
             if hasFiles {
                 let nsUrls = item.fileURLs!.map { NSURL(fileURLWithPath: $0) }
                 pasteboard.writeObjects(nsUrls)
