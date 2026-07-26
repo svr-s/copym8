@@ -25,8 +25,8 @@ struct ClipboardItem: Identifiable, Equatable, Codable {
     let text: String
     let timestamp: Date
     var sourceApp: String?
-    var rtfData: Data?
-    var htmlData: Data?
+    var hasRTF: Bool = false
+    var hasHTML: Bool = false
     var isPinned: Bool = false
     var itemType: ItemType = .text
     var fileURLs: [String]?
@@ -83,6 +83,73 @@ class LocalImageStore {
     
     func getTotalSizeMB() -> Double {
         guard let dir = imagesDirectory,
+              let files = try? fileManager.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.fileSizeKey]) else { return 0 }
+        
+        var totalBytes: Int64 = 0
+        for file in files {
+            if let attrs = try? file.resourceValues(forKeys: [.fileSizeKey]), let size = attrs.fileSize {
+                totalBytes += Int64(size)
+            }
+        }
+        return Double(totalBytes) / (1024.0 * 1024.0)
+    }
+}
+
+enum PayloadType: String {
+    case rtf
+    case html
+}
+
+class LocalPayloadStore {
+    static let shared = LocalPayloadStore()
+    
+    private let fileManager = FileManager.default
+    private var payloadsDirectory: URL? {
+        guard let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return nil }
+        let dir = appSupport.appendingPathComponent("CopyM8/Payloads")
+        if !fileManager.fileExists(atPath: dir.path) {
+            try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
+        }
+        return dir
+    }
+    
+    func savePayload(_ data: Data, id: UUID, type: PayloadType) -> Bool {
+        guard let dir = payloadsDirectory else { return false }
+        let fileURL = dir.appendingPathComponent("\(id.uuidString).\(type.rawValue)")
+        do {
+            try data.write(to: fileURL)
+            return true
+        } catch {
+            print("Failed to save payload: \(error)")
+            return false
+        }
+    }
+    
+    func loadPayload(id: UUID, type: PayloadType) -> Data? {
+        guard let dir = payloadsDirectory else { return nil }
+        let fileURL = dir.appendingPathComponent("\(id.uuidString).\(type.rawValue)")
+        return try? Data(contentsOf: fileURL)
+    }
+    
+    func deletePayloads(for id: UUID) {
+        guard let dir = payloadsDirectory else { return }
+        let rtfURL = dir.appendingPathComponent("\(id.uuidString).rtf")
+        let htmlURL = dir.appendingPathComponent("\(id.uuidString).html")
+        try? fileManager.removeItem(at: rtfURL)
+        try? fileManager.removeItem(at: htmlURL)
+    }
+    
+    func getFileSizeMB(id: UUID, type: PayloadType) -> Double {
+        guard let dir = payloadsDirectory else { return 0 }
+        let fileURL = dir.appendingPathComponent("\(id.uuidString).\(type.rawValue)")
+        if let attrs = try? fileManager.attributesOfItem(atPath: fileURL.path), let size = attrs[.size] as? UInt64 {
+            return Double(size) / (1024.0 * 1024.0)
+        }
+        return 0
+    }
+    
+    func getTotalSizeMB() -> Double {
+        guard let dir = payloadsDirectory,
               let files = try? fileManager.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.fileSizeKey]) else { return 0 }
         
         var totalBytes: Int64 = 0
@@ -416,13 +483,34 @@ class ClipboardManager: ObservableObject {
             }
             saveFolders()
             
-        case .none:
+case .none:
             break
         }
     }
 
+    func deleteItem(at index: Int) {
+        let item = history[index]
+        LocalPayloadStore.shared.deletePayloads(for: item.id)
+        if item.itemType == .image {
+            LocalImageStore.shared.deleteImage(id: item.id)
+        }
+        history.remove(at: index)
+        saveHistory()
+    }
+    
+    func deleteItems(where predicate: (ClipboardItem) -> Bool) {
+        let itemsToDelete = history.filter(predicate)
+        for item in itemsToDelete {
+            LocalPayloadStore.shared.deletePayloads(for: item.id)
+            if item.itemType == .image {
+                LocalImageStore.shared.deleteImage(id: item.id)
+            }
+        }
+        history.removeAll(where: predicate)
+    }
+
     func clearAll() {
-        history.removeAll()
+        deleteItems(where: { _ in true })
     }
     
     func togglePin(for id: UUID) {
@@ -583,7 +671,7 @@ private func checkForChanges() {
                             let formatter = DateFormatter()
                             formatter.timeStyle = .short
                             let name = "Screenshot at \(formatter.string(from: Date()))"
-                            newItem = ClipboardItem(id: id, text: name, timestamp: Date(), sourceApp: appName, rtfData: nil, isPinned: false, itemType: .image, fileURLs: nil)
+                            newItem = ClipboardItem(id: id, text: name, timestamp: Date(), sourceApp: appName, hasRTF: false, hasHTML: false, isPinned: false, itemType: .image, fileURLs: nil)
                         }
                     }
                 }
@@ -599,17 +687,20 @@ private func checkForChanges() {
                 }
                 
                 if let newString = extractedString {
-                    var rtfData: Data? = nil
+                    let newItemId = UUID()
+                    var hasRTF = false
                     if let rtf = pasteboard.data(forType: .rtf) {
                         if rtf.count <= maxItemSizeMB * 1024 * 1024 {
-                            rtfData = rtf
+                            let _ = LocalPayloadStore.shared.savePayload(rtf, id: newItemId, type: .rtf)
+                            hasRTF = true
                         }
                     }
                     
-                    var htmlData: Data? = nil
+                    var hasHTML = false
                     if let html = pasteboard.data(forType: .html) ?? pasteboard.data(forType: NSPasteboard.PasteboardType("public.html")) {
                         if html.count <= maxItemSizeMB * 1024 * 1024 {
-                            htmlData = html
+                            let _ = LocalPayloadStore.shared.savePayload(html, id: newItemId, type: .html)
+                            hasHTML = true
                         }
                     }
                     
@@ -624,7 +715,7 @@ private func checkForChanges() {
                                         
                     if isActuallyURL { type = .link }
                     
-                    newItem = ClipboardItem(text: newString, timestamp: Date(), sourceApp: appName, rtfData: rtfData, htmlData: htmlData, isPinned: false, itemType: type, fileURLs: nil)
+                    newItem = ClipboardItem(id: newItemId, text: newString, timestamp: Date(), sourceApp: appName, hasRTF: hasRTF, hasHTML: hasHTML, isPinned: false, itemType: type, fileURLs: nil)
                 }
             }
             
@@ -635,11 +726,11 @@ private func checkForChanges() {
                 DispatchQueue.main.async {
                     var item = self.history.remove(at: existingIndex)
                     if item.itemType == .text {
-                        if let rtf = itemToSave.rtfData {
-                            item.rtfData = rtf
+                        if itemToSave.hasRTF {
+                            item.hasRTF = true
                         }
-                        if let html = itemToSave.htmlData {
-                            item.htmlData = html
+                        if itemToSave.hasHTML {
+                            item.hasHTML = true
                         }
                     }
                     self.history.insert(item, at: 0)
@@ -686,7 +777,7 @@ var maxHistoryCount: Int {
         }
         
         if !idsToRemove.isEmpty {
-            history.removeAll { idsToRemove.contains($0.id) }
+            deleteItems(where: { idsToRemove.contains($0.id) })
         }
     }
     private func formatSize(_ bytes: Int64) -> String {
@@ -731,7 +822,7 @@ var maxHistoryCount: Int {
         let imageExts = ["png", "jpg", "jpeg", "gif", "tiff", "webp", "heic"]
         let type: ItemType = (isImage || imageExts.contains(ext.lowercased())) ? .image : .file
         
-        return ClipboardItem(text: text, timestamp: Date(), sourceApp: finalAppName, rtfData: nil, isPinned: false, itemType: type, fileURLs: paths)
+        return ClipboardItem(text: text, timestamp: Date(), sourceApp: finalAppName, hasRTF: false, hasHTML: false, isPinned: false, itemType: type, fileURLs: paths)
     }
 
     func truncateHistory(to limit: Int) {
@@ -769,8 +860,8 @@ var maxHistoryCount: Int {
             }
             
         case .rich:
-            if let rtfData = item.rtfData { pasteboard.setData(rtfData, forType: .rtf) }
-            if let htmlData = item.htmlData { pasteboard.setData(htmlData, forType: .html) }
+            if item.hasRTF, let rtfData = LocalPayloadStore.shared.loadPayload(id: item.id, type: .rtf) { pasteboard.setData(rtfData, forType: .rtf) }
+            if item.hasHTML, let htmlData = LocalPayloadStore.shared.loadPayload(id: item.id, type: .html) { pasteboard.setData(htmlData, forType: .html) }
             if hasFiles {
                 let nsUrls = item.fileURLs!.map { NSURL(fileURLWithPath: $0) }
                 pasteboard.writeObjects(nsUrls)
@@ -780,7 +871,8 @@ var maxHistoryCount: Int {
             
         case .richNoLinks:
             let stripRtfLinks = {
-                if let rtfData = item.rtfData,
+                if item.hasRTF,
+                   let rtfData = LocalPayloadStore.shared.loadPayload(id: item.id, type: .rtf),
                    let attrString = try? NSMutableAttributedString(data: rtfData, options: [.documentType: NSAttributedString.DocumentType.rtf], documentAttributes: nil) {
                     
                     attrString.enumerateAttribute(.link, in: NSRange(location: 0, length: attrString.length), options: []) { value, range, _ in
@@ -797,32 +889,34 @@ var maxHistoryCount: Int {
                 }
             }
             
-            if let htmlData = item.htmlData,
-               let htmlString = String(data: htmlData, encoding: .utf8),
-               let htmlDoc = try? XMLDocument(xmlString: htmlString, options: .documentTidyHTML) {
-                
-                if let links = try? htmlDoc.nodes(forXPath: "//a") {
-                    for link in links {
-                        let textNode = XMLNode(kind: .text)
-                        textNode.stringValue = link.stringValue
-                        if let parent = link.parent as? XMLElement {
-                            let index = link.index
-                            parent.replaceChild(at: index, with: textNode)
+            if item.hasHTML,
+               let htmlData = LocalPayloadStore.shared.loadPayload(id: item.id, type: .html) {
+                if let htmlString = String(data: htmlData, encoding: .utf8),
+                   let htmlDoc = try? XMLDocument(xmlString: htmlString, options: .documentTidyHTML) {
+                    
+                    if let links = try? htmlDoc.nodes(forXPath: "//a") {
+                        for link in links {
+                            let textNode = XMLNode(kind: .text)
+                            textNode.stringValue = link.stringValue
+                            if let parent = link.parent as? XMLElement {
+                                let index = link.index
+                                parent.replaceChild(at: index, with: textNode)
+                            }
                         }
                     }
-                }
-                
-                let xmlStr = htmlDoc.xmlString
-                let cleanHtmlStr = xmlStr.replacingOccurrences(of: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n", with: "")
-                if let cleanedHtmlData = cleanHtmlStr.data(using: .utf8), !cleanedHtmlData.isEmpty {
-                    pasteboard.setData(cleanedHtmlData, forType: .html)
+                    
+                    let xmlStr = htmlDoc.xmlString
+                    let cleanHtmlStr = xmlStr.replacingOccurrences(of: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n", with: "")
+                    if let cleanedHtmlData = cleanHtmlStr.data(using: .utf8), !cleanedHtmlData.isEmpty {
+                        pasteboard.setData(cleanedHtmlData, forType: .html)
+                    } else {
+                        pasteboard.setData(htmlData, forType: .html)
+                        stripRtfLinks()
+                    }
                 } else {
                     pasteboard.setData(htmlData, forType: .html)
                     stripRtfLinks()
                 }
-            } else if let htmlData = item.htmlData {
-                pasteboard.setData(htmlData, forType: .html)
-                stripRtfLinks()
             } else {
                 stripRtfLinks()
             }

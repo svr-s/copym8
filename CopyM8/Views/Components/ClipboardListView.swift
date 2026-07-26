@@ -128,7 +128,7 @@ struct ClipboardListView: View {
                             }
                             .contextMenu {
                                 Button(item.isPinned ? "Unpin" : "Pin") { clipboard.togglePin(for: item.id) }
-                                Button("Delete") { clipboard.history.removeAll { $0.id == item.id } }
+                                Button("Delete") { clipboard.deleteItems(where: { $0.id == item.id }) }
                             }
                             .id(node.id)
                         }

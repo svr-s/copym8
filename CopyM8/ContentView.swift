@@ -637,7 +637,7 @@ struct ContentView: View {
     }
     
     private func deleteSelectedItems() {
-        clipboard.history.removeAll { _selectedItemsForDeletion.wrappedValue.contains($0.id) }
+        clipboard.deleteItems(where: { _selectedItemsForDeletion.wrappedValue.contains($0.id) })
         _selectedItemsForDeletion.wrappedValue.removeAll()
         _isEditMode.wrappedValue = false
     }
@@ -654,14 +654,14 @@ struct ContentView: View {
                 }
             }
         } else {
-            clipboard.history.removeAll { item in
+            clipboard.deleteItems(where: { item in
                 if let fId = item.folderId { return folderIds.contains(fId) }
                 return false
-            }
+            })
         }
         
         clipboard.folders.removeAll { folderIds.contains($0.id) }
-        clipboard.history.removeAll { independentItemIds.contains($0.id) }
+        clipboard.deleteItems(where: { independentItemIds.contains($0.id) })
         
         _selectedItemsForDeletion.wrappedValue.removeAll()
         _isEditMode.wrappedValue = false
@@ -879,7 +879,7 @@ extension ContentView {
                         _showingFolderDeleteAlert.wrappedValue = true
                     } else if let id = node.item?.id {
                         if selectedIndex >= displayNodesLocal.count - 1 && selectedIndex > 0 { _selectedIndex.wrappedValue -= 1 }
-                        withAnimation { clipboard.history.removeAll { $0.id == id } }
+                        withAnimation { clipboard.deleteItems(where: { $0.id == id }) }
                     }
                 }
                 return nil
