@@ -164,8 +164,10 @@ struct ClipboardListView: View {
                     currentFolderId = node.folder?.id
                     count = 0
                 } else if node.parentFolderId == currentFolderId {
-                    if node.id == nodeId { return count < 10 ? count : nil }
-                    count += 1
+                    if !node.isDivider {
+                        if node.id == nodeId { return count < 10 ? count : nil }
+                        count += 1
+                    }
                 }
             }
         } else {
