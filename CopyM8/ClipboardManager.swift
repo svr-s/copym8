@@ -845,6 +845,7 @@ var maxHistoryCount: Int {
                     if item.itemType == .image {
                         LocalImageStore.shared.deleteImage(id: item.id)
                     }
+                    LocalPayloadStore.shared.deletePayloads(for: item.id)
                     history.remove(at: i)
                     removed += 1
                     if removed >= elementsToRemove { break }
