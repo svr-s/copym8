@@ -44,6 +44,7 @@ struct ContentView: View {
     @State var showingFolderDeleteAlert = false
     @State var showingUngroupAlert = false
     @State var expandedItemIndex: Int? = nil
+    @State var editingFolderId: UUID? = nil
     @State var showingSettings = false
     @State var showingGroupAssignment = false
     @State var itemToAssignGroup: GroupAssignmentPayload? = nil
@@ -264,6 +265,7 @@ struct ContentView: View {
                     displayNodes: displayNodes,
                     expandedFolderIds: $expandedFolderIds,
                     expandedItemIndex: $expandedItemIndex,
+                    editingFolderId: $editingFolderId,
                     activeColorName: activeColorName,
                     showingDeleteSelectedAlert: $showingDeleteSelectedAlert,
                     showingFolderDeleteAlert: $showingFolderDeleteAlert,
@@ -642,11 +644,13 @@ struct ContentView: View {
     
     private func deleteFolders(keepItems: Bool) {
         let folderIds = _selectedItemsForDeletion.wrappedValue.filter { id in clipboard.folders.contains(where: { $0.id == id }) }
+        let independentItemIds = _selectedItemsForDeletion.wrappedValue.filter { id in !clipboard.folders.contains(where: { $0.id == id }) }
         
         if keepItems {
             for i in 0..<clipboard.history.count {
                 if let fId = clipboard.history[i].folderId, folderIds.contains(fId) {
                     clipboard.history[i].folderId = nil
+                    clipboard.history[i].isPinned = true
                 }
             }
         } else {
@@ -657,11 +661,7 @@ struct ContentView: View {
         }
         
         clipboard.folders.removeAll { folderIds.contains($0.id) }
-        
-        let itemIds = _selectedItemsForDeletion.wrappedValue.subtracting(folderIds)
-        if !itemIds.isEmpty {
-            clipboard.history.removeAll { itemIds.contains($0.id) }
-        }
+        clipboard.history.removeAll { independentItemIds.contains($0.id) }
         
         _selectedItemsForDeletion.wrappedValue.removeAll()
         _isEditMode.wrappedValue = false
@@ -762,14 +762,26 @@ extension ContentView {
                 }
             }
             
-            if isSearchFocused {
-                let allowedWhenSearchFocused: Set<UInt16> = [36, 48, 53, 125, 126, 123, 124]
-                if !allowedWhenSearchFocused.contains(event.keyCode) {
+            if isSearchFocused || _editingFolderId.wrappedValue != nil {
+                let allowedWhenFocused: Set<UInt16> = [36, 48, 53, 125, 126, 123, 124]
+                if !allowedWhenFocused.contains(event.keyCode) {
                     return event
                 }
             }
             
-            if event.modifierFlags.contains(.option) && event.keyCode != 48 && event.keyCode != 123 {
+            if event.modifierFlags.contains(.option) && event.keyCode == 15 { // Option + R
+                if activeTab == "Groups" && !_isEditMode.wrappedValue && !_isReorderMode.wrappedValue {
+                    if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
+                        let node = displayNodesLocal[selectedIndex]
+                        if node.isFolder, let folder = node.folder {
+                            _editingFolderId.wrappedValue = folder.id
+                            return nil
+                        }
+                    }
+                }
+            }
+            
+            if event.modifierFlags.contains(.option) && event.keyCode != 48 && event.keyCode != 123 && event.keyCode != 15 {
                 if _isReorderMode.wrappedValue { return nil }
                 var newTab: String? = nil
                 switch event.keyCode {
@@ -852,9 +864,20 @@ extension ContentView {
                 return nil
             case 51: // Backspace
                 if isEditMode {
-                    if !_selectedItemsForDeletion.wrappedValue.isEmpty { _showingDeleteSelectedAlert.wrappedValue = true }
+                    if !_selectedItemsForDeletion.wrappedValue.isEmpty {
+                        let hasFoldersSelected = _selectedItemsForDeletion.wrappedValue.contains { id in clipboard.folders.contains(where: { $0.id == id }) }
+                        if hasFoldersSelected {
+                            _showingFolderDeleteAlert.wrappedValue = true
+                        } else {
+                            _showingDeleteSelectedAlert.wrappedValue = true
+                        }
+                    }
                 } else if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
-                    if let id = displayNodesLocal[selectedIndex].item?.id {
+                    let node = displayNodesLocal[selectedIndex]
+                    if node.isFolder, let folder = node.folder {
+                        _selectedItemsForDeletion.wrappedValue = [folder.id]
+                        _showingFolderDeleteAlert.wrappedValue = true
+                    } else if let id = node.item?.id {
                         if selectedIndex >= displayNodesLocal.count - 1 && selectedIndex > 0 { _selectedIndex.wrappedValue -= 1 }
                         withAnimation { clipboard.history.removeAll { $0.id == id } }
                     }
@@ -1016,6 +1039,10 @@ extension ContentView {
                     _isFreezeFieldFocused.wrappedValue = false
                     return nil
                 }
+                if _editingFolderId.wrappedValue != nil {
+                    // Let the textfield handle the Enter key to submit
+                    return event
+                }
                 if _isReorderMode.wrappedValue {
                     clipboard.isReordering = false
                     _isReorderMode.wrappedValue = false
@@ -1044,6 +1071,7 @@ extension ContentView {
                 }
                 return nil
             case 124: // Right
+                if _editingFolderId.wrappedValue != nil { return event }
                 if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
                     let node = displayNodesLocal[selectedIndex]
                     if node.isFolder, let folder = node.folder {
@@ -1054,6 +1082,7 @@ extension ContentView {
                 }
                 return nil
             case 123: // Left
+                if _editingFolderId.wrappedValue != nil { return event }
                 if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
                     let node = displayNodesLocal[selectedIndex]
                     if event.modifierFlags.contains(.option) {

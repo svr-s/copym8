@@ -9,6 +9,7 @@ struct ClipboardFolderListView: View {
     var isEditMode: Bool
     @Binding var selectedItemsForDeletion: Set<UUID>
     @Binding var selectedFolderId: UUID?
+    @Binding var editingFolderId: UUID?
     
     var body: some View {
         ScrollView {
@@ -23,6 +24,7 @@ struct ClipboardFolderListView: View {
                             activeColor: activeColor,
                             isEditMode: isEditMode,
                             isChecked: selectedItemsForDeletion.contains(folder.id),
+                            editingFolderId: $editingFolderId,
                             onTap: {
                                 if !isEditMode {
                                     withAnimation {

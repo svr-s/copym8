@@ -13,6 +13,7 @@ struct EditModeFooterView: View {
     
     var body: some View {
         VStack(spacing: 8) {
+            let hasFolderSelected = clipboard.folders.contains(where: { selectedItemsForDeletion.contains($0.id) })
             HStack {
                 Button(action: {
                     let allIds = Set(displayNodes.compactMap { $0.item?.id ?? $0.folder?.id })
@@ -50,7 +51,7 @@ struct EditModeFooterView: View {
                         .frame(maxWidth: .infinity)
                         .background(Color.primary.opacity(0.1)).cornerRadius(6)
                     }.buttonStyle(PlainButtonStyle())
-                    .disabled(selectedItemsForDeletion.isEmpty)
+                    .disabled(selectedItemsForDeletion.isEmpty || hasFolderSelected)
                     
                     if activeTab == "Pinned" {
                         Button(action: {
@@ -71,7 +72,7 @@ struct EditModeFooterView: View {
                             .frame(maxWidth: .infinity)
                             .background(Color.primary.opacity(0.1)).cornerRadius(6)
                         }.buttonStyle(PlainButtonStyle())
-                        .disabled(selectedItemsForDeletion.isEmpty)
+                        .disabled(selectedItemsForDeletion.isEmpty || hasFolderSelected)
                     } else {
                         Button(action: {
                             for id in selectedItemsForDeletion {
@@ -92,7 +93,7 @@ struct EditModeFooterView: View {
                             .frame(maxWidth: .infinity)
                             .background(Color.primary.opacity(0.1)).cornerRadius(6)
                         }.buttonStyle(PlainButtonStyle())
-                        .disabled(selectedItemsForDeletion.isEmpty)
+                        .disabled(selectedItemsForDeletion.isEmpty || hasFolderSelected)
                     }
                 }
                 
@@ -111,7 +112,7 @@ struct EditModeFooterView: View {
                             .frame(maxWidth: .infinity)
                             .background(Color.primary.opacity(0.1)).cornerRadius(6)
                         }.buttonStyle(PlainButtonStyle())
-                        .disabled(selectedItemsForDeletion.isEmpty)
+                        .disabled(selectedItemsForDeletion.isEmpty || hasFolderSelected)
                     }
                     
                     Button(action: {

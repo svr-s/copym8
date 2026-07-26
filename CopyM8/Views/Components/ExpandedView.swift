@@ -29,6 +29,7 @@ struct ExpandedView: View {
     var displayNodes: [DisplayNode]
     @Binding var expandedFolderIds: Set<UUID>
     @Binding var expandedItemIndex: Int?
+    @Binding var editingFolderId: UUID?
     var activeColorName: String
     @Binding var showingDeleteSelectedAlert: Bool
     @Binding var showingFolderDeleteAlert: Bool
@@ -80,6 +81,7 @@ struct ExpandedView: View {
                         isEditMode: isEditMode || isReorderMode,
                         selectedItemsForDeletion: $selectedItemsForDeletion,
                         expandedFolderIds: $expandedFolderIds,
+                        editingFolderId: $editingFolderId,
                         activeTab: activeTab,
                         pasteItem: pasteItem
                     )

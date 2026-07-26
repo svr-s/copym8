@@ -12,6 +12,7 @@ struct ClipboardListView: View {
     var isEditMode: Bool
     @Binding var selectedItemsForDeletion: Set<UUID>
     @Binding var expandedFolderIds: Set<UUID>
+    @Binding var editingFolderId: UUID?
     var activeTab: String
     var pasteItem: (Int, PasteFormatType) -> Void
     
@@ -39,6 +40,7 @@ struct ClipboardListView: View {
                                 activeColor: activeColor,
                                 isEditMode: isEditMode,
                                 isChecked: selectedItemsForDeletion.contains(folder.id),
+                                editingFolderId: $editingFolderId,
                                 onTap: {
                                 if !isEditMode {
                                         withAnimation {

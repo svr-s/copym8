@@ -2,6 +2,7 @@ import SwiftUI
 import AppKit
 
 struct ClipboardFolderView: View {
+    @EnvironmentObject var clipboard: ClipboardManager
     let folder: ClipboardFolder
     let shortcutIndex: Int?
     let isSelected: Bool
@@ -9,10 +10,13 @@ struct ClipboardFolderView: View {
     let activeColor: Color
     let isEditMode: Bool
     let isChecked: Bool
+    @Binding var editingFolderId: UUID?
     let onTap: () -> Void
     var isExpanded: Bool = false
     
     @State private var hover = false
+    @State private var renameText = ""
+    @FocusState private var isRenameFocused: Bool
     @Environment(\.controlActiveState) private var controlActiveState
     
     private var isWindowActive: Bool {
@@ -58,9 +62,36 @@ struct ClipboardFolderView: View {
                         .frame(width: 16, height: 16)
                         .opacity(isExpanded ? 1.0 : 0.7)
                     
-                    Text(folder.name)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(primaryTextColor)
+                    if editingFolderId == folder.id {
+                        TextField("", text: $renameText)
+                            .font(.system(size: 13, weight: .medium))
+                            .textFieldStyle(PlainTextFieldStyle())
+                            .foregroundColor(.primary)
+                            .focused($isRenameFocused)
+                            .onSubmit {
+                                if !renameText.trimmingCharacters(in: .whitespaces).isEmpty {
+                                    if let idx = clipboard.folders.firstIndex(where: { $0.id == folder.id }) {
+                                        clipboard.folders[idx].name = renameText.trimmingCharacters(in: .whitespaces)
+                                    }
+                                }
+                                editingFolderId = nil
+                            }
+                            .onAppear {
+                                renameText = folder.name
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    isRenameFocused = true
+                                }
+                            }
+                            .onChange(of: isRenameFocused) { focused in
+                                if !focused && editingFolderId == folder.id {
+                                    editingFolderId = nil
+                                }
+                            }
+                    } else {
+                        Text(folder.name)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(primaryTextColor)
+                    }
                 }
                 
                 Spacer()
