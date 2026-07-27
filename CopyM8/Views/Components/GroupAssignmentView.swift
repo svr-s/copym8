@@ -143,9 +143,9 @@ struct GroupAssignmentView: View {
                 let scalar = chars.unicodeScalars.first!.value
                 if scalar >= 65 && scalar <= 90 { // A-Z
                     let index = Int(scalar - 65)
-                    let targetIndex = clipboard.folders.first?.id == cloudFolderId ? index + 1 : index
-                    if targetIndex < clipboard.folders.count {
-                        assignToFolder(clipboard.folders[targetIndex].id)
+                    let standardFolders = clipboard.folders.filter { $0.id != cloudFolderId }
+                    if index < standardFolders.count {
+                        assignToFolder(standardFolders[index].id)
                         return nil
                     }
                 }
