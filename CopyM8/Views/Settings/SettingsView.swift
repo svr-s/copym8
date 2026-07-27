@@ -44,6 +44,7 @@ struct SettingsView: View {
     @Binding var maxHistoryCount: Int
     
     @State private var showingClearAlert = false
+    @State private var showDisableSyncAlert = false
     
     @State private var deviceToPurge: DevicePurgeItem? = nil
     @State private var purgeConfirmationText: String = ""
@@ -364,11 +365,21 @@ struct SettingsView: View {
                     }
                     
                     Button("Disable Sync") {
-                        clipboard.disableSync()
+                        showDisableSyncAlert = true
                     }
                     .font(.system(size: 11))
                     .foregroundColor(.red)
                     .buttonStyle(.plain)
+                    .alert(isPresented: $showDisableSyncAlert) {
+                        Alert(
+                            title: Text("Disable Sync"),
+                            message: Text("Are you sure you want to disable sync? This will permanently remove the Cloud Copy folder and all items imported from remote devices from this Mac's memory."),
+                            primaryButton: .destructive(Text("Disable")) {
+                                clipboard.disableSync()
+                            },
+                            secondaryButton: .cancel()
+                        )
+                    }
                 }
             }
                 
