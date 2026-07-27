@@ -48,12 +48,18 @@ struct ClipboardFolderView: View {
                             .font(.system(size: 11, weight: .bold, design: .monospaced))
                             .foregroundColor(secondaryTextColor)
                             .frame(width: 16, alignment: .leading)
-                    } else if let sIndex = shortcutIndex, sIndex < 26 {
-                        let shortcutLetter = String(UnicodeScalar(UInt8(65 + sIndex)))
-                        Text(shortcutLetter)
-                            .font(.system(size: 11, weight: .bold, design: .monospaced))
-                            .foregroundColor(secondaryTextColor)
-                            .frame(width: 16, alignment: .leading)
+                    } else if let sIndex = shortcutIndex {
+                        let adjustedIndex = (clipboard.folders.first?.id == UUID(uuidString: "00000000-0000-0000-0000-000000000000")! && folder.id != UUID(uuidString: "00000000-0000-0000-0000-000000000000")!) ? sIndex - 1 : sIndex
+                        
+                        if adjustedIndex >= 0 && adjustedIndex < 26 {
+                            let shortcutLetter = String(UnicodeScalar(UInt8(65 + adjustedIndex)))
+                            Text(shortcutLetter)
+                                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                .foregroundColor(secondaryTextColor)
+                                .frame(width: 16, alignment: .leading)
+                        } else {
+                            Spacer().frame(width: 16)
+                        }
                     } else {
                         Spacer().frame(width: 16)
                     }
