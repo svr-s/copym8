@@ -368,7 +368,7 @@ class ClipboardManager: ObservableObject {
             if let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty {
                 let deviceName = UserDefaults.standard.string(forKey: "syncDeviceName") ?? (Host.current().localizedName ?? "My Mac")
                 let safeName = deviceName.replacingOccurrences(of: "/", with: "-")
-                let syncURL = URL(fileURLWithPath: syncPath).appendingPathComponent("\(safeName).json")
+                let syncURL = URL(fileURLWithPath: syncPath).appendingPathComponent("\(safeName)_entries.json")
                 try? encoded.write(to: syncURL, options: .atomic)
             }
         }
@@ -663,8 +663,8 @@ case .none:
         guard let files = try? FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil) else { return }
         
         let devices = files
-            .filter { $0.pathExtension == "json" }
-            .map { $0.deletingPathExtension().lastPathComponent }
+            .filter { $0.lastPathComponent.hasSuffix("_entries.json") }
+            .map { $0.lastPathComponent.replacingOccurrences(of: "_entries.json", with: "") }
             .filter { $0 != localDeviceName }
             .sorted()
             
@@ -681,7 +681,7 @@ case .none:
     
     func fetchRemoteHistory(for deviceName: String) {
         guard let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty else { return }
-        let url = URL(fileURLWithPath: syncPath).appendingPathComponent("\(deviceName).json")
+        let url = URL(fileURLWithPath: syncPath).appendingPathComponent("\(deviceName)_entries.json")
         
         guard let data = try? Data(contentsOf: url) else { return }
         
@@ -1161,7 +1161,7 @@ var maxHistoryCount: Int {
     
     func purgeRemoteDevice(_ deviceName: String) {
         guard let folderPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !folderPath.isEmpty else { return }
-        let fileURL = URL(fileURLWithPath: folderPath).appendingPathComponent("\(deviceName).json")
+        let fileURL = URL(fileURLWithPath: folderPath).appendingPathComponent("\(deviceName)_entries.json")
         let foldersURL = URL(fileURLWithPath: folderPath).appendingPathComponent("\(deviceName)_folders.json")
         try? FileManager.default.removeItem(at: fileURL)
         try? FileManager.default.removeItem(at: foldersURL)
