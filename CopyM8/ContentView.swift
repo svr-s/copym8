@@ -1138,7 +1138,7 @@ extension ContentView {
                         for i in start...end {
                             if i < displayNodesLocal.count {
                                 if let id = displayNodesLocal[i].item?.id { idsToToggle.append(id) }
-                                else if let id = displayNodesLocal[i].folder?.id { idsToToggle.append(id) }
+                                else if let id = displayNodesLocal[i].folder?.id, id != cloudFolderId { idsToToggle.append(id) }
                             }
                         }
                         
@@ -1155,7 +1155,7 @@ extension ContentView {
                         }
                     } else {
                         let node = displayNodesLocal[selectedIndex]
-                        if let id = node.item?.id ?? node.folder?.id {
+                        if let id = node.item?.id ?? (node.folder?.id != cloudFolderId ? node.folder?.id : nil) {
                             withAnimation {
                                 if _selectedItemsForDeletion.wrappedValue.contains(id) { _selectedItemsForDeletion.wrappedValue.remove(id) }
                                 else { _selectedItemsForDeletion.wrappedValue.insert(id) }
