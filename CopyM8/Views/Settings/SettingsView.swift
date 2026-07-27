@@ -21,6 +21,23 @@ struct AntiPasteTextField: View {
     }
 }
 
+
+enum CloudProvider: String, CaseIterable {
+    case icloud = "iCloud Drive"
+    case dropbox = "Dropbox"
+    case googleDrive = "Google Drive"
+    case oneDrive = "OneDrive"
+    
+    var icon: String {
+        switch self {
+        case .icloud: return "☁️"
+        case .dropbox: return "📦"
+        case .googleDrive: return "🔺"
+        case .oneDrive: return "☁️"
+        }
+    }
+}
+
 struct SettingsView: View {
     @EnvironmentObject var clipboard: ClipboardManager
     @Binding var draftHistoryCount: Int
@@ -45,6 +62,8 @@ struct SettingsView: View {
     @State private var blacklistedApps: [String] = []
     
     @AppStorage("syncFolderPath") private var syncFolderPath: String = ""
+    @State private var detectedProviders: [(CloudProvider, URL)] = []
+    @State private var showVisibilityAlert = false
     @AppStorage("syncDeviceName") private var syncDeviceName: String = Host.current().localizedName ?? "My Mac"
     
     @State private var selectedTab = "General"
@@ -272,35 +291,86 @@ struct SettingsView: View {
             .textFieldStyle(RoundedBorderTextFieldStyle())
             .font(.system(size: 12))
             
-            Text("Sync Folder:")
+            Text("Sync Setup")
                 .font(.system(size: 12))
                 .padding(.top, 4)
             
-            HStack {
-                Text(syncFolderPath.isEmpty ? "Not configured" : syncFolderPath)
+            if syncFolderPath.isEmpty {
+                VStack(spacing: 8) {
+                    ForEach(detectedProviders, id: \.0.rawValue) { provider, url in
+                        Button(action: {
+                            setupSync(with: url)
+                        }) {
+                            HStack {
+                                Text(provider.icon)
+                                Text("Sync with \(provider.rawValue)")
+                                Spacer()
+                            }
+                            .padding(8)
+                            .frame(maxWidth: .infinity)
+                            .background(Color.primary.opacity(0.05))
+                            .cornerRadius(6)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    
+                    Button(action: { selectSyncFolder() }) {
+                        HStack {
+                            Image(systemName: "folder")
+                            Text("Choose Custom Folder...")
+                            Spacer()
+                        }
+                        .padding(8)
+                        .frame(maxWidth: .infinity)
+                        .background(Color.primary.opacity(0.05))
+                        .cornerRadius(6)
+                    }
+                    .buttonStyle(.plain)
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text(syncFolderPath)
+                            .font(.system(size: 11))
+                            .foregroundColor(.primary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(6)
+                            .background(Color.primary.opacity(0.05))
+                            .cornerRadius(4)
+                    }
+                    
+                    Toggle("Make raw sync files visible in Finder", isOn: Binding(
+                        get: { syncFolderPath.hasSuffix("CopyM8_Data") },
+                        set: { newValue in
+                            if newValue {
+                                showVisibilityAlert = true
+                            } else {
+                                toggleVisibility(toVisible: false)
+                            }
+                        }
+                    ))
                     .font(.system(size: 11))
-                    .foregroundColor(syncFolderPath.isEmpty ? .secondary : .primary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(6)
-                    .background(Color.primary.opacity(0.05))
-                    .cornerRadius(4)
-                
-                Button("Choose...") {
-                    selectSyncFolder()
+                    .alert(isPresented: $showVisibilityAlert) {
+                        Alert(
+                            title: Text("Warning"),
+                            message: Text("Exposing raw sync files allows you to view them in Finder. However, manually modifying, renaming, or deleting these files will corrupt your CopyM8 history. Are you sure you want to proceed?"),
+                            primaryButton: .destructive(Text("Make Visible")) {
+                                toggleVisibility(toVisible: true)
+                            },
+                            secondaryButton: .cancel()
+                        )
+                    }
+                    
+                    Button("Disable Sync") {
+                        syncFolderPath = ""
+                    }
+                    .font(.system(size: 11))
+                    .foregroundColor(.red)
+                    .buttonStyle(.plain)
                 }
-                .font(.system(size: 11))
             }
-            
-            if !syncFolderPath.isEmpty {
-                Button("Disable Sync") {
-                    syncFolderPath = ""
-                }
-                .font(.system(size: 11))
-                .foregroundColor(.red)
-                .buttonStyle(.plain)
-                .padding(.top, 4)
                 
                 Divider().padding(.vertical, 4)
                 
@@ -342,8 +412,6 @@ struct SettingsView: View {
                 .frame(height: 100)
                 .cornerRadius(6)
                 .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.primary.opacity(0.1), lineWidth: 1))
-            }
-            
             Spacer()
         }
         .sheet(item: $deviceToPurge) { deviceItem in
@@ -382,6 +450,73 @@ struct SettingsView: View {
             .padding(24)
             .frame(width: 300)
         }
+        .onAppear {
+            scanForProviders()
+        }
+    }
+    
+    private func scanForProviders() {
+        var providers: [(CloudProvider, URL)] = []
+        let fm = FileManager.default
+        let home = fm.homeDirectoryForCurrentUser
+        
+        let paths: [(CloudProvider, [String])] = [
+            (.icloud, ["Library/Mobile Documents/com~apple~CloudDocs"]),
+            (.dropbox, ["Library/CloudStorage/Dropbox", "Dropbox"]),
+            (.googleDrive, ["Library/CloudStorage/GoogleDrive", "Google Drive"]),
+            (.oneDrive, ["Library/CloudStorage/OneDrive", "OneDrive"])
+        ]
+        
+        for (provider, relativePaths) in paths {
+            for rel in relativePaths {
+                let url = home.appendingPathComponent(rel)
+                if fm.fileExists(atPath: url.path) {
+                    providers.append((provider, url))
+                    break // Found this provider
+                }
+            }
+        }
+        
+        DispatchQueue.main.async {
+            self.detectedProviders = providers
+        }
+    }
+    
+    private func setupSync(with baseURL: URL) {
+        let finalURL = baseURL.appendingPathComponent(".copym8_data")
+        do {
+            try FileManager.default.createDirectory(at: finalURL, withIntermediateDirectories: true, attributes: nil)
+            DispatchQueue.main.async {
+                self.syncFolderPath = finalURL.path
+            }
+        } catch {
+            print("Failed to create sync directory: \(error)")
+        }
+    }
+    
+    private func toggleVisibility(toVisible: Bool) {
+        let fm = FileManager.default
+        let currentURL = URL(fileURLWithPath: syncFolderPath)
+        let parentURL = currentURL.deletingLastPathComponent()
+        
+        let newFolderName = toVisible ? "CopyM8_Data" : ".copym8_data"
+        let newURL = parentURL.appendingPathComponent(newFolderName)
+        
+        if fm.fileExists(atPath: currentURL.path) {
+            do {
+                try fm.moveItem(at: currentURL, to: newURL)
+                DispatchQueue.main.async {
+                    self.syncFolderPath = newURL.path
+                }
+            } catch {
+                print("Failed to rename sync directory: \(error)")
+            }
+        } else {
+            // Directory didn't exist? Just update the path
+            DispatchQueue.main.async {
+                self.syncFolderPath = newURL.path
+            }
+        }
     }
     
     private func selectSyncFolder() {
@@ -394,13 +529,13 @@ struct SettingsView: View {
             panel.beginSheetModal(for: window) { response in
                 if response == .OK, let url = panel.url {
                     DispatchQueue.main.async {
-                        self.syncFolderPath = url.path
+                        setupSync(with: url)
                     }
                 }
             }
         } else {
             if panel.runModal() == .OK, let url = panel.url {
-                syncFolderPath = url.path
+                setupSync(with: url)
             }
         }
     }
