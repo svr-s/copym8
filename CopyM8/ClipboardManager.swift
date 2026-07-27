@@ -1200,6 +1200,25 @@ var maxHistoryCount: Int {
         }
     }
     
+    func renameDeviceFiles(from oldName: String, to newName: String) {
+        guard let folderPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !folderPath.isEmpty else { return }
+        
+        let fm = FileManager.default
+        let oldEntriesURL = URL(fileURLWithPath: folderPath).appendingPathComponent("\(oldName)_entries.json")
+        let oldFoldersURL = URL(fileURLWithPath: folderPath).appendingPathComponent("\(oldName)_folders.json")
+        
+        let newEntriesURL = URL(fileURLWithPath: folderPath).appendingPathComponent("\(newName)_entries.json")
+        let newFoldersURL = URL(fileURLWithPath: folderPath).appendingPathComponent("\(newName)_folders.json")
+        
+        if fm.fileExists(atPath: oldEntriesURL.path) {
+            try? fm.moveItem(at: oldEntriesURL, to: newEntriesURL)
+        }
+        
+        if fm.fileExists(atPath: oldFoldersURL.path) {
+            try? fm.moveItem(at: oldFoldersURL, to: newFoldersURL)
+        }
+    }
+    
     func importItems(_ items: [ClipboardItem]) {
         let remoteDevice = self.selectedDevice != "Local (This Mac)" ? self.selectedDevice : "Remote"
         

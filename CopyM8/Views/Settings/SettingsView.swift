@@ -46,6 +46,9 @@ struct SettingsView: View {
     @State private var showingClearAlert = false
     @State private var showDisableSyncAlert = false
     
+    @State private var draftDeviceName: String = ""
+    @FocusState private var isDeviceNameFocused: Bool
+    
     @State private var deviceToPurge: DevicePurgeItem? = nil
     @State private var purgeConfirmationText: String = ""
     
@@ -281,14 +284,16 @@ struct SettingsView: View {
             
             Text("Device Name:")
                 .font(.system(size: 12))
-            TextField("e.g. MacBook Pro", text: Binding(
-                get: { syncDeviceName },
-                set: { newValue in
-                    if !clipboard.availableDevices.contains(newValue) {
-                        syncDeviceName = newValue
+            TextField("e.g. MacBook Pro", text: $draftDeviceName)
+                .focused($isDeviceNameFocused)
+                .onChange(of: isDeviceNameFocused) { focused in
+                    if !focused {
+                        commitDeviceNameChange()
                     }
                 }
-            ))
+                .onSubmit {
+                    commitDeviceNameChange()
+                }
             .textFieldStyle(RoundedBorderTextFieldStyle())
             .font(.system(size: 12))
             
@@ -462,7 +467,25 @@ struct SettingsView: View {
             .frame(width: 300)
         }
         .onAppear {
+            draftDeviceName = syncDeviceName
+            
+            // Re-detect on appear just in case
             scanForProviders()
+        }
+    }
+    
+    private func commitDeviceNameChange() {
+        let trimmed = draftDeviceName.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, trimmed != syncDeviceName else {
+            draftDeviceName = syncDeviceName
+            return
+        }
+        if !clipboard.availableDevices.contains(trimmed) {
+            let oldName = syncDeviceName
+            syncDeviceName = trimmed
+            clipboard.renameDeviceFiles(from: oldName, to: trimmed)
+        } else {
+            draftDeviceName = syncDeviceName
         }
     }
     
