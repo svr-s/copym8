@@ -364,7 +364,7 @@ struct SettingsView: View {
                     }
                     
                     Button("Disable Sync") {
-                        syncFolderPath = ""
+                        clipboard.disableSync()
                     }
                     .font(.system(size: 11))
                     .foregroundColor(.red)

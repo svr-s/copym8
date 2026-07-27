@@ -1170,6 +1170,33 @@ var maxHistoryCount: Int {
             if self.selectedDevice == deviceName {
                 self.selectedDevice = "Local (This Mac)"
             }
+            
+            // Clean up memory: remove imported folders for this device
+            let foldersToRemove = self.folders.filter { $0.name.hasPrefix("\(deviceName) - ") }.map { $0.id }
+            self.history.removeAll { foldersToRemove.contains($0.folderId ?? UUID()) }
+            self.folders.removeAll { foldersToRemove.contains($0.id) }
+        }
+    }
+    
+    func disableSync() {
+        DispatchQueue.main.async {
+            // Remove the main Cloud Copy folder and its items
+            self.history.removeAll { $0.folderId == cloudFolderId }
+            self.folders.removeAll { $0.id == cloudFolderId }
+            
+            // Remove remote folders
+            let remoteFolderIds = self.folders.filter { folder in 
+                self.availableDevices.contains { device in 
+                    device != "Local (This Mac)" && folder.name.hasPrefix("\(device) - ")
+                }
+            }.map { $0.id }
+            
+            self.history.removeAll { remoteFolderIds.contains($0.folderId ?? UUID()) }
+            self.folders.removeAll { remoteFolderIds.contains($0.id) }
+            
+            self.availableDevices = ["Local (This Mac)"]
+            self.selectedDevice = "Local (This Mac)"
+            UserDefaults.standard.set("", forKey: "syncFolderPath")
         }
     }
     
