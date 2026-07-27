@@ -959,6 +959,7 @@ extension ContentView {
                 }
                 return nil
             case 126: // Up
+                if _editingFolderId.wrappedValue != nil { return event }
                 if _isFreezeFieldFocused.wrappedValue {
                     let current = Int(_reorderFreezeLimit.wrappedValue) ?? 0
                     if current < 10 { _reorderFreezeLimit.wrappedValue = "\(current + 1)" }
@@ -1007,6 +1008,7 @@ extension ContentView {
                 else { _selectedIndex.wrappedValue = maxIndex }
                 return nil
             case 125: // Down
+                if _editingFolderId.wrappedValue != nil { return event }
                 if _isFreezeFieldFocused.wrappedValue {
                     let current = Int(_reorderFreezeLimit.wrappedValue) ?? 0
                     if current > 0 { _reorderFreezeLimit.wrappedValue = "\(current - 1)" }
