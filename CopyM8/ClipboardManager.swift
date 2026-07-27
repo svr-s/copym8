@@ -1183,12 +1183,8 @@ var maxHistoryCount: Int {
             // Remove the main Cloud Copy folder and its items
             self.history.removeAll { $0.folderId == cloudFolderId }
             self.folders.removeAll { $0.id == cloudFolderId }
-            
-            // Remove remote folders
-            let remoteFolderIds = self.folders.filter { folder in 
-                self.availableDevices.contains { device in 
-                    device != "Local (This Mac)" && folder.name.hasPrefix("\(device) - ")
-                }
+            let remoteFolderIds = self.folders.filter { folder in
+                return folder.id == cloudFolderId || folder.name.contains(" - ")
             }.map { $0.id }
             
             self.history.removeAll { remoteFolderIds.contains($0.folderId ?? UUID()) }
@@ -1197,6 +1193,20 @@ var maxHistoryCount: Int {
             self.availableDevices = ["Local (This Mac)"]
             self.selectedDevice = "Local (This Mac)"
             UserDefaults.standard.set("", forKey: "syncFolderPath")
+        }
+    }
+    
+    func enableSync() {
+        DispatchQueue.main.async {
+            if let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty {
+                if !self.folders.contains(where: { $0.id == cloudFolderId }) {
+                    let cloudFolder = ClipboardFolder(id: cloudFolderId, name: "Cloud Copy", orderIndex: -1)
+                    self.folders.insert(cloudFolder, at: 0)
+                    self.saveFolders()
+                }
+                // Trigger an initial save to populate the cloud
+                self.saveHistory()
+            }
         }
     }
     

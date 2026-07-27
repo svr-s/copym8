@@ -522,6 +522,7 @@ struct SettingsView: View {
             try FileManager.default.createDirectory(at: finalURL, withIntermediateDirectories: true, attributes: nil)
             DispatchQueue.main.async {
                 self.syncFolderPath = finalURL.path
+                self.clipboard.enableSync()
             }
         } catch {
             print("Failed to create sync directory: \(error)")
