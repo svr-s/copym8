@@ -517,9 +517,14 @@ struct SettingsView: View {
     }
     
     private func setupSync(with baseURL: URL) {
-        let finalURL = baseURL.appendingPathComponent(".copym8_data")
+        let fm = FileManager.default
+        let visibleURL = baseURL.appendingPathComponent("CopyM8_Data")
+        let hiddenURL = baseURL.appendingPathComponent(".copym8_data")
+        
+        let finalURL = fm.fileExists(atPath: visibleURL.path) ? visibleURL : hiddenURL
+        
         do {
-            try FileManager.default.createDirectory(at: finalURL, withIntermediateDirectories: true, attributes: nil)
+            try fm.createDirectory(at: finalURL, withIntermediateDirectories: true, attributes: nil)
             DispatchQueue.main.async {
                 self.syncFolderPath = finalURL.path
                 self.clipboard.enableSync()
@@ -538,13 +543,20 @@ struct SettingsView: View {
         let newURL = parentURL.appendingPathComponent(newFolderName)
         
         if fm.fileExists(atPath: currentURL.path) {
-            do {
-                try fm.moveItem(at: currentURL, to: newURL)
+            if fm.fileExists(atPath: newURL.path) {
+                // If destination already exists (e.g. leftover folder), just switch to it
                 DispatchQueue.main.async {
                     self.syncFolderPath = newURL.path
                 }
-            } catch {
-                print("Failed to rename sync directory: \(error)")
+            } else {
+                do {
+                    try fm.moveItem(at: currentURL, to: newURL)
+                    DispatchQueue.main.async {
+                        self.syncFolderPath = newURL.path
+                    }
+                } catch {
+                    print("Failed to rename sync directory: \(error)")
+                }
             }
         } else {
             // Directory didn't exist? Just update the path
