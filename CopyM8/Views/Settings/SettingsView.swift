@@ -351,7 +351,10 @@ struct SettingsView: View {
                         get: { syncFolderPath.hasSuffix("CopyM8_Data") },
                         set: { newValue in
                             if newValue {
-                                showVisibilityAlert = true
+                                // Defer the alert presentation slightly to prevent SwiftUI Toggle glitches
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    showVisibilityAlert = true
+                                }
                             } else {
                                 toggleVisibility(toVisible: false)
                             }
@@ -365,7 +368,12 @@ struct SettingsView: View {
                             primaryButton: .destructive(Text("Make Visible")) {
                                 toggleVisibility(toVisible: true)
                             },
-                            secondaryButton: .cancel()
+                            secondaryButton: .cancel() {
+                                // Force a UI refresh if they cancel, so the toggle snaps back
+                                let current = syncFolderPath
+                                syncFolderPath = ""
+                                DispatchQueue.main.async { syncFolderPath = current }
+                            }
                         )
                     }
                     
