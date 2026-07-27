@@ -1211,7 +1211,10 @@ extension ContentView {
                     _isEditMode.wrappedValue = false
                     _selectedItemsForDeletion.wrappedValue.removeAll()
                 }
-                else { withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { shortcut.isExpanded = false } }
+                else { 
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { shortcut.isExpanded = false }
+                    previousApp?.activate(options: [])
+                }
                 return nil
             case 48: // Tab
                 if event.modifierFlags.contains(.option) {
