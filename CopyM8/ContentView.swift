@@ -779,7 +779,9 @@ extension ContentView {
                     if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
                         let node = displayNodesLocal[selectedIndex]
                         if node.isFolder, let folder = node.folder {
-                            _editingFolderId.wrappedValue = folder.id
+                            if folder.id != cloudFolderId {
+                                _editingFolderId.wrappedValue = folder.id
+                            }
                             return nil
                         }
                     }

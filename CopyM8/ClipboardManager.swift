@@ -349,6 +349,12 @@ class ClipboardManager: ObservableObject {
             saveFolders()
             UserDefaults.standard.removeObject(forKey: foldersKey)
         }
+        
+        self.folders.removeAll { $0.id == cloudFolderId }
+        if let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty {
+            let cloudFolder = ClipboardFolder(id: cloudFolderId, name: "Cloud Copy", orderIndex: -1)
+            self.folders.insert(cloudFolder, at: 0)
+        }
     }
     
     func saveHistory() {
@@ -370,7 +376,8 @@ class ClipboardManager: ObservableObject {
     
     func saveFolders() {
         if isReordering { return }
-        if let encoded = try? JSONEncoder().encode(folders) {
+        let foldersToSave = folders.filter { $0.id != cloudFolderId }
+        if let encoded = try? JSONEncoder().encode(foldersToSave) {
             if let url = foldersFileURL {
                 try? encoded.write(to: url, options: .atomic)
             }

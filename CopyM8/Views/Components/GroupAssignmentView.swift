@@ -7,14 +7,7 @@ struct GroupAssignmentView: View {
     var onCancel: () -> Void
     
     
-    private var displayFolders: [ClipboardFolder] {
-        var folders = clipboard.folders
-        if let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty {
-            let cloudFolder = ClipboardFolder(id: cloudFolderId, name: "Cloud Copy", orderIndex: -1)
-            folders.insert(cloudFolder, at: 0)
-        }
-        return folders
-    }
+    
 
     @State private var newFolderName: String = ""
     @State private var isCreatingNew = false
@@ -28,7 +21,7 @@ struct GroupAssignmentView: View {
             Text("Assign to Group")
                 .font(.headline)
             
-            if displayFolders.isEmpty && !isCreatingNew {
+            if clipboard.folders.isEmpty && !isCreatingNew {
                 Text("No groups available.")
                     .font(.system(size: 13))
                     .foregroundColor(.secondary)
@@ -37,9 +30,9 @@ struct GroupAssignmentView: View {
                 ScrollView {
                     ScrollViewReader { proxy in
                         VStack(spacing: 8) {
-                            ForEach(Array(displayFolders.enumerated()), id: \.element.id) { index, folder in
+                            ForEach(Array(clipboard.folders.enumerated()), id: \.element.id) { index, folder in
                                 let isCloud = folder.id == cloudFolderId
-                                let letterIndex = isCloud ? 0 : index - (displayFolders.first?.id == cloudFolderId ? 1 : 0)
+                                let letterIndex = isCloud ? 0 : index - (clipboard.folders.first?.id == cloudFolderId ? 1 : 0)
                                 let letter = isCloud ? "`" : String(UnicodeScalar(UInt8(65 + letterIndex)))
                             Button(action: {
                                 assignToFolder(folder.id)
@@ -141,7 +134,7 @@ struct GroupAssignmentView: View {
             
             if let chars = event.charactersIgnoringModifiers?.uppercased(), chars.count == 1 {
             if chars == "`" {
-                if displayFolders.first?.id == cloudFolderId {
+                if clipboard.folders.first?.id == cloudFolderId {
                     assignToFolder(cloudFolderId)
                     return nil
                 }
@@ -150,9 +143,9 @@ struct GroupAssignmentView: View {
                 let scalar = chars.unicodeScalars.first!.value
                 if scalar >= 65 && scalar <= 90 { // A-Z
                     let index = Int(scalar - 65)
-                    let targetIndex = displayFolders.first?.id == cloudFolderId ? index + 1 : index
-                    if targetIndex < displayFolders.count {
-                        assignToFolder(displayFolders[targetIndex].id)
+                    let targetIndex = clipboard.folders.first?.id == cloudFolderId ? index + 1 : index
+                    if targetIndex < clipboard.folders.count {
+                        assignToFolder(clipboard.folders[targetIndex].id)
                         return nil
                     }
                 }
@@ -160,18 +153,18 @@ struct GroupAssignmentView: View {
             
             switch event.keyCode {
             case 126: // Up
-                if displayFolders.isEmpty { return nil }
+                if clipboard.folders.isEmpty { return nil }
                 if selectedIndex > 0 { selectedIndex -= 1 }
-                else { selectedIndex = displayFolders.count - 1 }
+                else { selectedIndex = clipboard.folders.count - 1 }
                 return nil
             case 125: // Down
-                if displayFolders.isEmpty { return nil }
-                if selectedIndex < displayFolders.count - 1 { selectedIndex += 1 }
+                if clipboard.folders.isEmpty { return nil }
+                if selectedIndex < clipboard.folders.count - 1 { selectedIndex += 1 }
                 else { selectedIndex = 0 }
                 return nil
             case 36, 76: // Enter / Return
-                if selectedIndex >= 0 && selectedIndex < displayFolders.count {
-                    assignToFolder(displayFolders[selectedIndex].id)
+                if selectedIndex >= 0 && selectedIndex < clipboard.folders.count {
+                    assignToFolder(clipboard.folders[selectedIndex].id)
                 }
                 return nil
             default:
