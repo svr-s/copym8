@@ -6,6 +6,16 @@ struct GroupAssignmentView: View {
     var onComplete: (() -> Void)? = nil
     var onCancel: () -> Void
     
+    
+    private var displayFolders: [ClipboardFolder] {
+        var folders = clipboard.folders
+        if let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty {
+            let cloudFolder = ClipboardFolder(id: cloudFolderId, name: "Cloud Copy", orderIndex: -1)
+            folders.insert(cloudFolder, at: 0)
+        }
+        return folders
+    }
+
     @State private var newFolderName: String = ""
     @State private var isCreatingNew = false
     @FocusState private var isTextFieldFocused: Bool
@@ -18,7 +28,7 @@ struct GroupAssignmentView: View {
             Text("Assign to Group")
                 .font(.headline)
             
-            if clipboard.folders.isEmpty && !isCreatingNew {
+            if displayFolders.isEmpty && !isCreatingNew {
                 Text("No groups available.")
                     .font(.system(size: 13))
                     .foregroundColor(.secondary)
@@ -27,8 +37,10 @@ struct GroupAssignmentView: View {
                 ScrollView {
                     ScrollViewReader { proxy in
                         VStack(spacing: 8) {
-                            ForEach(Array(clipboard.folders.enumerated()), id: \.element.id) { index, folder in
-                                let letter = String(UnicodeScalar(UInt8(65 + index)))
+                            ForEach(Array(displayFolders.enumerated()), id: \.element.id) { index, folder in
+                                let isCloud = folder.id == cloudFolderId
+                                let letterIndex = isCloud ? 0 : index - (displayFolders.first?.id == cloudFolderId ? 1 : 0)
+                                let letter = isCloud ? "`" : String(UnicodeScalar(UInt8(65 + letterIndex)))
                             Button(action: {
                                 assignToFolder(folder.id)
                             }) {
@@ -36,10 +48,18 @@ struct GroupAssignmentView: View {
                                     Text(letter)
                                         .font(.system(size: 11, weight: .bold, design: .monospaced))
                                         .frame(width: 16, alignment: .leading)
-                                    Image(nsImage: NSImage(named: NSImage.folderName)!)
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                        .frame(width: 14, height: 14)
+                                    if isCloud {
+                                        Image(systemName: "cloud.fill")
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: 12, height: 12)
+                                            .foregroundColor(.blue.opacity(0.8))
+                                    } else {
+                                        Image(nsImage: NSImage(named: NSImage.folderName)!)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: 14, height: 14)
+                                    }
                                     Text(folder.name)
                                         .foregroundColor(index == selectedIndex ? .white : .primary)
                                     Spacer()
@@ -120,11 +140,19 @@ struct GroupAssignmentView: View {
             guard !isCreatingNew else { return event }
             
             if let chars = event.charactersIgnoringModifiers?.uppercased(), chars.count == 1 {
+            if chars == "`" {
+                if displayFolders.first?.id == cloudFolderId {
+                    assignToFolder(cloudFolderId)
+                    return nil
+                }
+            }
+
                 let scalar = chars.unicodeScalars.first!.value
                 if scalar >= 65 && scalar <= 90 { // A-Z
                     let index = Int(scalar - 65)
-                    if index < clipboard.folders.count {
-                        assignToFolder(clipboard.folders[index].id)
+                    let targetIndex = displayFolders.first?.id == cloudFolderId ? index + 1 : index
+                    if targetIndex < displayFolders.count {
+                        assignToFolder(displayFolders[targetIndex].id)
                         return nil
                     }
                 }
@@ -132,18 +160,18 @@ struct GroupAssignmentView: View {
             
             switch event.keyCode {
             case 126: // Up
-                if clipboard.folders.isEmpty { return nil }
+                if displayFolders.isEmpty { return nil }
                 if selectedIndex > 0 { selectedIndex -= 1 }
-                else { selectedIndex = clipboard.folders.count - 1 }
+                else { selectedIndex = displayFolders.count - 1 }
                 return nil
             case 125: // Down
-                if clipboard.folders.isEmpty { return nil }
-                if selectedIndex < clipboard.folders.count - 1 { selectedIndex += 1 }
+                if displayFolders.isEmpty { return nil }
+                if selectedIndex < displayFolders.count - 1 { selectedIndex += 1 }
                 else { selectedIndex = 0 }
                 return nil
             case 36, 76: // Enter / Return
-                if selectedIndex >= 0 && selectedIndex < clipboard.folders.count {
-                    assignToFolder(clipboard.folders[selectedIndex].id)
+                if selectedIndex >= 0 && selectedIndex < displayFolders.count {
+                    assignToFolder(displayFolders[selectedIndex].id)
                 }
                 return nil
             default:
