@@ -33,7 +33,7 @@ struct ClipboardFolderView: View {
     
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
                 if isEditMode {
                     if folder.id == UUID(uuidString: "00000000-0000-0000-0000-000000000000")! {
                         Spacer().frame(width: 14)
@@ -61,7 +61,7 @@ struct ClipboardFolderView: View {
                 
                 Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(secondaryTextColor.opacity(0.6))
+                    .foregroundColor(secondaryTextColor.opacity(0.8))
                     .frame(width: 10)
                 
                 HStack(spacing: 8) {
@@ -76,7 +76,7 @@ struct ClipboardFolderView: View {
                         Image(nsImage: NSImage(named: NSImage.folderName)!)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 16, height: 16)
+                            .frame(width: 14, height: 14)
                             .opacity(isExpanded ? 1.0 : 0.7)
                     }
                     
