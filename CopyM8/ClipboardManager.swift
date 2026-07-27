@@ -506,15 +506,18 @@ class ClipboardManager: ObservableObject {
     }
     
     func moveFolders(up: Bool, ids: [UUID]) {
-        guard !ids.isEmpty else { return }
-        let indices = ids.compactMap { id in folders.firstIndex(where: { $0.id == id }) }.sorted()
+        let validIds = ids.filter { $0 != cloudFolderId }
+        guard !validIds.isEmpty else { return }
+        let indices = validIds.compactMap { id in folders.firstIndex(where: { $0.id == id }) }.sorted()
         guard !indices.isEmpty else { return }
         
         var source = IndexSet()
         for idx in indices { source.insert(idx) }
         
+        let limit = (folders.first?.id == cloudFolderId) ? 1 : 0
+        
         if up {
-            guard indices.first! > 0 else { return }
+            guard indices.first! > limit else { return }
             let dest = indices.first! - 1
             reorderFolders(source: source, destination: dest)
         } else {

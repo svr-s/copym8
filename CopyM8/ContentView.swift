@@ -648,7 +648,7 @@ struct ContentView: View {
     }
     
     private func deleteFolders(keepItems: Bool) {
-        let folderIds = _selectedItemsForDeletion.wrappedValue.filter { id in clipboard.folders.contains(where: { $0.id == id }) }
+        let folderIds = _selectedItemsForDeletion.wrappedValue.filter { id in clipboard.folders.contains(where: { $0.id == id }) && id != cloudFolderId }
         let independentItemIds = _selectedItemsForDeletion.wrappedValue.filter { id in !clipboard.folders.contains(where: { $0.id == id }) }
         
         if keepItems {
@@ -885,8 +885,10 @@ extension ContentView {
                 return nil
             case 51: // Backspace
                 if isEditMode {
-                    if !_selectedItemsForDeletion.wrappedValue.isEmpty {
-                        let hasFoldersSelected = _selectedItemsForDeletion.wrappedValue.contains { id in clipboard.folders.contains(where: { $0.id == id }) }
+                    let validDeletions = _selectedItemsForDeletion.wrappedValue.filter { $0 != cloudFolderId }
+                    if !validDeletions.isEmpty {
+                        _selectedItemsForDeletion.wrappedValue = validDeletions
+                        let hasFoldersSelected = validDeletions.contains { id in clipboard.folders.contains(where: { $0.id == id }) }
                         if hasFoldersSelected {
                             _showingFolderDeleteAlert.wrappedValue = true
                         } else {
@@ -896,8 +898,10 @@ extension ContentView {
                 } else if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
                     let node = displayNodesLocal[selectedIndex]
                     if node.isFolder, let folder = node.folder {
-                        _selectedItemsForDeletion.wrappedValue = [folder.id]
-                        _showingFolderDeleteAlert.wrappedValue = true
+                        if folder.id != cloudFolderId {
+                            _selectedItemsForDeletion.wrappedValue = [folder.id]
+                            _showingFolderDeleteAlert.wrappedValue = true
+                        }
                     } else if let id = node.item?.id {
                         if selectedIndex >= displayNodesLocal.count - 1 && selectedIndex > 0 { _selectedIndex.wrappedValue -= 1 }
                         withAnimation { clipboard.deleteItems(where: { $0.id == id }) }
