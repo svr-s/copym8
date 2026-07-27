@@ -51,8 +51,21 @@ class LocalImageStore {
         return dir
     }
     
-    func saveImage(_ data: Data, id: UUID) -> Bool {
-        guard let dir = imagesDirectory else { return false }
+    private var cloudDirectory: URL? {
+        guard let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty else { return nil }
+        let dir = URL(fileURLWithPath: syncPath).appendingPathComponent("Images")
+        if !fileManager.fileExists(atPath: dir.path) {
+            try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
+        }
+        return dir
+    }
+    
+    func getDirectory(inCloud: Bool) -> URL? {
+        return inCloud ? cloudDirectory : imagesDirectory
+    }
+    
+    func saveImage(_ data: Data, id: UUID, inCloud: Bool = false) -> Bool {
+        guard let dir = getDirectory(inCloud: inCloud) else { return false }
         let fileURL = dir.appendingPathComponent("\(id.uuidString).png")
         do {
             try data.write(to: fileURL)
@@ -63,20 +76,27 @@ class LocalImageStore {
         }
     }
     
-    func loadImage(id: UUID) -> NSImage? {
-        guard let dir = imagesDirectory else { return nil }
+    func loadImage(id: UUID, inCloud: Bool = false) -> NSImage? {
+        guard let dir = getDirectory(inCloud: inCloud) else { return nil }
         let fileURL = dir.appendingPathComponent("\(id.uuidString).png")
+        if !fileManager.fileExists(atPath: fileURL.path) && inCloud {
+            let placeholder = fileURL.deletingPathExtension().appendingPathExtension("png.icloud")
+            if fileManager.fileExists(atPath: placeholder.path) {
+                try? fileManager.startDownloadingUbiquitousItem(at: fileURL)
+            }
+            return nil
+        }
         return NSImage(contentsOf: fileURL)
     }
     
-    func deleteImage(id: UUID) {
-        guard let dir = imagesDirectory else { return }
+    func deleteImage(id: UUID, inCloud: Bool = false) {
+        guard let dir = getDirectory(inCloud: inCloud) else { return }
         let fileURL = dir.appendingPathComponent("\(id.uuidString).png")
         try? fileManager.removeItem(at: fileURL)
     }
     
-    func getFileSizeMB(id: UUID) -> Double {
-        guard let dir = imagesDirectory else { return 0 }
+    func getFileSizeMB(id: UUID, inCloud: Bool = false) -> Double {
+        guard let dir = getDirectory(inCloud: inCloud) else { return 0 }
         let fileURL = dir.appendingPathComponent("\(id.uuidString).png")
         if let attrs = try? fileManager.attributesOfItem(atPath: fileURL.path), let size = attrs[.size] as? UInt64 {
             return Double(size) / (1024.0 * 1024.0)
@@ -84,6 +104,16 @@ class LocalImageStore {
         return 0
     }
     
+    
+    func migrateImage(id: UUID, toCloud: Bool) {
+        guard let sourceDir = getDirectory(inCloud: !toCloud), let destDir = getDirectory(inCloud: toCloud) else { return }
+        let sourceURL = sourceDir.appendingPathComponent("\(id.uuidString).png")
+        let destURL = destDir.appendingPathComponent("\(id.uuidString).png")
+        if fileManager.fileExists(atPath: sourceURL.path) {
+            try? fileManager.moveItem(at: sourceURL, to: destURL)
+        }
+    }
+
     func getTotalSizeMB() -> Double {
         guard let dir = imagesDirectory,
               let files = try? fileManager.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.fileSizeKey]) else { return 0 }
@@ -119,8 +149,21 @@ class LocalPayloadStore {
         return dir
     }
     
-    func savePayload(_ data: Data, id: UUID, type: PayloadType) -> Bool {
-        guard let dir = payloadsDirectory else { return false }
+    private var cloudDirectory: URL? {
+        guard let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty else { return nil }
+        let dir = URL(fileURLWithPath: syncPath).appendingPathComponent("Payloads")
+        if !fileManager.fileExists(atPath: dir.path) {
+            try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
+        }
+        return dir
+    }
+    
+    func getDirectory(inCloud: Bool) -> URL? {
+        return inCloud ? cloudDirectory : payloadsDirectory
+    }
+    
+    func savePayload(_ data: Data, id: UUID, type: PayloadType, inCloud: Bool = false) -> Bool {
+        guard let dir = getDirectory(inCloud: inCloud) else { return false }
         let fileURL = dir.appendingPathComponent("\(id.uuidString).\(type.rawValue)")
         do {
             try data.write(to: fileURL)
@@ -131,22 +174,30 @@ class LocalPayloadStore {
         }
     }
     
-    func loadPayload(id: UUID, type: PayloadType) -> Data? {
-        guard let dir = payloadsDirectory else { return nil }
+    func loadPayload(id: UUID, type: PayloadType, inCloud: Bool = false) -> Data? {
+        guard let dir = getDirectory(inCloud: inCloud) else { return nil }
         let fileURL = dir.appendingPathComponent("\(id.uuidString).\(type.rawValue)")
+        if !fileManager.fileExists(atPath: fileURL.path) && inCloud {
+            let placeholder = fileURL.deletingPathExtension().appendingPathExtension("\(type.rawValue).icloud")
+            if fileManager.fileExists(atPath: placeholder.path) {
+                try? fileManager.startDownloadingUbiquitousItem(at: fileURL)
+            }
+            return nil
+        }
         return try? Data(contentsOf: fileURL)
     }
     
-    func deletePayloads(for id: UUID) {
-        guard let dir = payloadsDirectory else { return }
-        let rtfURL = dir.appendingPathComponent("\(id.uuidString).rtf")
-        let htmlURL = dir.appendingPathComponent("\(id.uuidString).html")
-        try? fileManager.removeItem(at: rtfURL)
-        try? fileManager.removeItem(at: htmlURL)
+    func deletePayloads(for id: UUID, inCloud: Bool = false) {
+        guard let dir = getDirectory(inCloud: inCloud) else { return }
+        let types: [PayloadType] = [.rtf, .html, .rtfd, .webArchive, .pdf]
+        for type in types {
+            let fileURL = dir.appendingPathComponent("\(id.uuidString).\(type.rawValue)")
+            try? fileManager.removeItem(at: fileURL)
+        }
     }
     
-    func getFileSizeMB(id: UUID, type: PayloadType) -> Double {
-        guard let dir = payloadsDirectory else { return 0 }
+    func getFileSizeMB(id: UUID, type: PayloadType, inCloud: Bool = false) -> Double {
+        guard let dir = getDirectory(inCloud: inCloud) else { return 0 }
         let fileURL = dir.appendingPathComponent("\(id.uuidString).\(type.rawValue)")
         if let attrs = try? fileManager.attributesOfItem(atPath: fileURL.path), let size = attrs[.size] as? UInt64 {
             return Double(size) / (1024.0 * 1024.0)
@@ -154,6 +205,19 @@ class LocalPayloadStore {
         return 0
     }
     
+    
+    func migratePayloads(for id: UUID, toCloud: Bool) {
+        guard let sourceDir = getDirectory(inCloud: !toCloud), let destDir = getDirectory(inCloud: toCloud) else { return }
+        let types: [PayloadType] = [.rtf, .html, .rtfd, .webArchive, .pdf]
+        for type in types {
+            let sourceURL = sourceDir.appendingPathComponent("\(id.uuidString).\(type.rawValue)")
+            let destURL = destDir.appendingPathComponent("\(id.uuidString).\(type.rawValue)")
+            if fileManager.fileExists(atPath: sourceURL.path) {
+                try? fileManager.moveItem(at: sourceURL, to: destURL)
+            }
+        }
+    }
+
     func getTotalSizeMB() -> Double {
         guard let dir = payloadsDirectory,
               let files = try? fileManager.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.fileSizeKey]) else { return 0 }
@@ -167,6 +231,8 @@ class LocalPayloadStore {
         return Double(totalBytes) / (1024.0 * 1024.0)
     }
 }
+
+let cloudFolderId = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
 
 class ClipboardManager: ObservableObject {
     @Published var history: [ClipboardItem] = [] {
@@ -504,6 +570,35 @@ case .none:
         saveHistory()
     }
     
+    
+    func setFolderId(for itemIds: [UUID], folderId: UUID?) {
+        for itemId in itemIds {
+            if let idx = history.firstIndex(where: { $0.id == itemId }) {
+                let oldFolderId = history[idx].folderId
+                let newFolderId = folderId
+                history[idx].folderId = folderId
+                if folderId != nil {
+                    history[idx].isPinned = false
+                }
+                
+                // Cloud Migration
+                let wasInCloud = oldFolderId == cloudFolderId
+                let isInCloud = newFolderId == cloudFolderId
+                
+                if !wasInCloud && isInCloud {
+                    // Migrate to Cloud
+                    if history[idx].itemType == .image { LocalImageStore.shared.migrateImage(id: itemId, toCloud: true) }
+                    if history[idx].hasRTF || history[idx].hasHTML { LocalPayloadStore.shared.migratePayloads(for: itemId, toCloud: true) }
+                } else if wasInCloud && !isInCloud {
+                    // Migrate back to Local
+                    if history[idx].itemType == .image { LocalImageStore.shared.migrateImage(id: itemId, toCloud: false) }
+                    if history[idx].hasRTF || history[idx].hasHTML { LocalPayloadStore.shared.migratePayloads(for: itemId, toCloud: false) }
+                }
+            }
+        }
+        saveHistory()
+    }
+
     func deleteItems(where predicate: (ClipboardItem) -> Bool) {
         let itemsToDelete = history.filter(predicate)
         for item in itemsToDelete {
@@ -523,9 +618,9 @@ case .none:
         if let index = history.firstIndex(where: { $0.id == id }) {
             history[index].isPinned.toggle()
             if history[index].isPinned {
-                history[index].folderId = nil // Pin directly to unassigned
+                setFolderId(for: [history[index].id], folderId: nil) // Pin directly to unassigned
             } else {
-                history[index].folderId = nil // Clear folder if unpinned
+                setFolderId(for: [history[index].id], folderId: nil) // Clear folder if unpinned
             }
             saveHistory()
         }
@@ -902,32 +997,77 @@ var maxHistoryCount: Int {
         }
     }
     
+    func isItemAvailable(_ item: ClipboardItem) -> Bool {
+        if item.folderId != cloudFolderId { return true }
+        
+        let fileManager = FileManager.default
+        if item.itemType == .image {
+            guard let dir = LocalImageStore.shared.getDirectory(inCloud: true) else { return false }
+            return fileManager.fileExists(atPath: dir.appendingPathComponent("\(item.id.uuidString).png").path)
+        }
+        if item.hasRTF {
+            guard let dir = LocalPayloadStore.shared.getDirectory(inCloud: true) else { return false }
+            return fileManager.fileExists(atPath: dir.appendingPathComponent("\(item.id.uuidString).rtf").path)
+        }
+        if item.hasHTML {
+            guard let dir = LocalPayloadStore.shared.getDirectory(inCloud: true) else { return false }
+            return fileManager.fileExists(atPath: dir.appendingPathComponent("\(item.id.uuidString).html").path)
+        }
+        if item.itemType == .file { return true }
+        return true
+    }
+    
     func prepareForPaste(_ item: ClipboardItem, formatType: PasteFormatType = .plain) {
         ignoreNextChange = true
+
+        let inCloud = item.folderId == cloudFolderId
+        var isDownloading = false
+        
+        let checkDownload = {
+            if isDownloading { return }
+            NSSound.beep()
+            self.pasteboard.setString("[Downloading from Cloud... Please try pasting again in a moment]", forType: .string)
+            isDownloading = true
+        }
+    
         pasteboard.clearContents()
         
         let hasFiles = item.fileURLs != nil && !item.fileURLs!.isEmpty
         
         switch formatType {
         case .plain:
-            if hasFiles {
-                let nsUrls = item.fileURLs!.map { NSURL(fileURLWithPath: $0) }
-                pasteboard.writeObjects(nsUrls)
-            } else {
-                pasteboard.setString(item.text, forType: .string)
+            if !isDownloading {
+                if hasFiles {
+                    let nsUrls = item.fileURLs!.map { NSURL(fileURLWithPath: $0) }
+                    pasteboard.writeObjects(nsUrls)
+                } else {
+                    self.pasteboard.setString(item.text, forType: .string)
+                }
             }
             
         case .rich:
-            if item.hasRTF, let rtfData = LocalPayloadStore.shared.loadPayload(id: item.id, type: .rtf) { pasteboard.setData(rtfData, forType: .rtf) }
-            if item.hasHTML, let htmlData = LocalPayloadStore.shared.loadPayload(id: item.id, type: .html) { pasteboard.setData(htmlData, forType: .html) }
-            if item.hasRTFD, let rtfdData = LocalPayloadStore.shared.loadPayload(id: item.id, type: .rtfd) { pasteboard.setData(rtfdData, forType: .rtfd) }
-            if item.hasWebArchive, let webArchiveData = LocalPayloadStore.shared.loadPayload(id: item.id, type: .webArchive) { pasteboard.setData(webArchiveData, forType: NSPasteboard.PasteboardType("Apple Web Archive pasteboard type")) }
-            if item.hasPDF, let pdfData = LocalPayloadStore.shared.loadPayload(id: item.id, type: .pdf) { pasteboard.setData(pdfData, forType: .pdf) }
-            if hasFiles {
-                let nsUrls = item.fileURLs!.map { NSURL(fileURLWithPath: $0) }
-                pasteboard.writeObjects(nsUrls)
-            } else {
-                pasteboard.setString(item.text, forType: .string)
+            if item.hasRTF {
+                if let data = LocalPayloadStore.shared.loadPayload(id: item.id, type: .rtf, inCloud: inCloud) { pasteboard.setData(data, forType: .rtf) } else if inCloud { checkDownload() }
+            }
+            if item.hasHTML {
+                if let data = LocalPayloadStore.shared.loadPayload(id: item.id, type: .html, inCloud: inCloud) { pasteboard.setData(data, forType: .html) } else if inCloud { checkDownload() }
+            }
+            if item.hasRTFD {
+                if let data = LocalPayloadStore.shared.loadPayload(id: item.id, type: .rtfd, inCloud: inCloud) { pasteboard.setData(data, forType: .rtfd) } else if inCloud { checkDownload() }
+            }
+            if item.hasWebArchive {
+                if let data = LocalPayloadStore.shared.loadPayload(id: item.id, type: .webArchive, inCloud: inCloud) { pasteboard.setData(data, forType: NSPasteboard.PasteboardType("Apple Web Archive pasteboard type")) } else if inCloud { checkDownload() }
+            }
+            if item.hasPDF {
+                if let data = LocalPayloadStore.shared.loadPayload(id: item.id, type: .pdf, inCloud: inCloud) { pasteboard.setData(data, forType: .pdf) } else if inCloud { checkDownload() }
+            }
+            if !isDownloading {
+                if hasFiles {
+                    let nsUrls = item.fileURLs!.map { NSURL(fileURLWithPath: $0) }
+                    pasteboard.writeObjects(nsUrls)
+                } else {
+                    self.pasteboard.setString(item.text, forType: .string)
+                }
             }
             
         case .richNoLinks:
@@ -982,11 +1122,13 @@ var maxHistoryCount: Int {
                 stripRtfLinks()
             }
             
-            if hasFiles {
-                let nsUrls = item.fileURLs!.map { NSURL(fileURLWithPath: $0) }
-                pasteboard.writeObjects(nsUrls)
-            } else {
-                pasteboard.setString(item.text, forType: .string)
+            if !isDownloading {
+                if hasFiles {
+                    let nsUrls = item.fileURLs!.map { NSURL(fileURLWithPath: $0) }
+                    pasteboard.writeObjects(nsUrls)
+                } else {
+                    self.pasteboard.setString(item.text, forType: .string)
+                }
             }
         }
         

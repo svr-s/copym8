@@ -2,6 +2,7 @@ import SwiftUI
 import AppKit
 
 struct ClipboardItemView: View {
+    @EnvironmentObject var clipboard: ClipboardManager
     let item: ClipboardItem
     let shortcutIndex: Int?
     let isSelected: Bool
@@ -161,7 +162,11 @@ struct ClipboardItemView: View {
                     .frame(width: 12)
                     
                     Group {
-                        if let folderId = folderIdentifier {
+                        if !clipboard.isItemAvailable(item) {
+                            Image(systemName: "arrow.down.icloud.fill")
+                                .foregroundColor(.blue.opacity(0.8))
+                                .font(.system(size: 11))
+                        } else if let folderId = folderIdentifier {
                             Text("[\(folderId)]")
                                 .font(.system(size: 11, weight: .bold, design: .monospaced))
                                 .foregroundColor(secondaryTextColor)

@@ -132,8 +132,13 @@ struct ContentView: View {
         }
         
         if activeTab == "Groups" {
-            let filteredFolders = clipboard.getFilteredFolders(searchText: searchText)
+            var filteredFolders = clipboard.getFilteredFolders(searchText: searchText)
             var nodes: [DisplayNode] = []
+            
+            if let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty {
+                let cloudFolder = ClipboardFolder(id: UUID(uuidString: "00000000-0000-0000-0000-000000000000")!, name: "Cloud Copy", orderIndex: -1)
+                filteredFolders.insert(cloudFolder, at: 0)
+            }
             
             for folder in filteredFolders {
                 nodes.append(DisplayNode(id: "folder_\(folder.id.uuidString)", isFolder: true, folder: folder, item: nil, parentFolderId: nil))
@@ -452,7 +457,7 @@ struct ContentView: View {
     private func ungroupSelectedItems(pin: Bool) {
         for i in 0..<clipboard.history.count {
             if selectedItemsForDeletion.contains(clipboard.history[i].id) {
-                clipboard.history[i].folderId = nil
+                clipboard.setFolderId(for: [clipboard.history[i].id], folderId: nil)
                 if pin {
                     clipboard.history[i].isPinned = true
                 }
@@ -649,7 +654,7 @@ struct ContentView: View {
         if keepItems {
             for i in 0..<clipboard.history.count {
                 if let fId = clipboard.history[i].folderId, folderIds.contains(fId) {
-                    clipboard.history[i].folderId = nil
+                    clipboard.setFolderId(for: [clipboard.history[i].id], folderId: nil)
                     clipboard.history[i].isPinned = true
                 }
             }
@@ -812,6 +817,20 @@ extension ContentView {
                     return nil
                 }
                 
+                if activeTab == "Groups" && chars == "`" && !event.modifierFlags.contains(.command) && !event.modifierFlags.contains(.control) && !event.modifierFlags.contains(.option) {
+                    if let nodeIndex = displayNodesLocal.firstIndex(where: { $0.isFolder && $0.folder?.id == UUID(uuidString: "00000000-0000-0000-0000-000000000000")! }) {
+                        withAnimation {
+                            _selectedIndex.wrappedValue = nodeIndex
+                            if !_expandedFolderIds.wrappedValue.contains(UUID(uuidString: "00000000-0000-0000-0000-000000000000")!) {
+                                _expandedFolderIds.wrappedValue.insert(UUID(uuidString: "00000000-0000-0000-0000-000000000000")!)
+                            } else {
+                                _expandedFolderIds.wrappedValue.remove(UUID(uuidString: "00000000-0000-0000-0000-000000000000")!)
+                            }
+                        }
+                        return nil
+                    }
+                }
+                
                 if activeTab == "Groups" && char >= "A" && char <= "Z" && !event.modifierFlags.contains(.command) && !event.modifierFlags.contains(.control) && !event.modifierFlags.contains(.option) {
                     let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                     if let letterIndex = alphabet.firstIndex(of: Character(char)) {
@@ -890,7 +909,7 @@ extension ContentView {
                             for id in _selectedItemsForDeletion.wrappedValue {
                                 if let idx = clipboard.history.firstIndex(where: { $0.id == id }) {
                                     clipboard.history[idx].isPinned = true
-                                    clipboard.history[idx].folderId = nil
+                                    clipboard.setFolderId(for: [id], folderId: nil)
                                 }
                             }
                             _selectedItemsForDeletion.wrappedValue.removeAll()

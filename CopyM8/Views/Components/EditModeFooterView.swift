@@ -78,7 +78,7 @@ struct EditModeFooterView: View {
                             for id in selectedItemsForDeletion {
                                 if let idx = clipboard.history.firstIndex(where: { $0.id == id }) {
                                     clipboard.history[idx].isPinned = true
-                                    clipboard.history[idx].folderId = nil
+                                    clipboard.setFolderId(for: [id], folderId: nil)
                                 }
                             }
                             selectedItemsForDeletion.removeAll()

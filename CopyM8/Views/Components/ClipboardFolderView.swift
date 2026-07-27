@@ -35,11 +35,20 @@ struct ClipboardFolderView: View {
         Button(action: onTap) {
             HStack(spacing: 12) {
                 if isEditMode {
-                    Image(systemName: isChecked ? "checkmark.circle.fill" : "circle")
-                        .foregroundColor(isChecked ? .primary : .primary.opacity(0.3))
-                        .font(.system(size: 14))
+                    if folder.id == UUID(uuidString: "00000000-0000-0000-0000-000000000000")! {
+                        Spacer().frame(width: 14)
+                    } else {
+                        Image(systemName: isChecked ? "checkmark.circle.fill" : "circle")
+                            .foregroundColor(isChecked ? .primary : .primary.opacity(0.3))
+                            .font(.system(size: 14))
+                    }
                 } else {
-                    if let sIndex = shortcutIndex, sIndex < 26 {
+                    if folder.id == UUID(uuidString: "00000000-0000-0000-0000-000000000000")! {
+                        Text("`")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundColor(secondaryTextColor)
+                            .frame(width: 16, alignment: .leading)
+                    } else if let sIndex = shortcutIndex, sIndex < 26 {
                         let shortcutLetter = String(UnicodeScalar(UInt8(65 + sIndex)))
                         Text(shortcutLetter)
                             .font(.system(size: 11, weight: .bold, design: .monospaced))
@@ -56,11 +65,20 @@ struct ClipboardFolderView: View {
                     .frame(width: 10)
                 
                 HStack(spacing: 8) {
-                    Image(nsImage: NSImage(named: NSImage.folderName)!)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 16, height: 16)
-                        .opacity(isExpanded ? 1.0 : 0.7)
+                    if folder.id == UUID(uuidString: "00000000-0000-0000-0000-000000000000")! {
+                        Image(systemName: "cloud.fill")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 14, height: 14)
+                            .foregroundColor(.blue.opacity(0.8))
+                            .opacity(isExpanded ? 1.0 : 0.7)
+                    } else {
+                        Image(nsImage: NSImage(named: NSImage.folderName)!)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 16, height: 16)
+                            .opacity(isExpanded ? 1.0 : 0.7)
+                    }
                     
                     if editingFolderId == folder.id {
                         TextField("", text: $renameText)
