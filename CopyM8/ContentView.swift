@@ -132,13 +132,8 @@ struct ContentView: View {
         }
         
         if activeTab == "Groups" {
-            var filteredFolders = clipboard.getFilteredFolders(searchText: searchText)
+            let filteredFolders = clipboard.getFilteredFolders(searchText: searchText)
             var nodes: [DisplayNode] = []
-            
-            if let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty {
-                let cloudFolder = ClipboardFolder(id: UUID(uuidString: "00000000-0000-0000-0000-000000000000")!, name: "Cloud Copy", orderIndex: -1)
-                filteredFolders.insert(cloudFolder, at: 0)
-            }
             
             for folder in filteredFolders {
                 nodes.append(DisplayNode(id: "folder_\(folder.id.uuidString)", isFolder: true, folder: folder, item: nil, parentFolderId: nil))
