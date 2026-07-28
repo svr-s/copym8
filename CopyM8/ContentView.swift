@@ -687,6 +687,10 @@ extension ContentView {
         let _expandedFolderIds = self._expandedFolderIds
         
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if SettingsWindowManager.shared.isSettingsOpen {
+                return event
+            }
+            
             if _showingDeleteSelectedAlert.wrappedValue || _showingFolderDeleteAlert.wrappedValue || _showingUngroupAlert.wrappedValue || _itemToAssignGroup.wrappedValue != nil {
                 if event.keyCode == 53 {
                     if _itemToAssignGroup.wrappedValue != nil { _itemToAssignGroup.wrappedValue = nil }
