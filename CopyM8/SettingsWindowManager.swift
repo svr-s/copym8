@@ -29,11 +29,26 @@ class SettingsWindowManager {
         )
         window.title = "CopyM8 Settings"
         
-        if let mainWindow = NSApp.windows.first(where: { $0 is CopyM8Window }) {
+        if let mainWindow = NSApp.windows.first(where: { $0 is CopyM8Window }), let screen = mainWindow.screen {
             let mainFrame = mainWindow.frame
-            let x = mainFrame.midX - (380 / 2)
+            let screenRect = screen.visibleFrame
+            
+            var x = mainFrame.midX - (380 / 2)
+            // Constrain X so it doesn't bleed off the screen
+            if x + 380 > screenRect.maxX {
+                x = screenRect.maxX - 380 - 12
+            }
+            if x < screenRect.minX {
+                x = screenRect.minX + 12
+            }
+            
             // Position it 40 points below the top edge of the main window to clear the CopyM8 heading
-            let y = mainFrame.maxY - 440 - 40
+            var y = mainFrame.maxY - 440 - 40
+            // Constrain Y as well just in case
+            if y < screenRect.minY {
+                y = screenRect.minY + 12
+            }
+            
             window.setFrameOrigin(NSPoint(x: x, y: y))
         } else {
             window.center()
