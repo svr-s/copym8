@@ -563,6 +563,14 @@ struct ContentView: View {
         } else {
             window.setFrame(frame, display: true, animate: false)
         }
+        
+        if !expanded {
+            DispatchQueue.main.asyncAfter(deadline: .now() + (animate ? 0.4 : 0.1)) {
+                if clipboard.selectedDevice != "Local (This Mac)" {
+                    clipboard.selectedDevice = "Local (This Mac)"
+                }
+            }
+        }
     }
     
     @State var eventMonitor: Any?
