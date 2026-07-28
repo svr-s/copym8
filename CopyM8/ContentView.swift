@@ -1288,6 +1288,8 @@ struct DeviceSwitcherView: View {
     let onCancel: () -> Void
     
     @State private var selectedIndex: Int = 0
+    @State private var localEventMonitor: Any?
+    @Environment(\.controlActiveState) private var controlActiveState
     
     var body: some View {
         VStack(spacing: 0) {
@@ -1301,7 +1303,7 @@ struct DeviceSwitcherView: View {
             
             Divider()
             
-            VStack(spacing: 0) {
+            VStack(spacing: 4) {
                 ForEach(Array(devices.enumerated()), id: \.element) { index, device in
                     HStack {
                         Text(device)
@@ -1314,20 +1316,24 @@ struct DeviceSwitcherView: View {
                                 .foregroundColor(.white)
                         }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(index == selectedIndex ? Color.blue : Color.clear)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(
+                        index == selectedIndex 
+                        ? (controlActiveState == .key ? Color(nsColor: .selectedContentBackgroundColor) : Color(nsColor: .unemphasizedSelectedContentBackgroundColor)) 
+                        : Color.clear
+                    )
+                    .cornerRadius(6)
                     .contentShape(Rectangle())
                     .onTapGesture {
                         onSelect(device)
                     }
                 }
             }
-            .padding(.vertical, 4)
+            .padding(8)
         }
-        // Local event monitor for arrow keys and enter within the modal
         .onAppear {
-            NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            localEventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
                 switch event.keyCode {
                 case 125: // Down arrow
                     if selectedIndex < devices.count - 1 {
@@ -1348,6 +1354,12 @@ struct DeviceSwitcherView: View {
                 default:
                     return event
                 }
+            }
+        }
+        .onDisappear {
+            if let monitor = localEventMonitor {
+                NSEvent.removeMonitor(monitor)
+                localEventMonitor = nil
             }
         }
     }
