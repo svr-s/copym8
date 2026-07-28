@@ -47,6 +47,7 @@ struct ContentView: View {
     @State var editingFolderId: UUID? = nil
     @State var showingGroupAssignment = false
     @State var itemToAssignGroup: GroupAssignmentPayload? = nil
+    @State var showingDeviceSwitcher: Bool = false
     @State var draftHistoryCount: Int = 25
     @State var searchText: String = ""
     @FocusState private var isSearchFocused: Bool
@@ -396,6 +397,26 @@ struct ContentView: View {
                             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
                             .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
                     }
+                } else if showingDeviceSwitcher {
+                    ZStack {
+                        Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
+                            .onTapGesture { showingDeviceSwitcher = false }
+                        
+                        let devices = ["Local (This Mac)"] + clipboard.availableDevices.filter { $0 != "Local (This Mac)" }
+                        DeviceSwitcherView(
+                            devices: devices,
+                            onSelect: { selected in
+                                clipboard.selectedDevice = selected
+                                showingDeviceSwitcher = false
+                            },
+                            onCancel: { showingDeviceSwitcher = false }
+                        )
+                            .frame(width: 280)
+                            .background(Color(NSColor.windowBackgroundColor))
+                            .cornerRadius(12)
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
+                            .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
+                    }
                 } else if showingDeleteSelectedAlert {
                     ZStack {
                         Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
@@ -722,15 +743,14 @@ extension ContentView {
                         _isSearchFocused.wrappedValue = true
                     }
                     return nil
-                case 1: // S
-                    if !clipboard.availableDevices.isEmpty {
-                        let devices = ["Local (This Mac)"] + clipboard.availableDevices.filter { $0 != "Local (This Mac)" }
-                        if let currentIndex = devices.firstIndex(of: clipboard.selectedDevice) {
-                            let nextIndex = (currentIndex + 1) % devices.count
-                            clipboard.selectedDevice = devices[nextIndex]
+                case 2: // D
+                    if event.modifierFlags.contains(.shift) {
+                        if !clipboard.availableDevices.isEmpty {
+                            _showingDeviceSwitcher.wrappedValue = true
                         }
+                        return nil
                     }
-                    return nil
+                    return event
                 case 15: // R
                     if activeTab == "Pinned" || activeTab == "Groups" {
                         if _isReorderMode.wrappedValue {
@@ -1257,6 +1277,77 @@ extension ContentView {
                 return event
             default:
                 return event
+            }
+        }
+    }
+}
+
+struct DeviceSwitcherView: View {
+    let devices: [String]
+    let onSelect: (String) -> Void
+    let onCancel: () -> Void
+    
+    @State private var selectedIndex: Int = 0
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            Text("Select Device Source")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(Color.primary.opacity(0.05))
+            
+            Divider()
+            
+            VStack(spacing: 0) {
+                ForEach(Array(devices.enumerated()), id: \.element) { index, device in
+                    HStack {
+                        Text(device)
+                            .font(.system(size: 13, weight: index == selectedIndex ? .semibold : .regular))
+                            .foregroundColor(index == selectedIndex ? .white : .primary)
+                        Spacer()
+                        if index == selectedIndex {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(index == selectedIndex ? Color.blue : Color.clear)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        onSelect(device)
+                    }
+                }
+            }
+            .padding(.vertical, 4)
+        }
+        // Local event monitor for arrow keys and enter within the modal
+        .onAppear {
+            NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+                switch event.keyCode {
+                case 125: // Down arrow
+                    if selectedIndex < devices.count - 1 {
+                        selectedIndex += 1
+                    }
+                    return nil
+                case 126: // Up arrow
+                    if selectedIndex > 0 {
+                        selectedIndex -= 1
+                    }
+                    return nil
+                case 36: // Enter
+                    onSelect(devices[selectedIndex])
+                    return nil
+                case 53: // Esc
+                    onCancel()
+                    return nil
+                default:
+                    return event
+                }
             }
         }
     }
