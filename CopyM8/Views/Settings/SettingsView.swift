@@ -805,6 +805,7 @@ struct SettingsView: View {
                 shortcutRow(action: "Open Search", key: "Cmd + F")
                 shortcutRow(action: "Toggle Layout", key: "Cmd + D")
                 shortcutRow(action: "Cycle Colors", key: "Cmd + K")
+                shortcutRow(action: "Cycle Device Source", key: "Cmd + S")
                 shortcutRow(action: "Settings", key: "Cmd + ,")
                 shortcutRow(action: "Close Window", key: "Esc")
             }

@@ -722,6 +722,15 @@ extension ContentView {
                         _isSearchFocused.wrappedValue = true
                     }
                     return nil
+                case 1: // S
+                    if !clipboard.availableDevices.isEmpty {
+                        let devices = ["Local (This Mac)"] + clipboard.availableDevices.filter { $0 != "Local (This Mac)" }
+                        if let currentIndex = devices.firstIndex(of: clipboard.selectedDevice) {
+                            let nextIndex = (currentIndex + 1) % devices.count
+                            clipboard.selectedDevice = devices[nextIndex]
+                        }
+                    }
+                    return nil
                 case 15: // R
                     if activeTab == "Pinned" || activeTab == "Groups" {
                         if _isReorderMode.wrappedValue {
