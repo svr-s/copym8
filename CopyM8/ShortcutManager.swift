@@ -13,6 +13,7 @@ extension KeyboardShortcuts.Name {
 class ShortcutManager: ObservableObject {
     @Published var isExpanded: Bool = false
     @Published var requestedTab: String? = nil
+    @Published var isPresentingModal: Bool = false
     private var eventMonitor: Any?
     
     init() {
@@ -39,6 +40,8 @@ class ShortcutManager: ObservableObject {
         // Monitor global mouse clicks to dismiss the expanded view
         eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
             DispatchQueue.main.async {
+                if self?.isPresentingModal == true { return }
+                
                 if self?.isExpanded == true {
                     if let window = NSApplication.shared.windows.first(where: { $0.isKeyWindow || $0.isVisible }),
                        window.frame.contains(NSEvent.mouseLocation) {

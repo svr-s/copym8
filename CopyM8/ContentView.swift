@@ -364,6 +364,7 @@ struct ContentView: View {
         }
         .onAppear { applyTheme(themePreference) }
         .environmentObject(clipboard)
+        .environmentObject(shortcut)
         .overlay(
             Group {
                 if let payload = itemToAssignGroup {

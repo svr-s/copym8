@@ -40,6 +40,7 @@ enum CloudProvider: String, CaseIterable {
 
 struct SettingsView: View {
     @EnvironmentObject var clipboard: ClipboardManager
+    @EnvironmentObject var shortcut: ShortcutManager
     @Binding var draftHistoryCount: Int
     @Binding var maxHistoryCount: Int
     
@@ -648,8 +649,10 @@ struct SettingsView: View {
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
         
-        if let window = NSApp.keyWindow {
+        shortcut.isPresentingModal = true
+        if let window = NSApp.windows.first(where: { $0.isVisible && $0.isKeyWindow }) {
             panel.beginSheetModal(for: window) { response in
+                shortcut.isPresentingModal = false
                 if response == .OK, let url = panel.url {
                     DispatchQueue.main.async {
                         setupSync(with: url)
@@ -660,6 +663,7 @@ struct SettingsView: View {
             if panel.runModal() == .OK, let url = panel.url {
                 setupSync(with: url)
             }
+            shortcut.isPresentingModal = false
         }
     }
     
@@ -721,13 +725,29 @@ struct SettingsView: View {
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
         panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        panel.prompt = "Add App"
         
-        if panel.runModal() == .OK, let url = panel.url {
-            let appName = url.deletingPathExtension().lastPathComponent
-            if !blacklistedApps.contains(appName) {
-                blacklistedApps.append(appName)
-                UserDefaults.standard.set(blacklistedApps, forKey: "blacklistedApps")
+        shortcut.isPresentingModal = true
+        if let window = NSApp.windows.first(where: { $0.isVisible && $0.isKeyWindow }) {
+            panel.beginSheetModal(for: window) { response in
+                shortcut.isPresentingModal = false
+                if response == .OK, let url = panel.url {
+                    let appName = url.deletingPathExtension().lastPathComponent
+                    if !blacklistedApps.contains(appName) {
+                        blacklistedApps.append(appName)
+                        UserDefaults.standard.set(blacklistedApps, forKey: "blacklistedApps")
+                    }
+                }
             }
+        } else {
+            if panel.runModal() == .OK, let url = panel.url {
+                let appName = url.deletingPathExtension().lastPathComponent
+                if !blacklistedApps.contains(appName) {
+                    blacklistedApps.append(appName)
+                    UserDefaults.standard.set(blacklistedApps, forKey: "blacklistedApps")
+                }
+            }
+            shortcut.isPresentingModal = false
         }
     }
     
