@@ -29,7 +29,7 @@ class SettingsWindowManager {
         )
         window.title = "CopyM8 Settings"
         
-        if let mainWindow = NSApp.windows.first(where: { $0.className == "CopyM8Window" || $0.title == "CopyM8" }) {
+        if let mainWindow = NSApp.windows.first(where: { $0 is CopyM8Window }) {
             let mainFrame = mainWindow.frame
             let x = mainFrame.midX - (380 / 2)
             // Position it 40 points below the top edge of the main window to clear the CopyM8 heading
