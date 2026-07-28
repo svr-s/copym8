@@ -50,6 +50,7 @@ class ShortcutManager: ObservableObject {
                     
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                         self?.isExpanded = false
+                        SettingsWindowManager.shared.closeSettings()
                     }
                 }
             }

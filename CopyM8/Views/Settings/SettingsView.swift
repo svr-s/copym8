@@ -698,7 +698,7 @@ struct SettingsView: View {
             .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.primary.opacity(0.1), lineWidth: 1))
             
             HStack {
-                Button("Add App via Finder...") {
+                Button("Add App to Blacklist via Finder...") {
                     addAppViaFinder()
                 }
                 .font(.system(size: 11))
@@ -730,7 +730,7 @@ struct SettingsView: View {
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
         panel.directoryURL = URL(fileURLWithPath: "/Applications")
-        panel.prompt = "Add App"
+        panel.prompt = "Add to blacklist"
         
         shortcut.isPresentingModal = true
         if let window = NSApp.windows.first(where: { $0.isVisible && $0.isKeyWindow }) {

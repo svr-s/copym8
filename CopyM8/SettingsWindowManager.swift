@@ -4,6 +4,7 @@ import AppKit
 class SettingsWindowManager {
     static let shared = SettingsWindowManager()
     private var settingsWindow: NSWindow?
+    private var eventMonitor: Any?
     
     func showSettings(draftHistoryCount: Binding<Int>, maxHistoryCount: Binding<Int>, clipboard: ClipboardManager, shortcut: ShortcutManager) {
         if let window = settingsWindow, window.isVisible {
@@ -24,11 +25,37 @@ class SettingsWindowManager {
         )
         window.title = "CopyM8 Settings"
         window.center()
+        window.level = .floating
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView: settingsView)
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         
         self.settingsWindow = window
+        
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            if event.keyCode == 53 && window.isKeyWindow { // ESC key
+                self?.closeSettings()
+                return nil
+            }
+            return event
+        }
+        
+        NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { [weak self] _ in
+            self?.cleanup()
+        }
+    }
+    
+    func closeSettings() {
+        settingsWindow?.close()
+        cleanup()
+    }
+    
+    private func cleanup() {
+        if let monitor = eventMonitor {
+            NSEvent.removeMonitor(monitor)
+            eventMonitor = nil
+        }
+        settingsWindow = nil
     }
 }
