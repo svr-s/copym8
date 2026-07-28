@@ -14,6 +14,7 @@
 		1B478EB92B0DF60A53A17BF1 /* CopyM8App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9870C57343C9C60F93714D9C /* CopyM8App.swift */; };
 		2E25865FBE9A2BD3A9BDDCEF /* ClipboardFolderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFCA4AEE1A8FD76CAABB5ED2 /* ClipboardFolderView.swift */; };
 		36A8E0938FDB4759F8682B66 /* ReorderFooterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ACF43EAE7D3288C2C0DEE9B /* ReorderFooterView.swift */; };
+		398857D327775480B3FB210C /* SettingsWindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE0E99A460014BA522DC1D3 /* SettingsWindowManager.swift */; };
 		3DAAE5949C907B15AD96D4BB /* EditModeFooterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C193A9E47C581EFD57012E /* EditModeFooterView.swift */; };
 		5AB71AEC9BF3C4C3CB8AE2CA /* DeleteConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B90CD71D0582245594AB0B4 /* DeleteConfirmationView.swift */; };
 		79A9E8EB1B0B35A7555E4DFD /* ShortcutManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1618755D3C4A1DBB5CA9C33B /* ShortcutManager.swift */; };
@@ -42,6 +43,7 @@
 		2ECAA114012F5CBBBF5EC6AB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		3486ED9F9756BC5D247DDD19 /* VisualEffectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualEffectView.swift; sourceTree = "<group>"; };
 		5ACF43EAE7D3288C2C0DEE9B /* ReorderFooterView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReorderFooterView.swift; sourceTree = "<group>"; };
+		6EE0E99A460014BA522DC1D3 /* SettingsWindowManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsWindowManager.swift; sourceTree = "<group>"; };
 		7C5DD7D390AD90A064ABFD3F /* ResizeEdgesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizeEdgesView.swift; sourceTree = "<group>"; };
 		7E9ADD5155AE7F85A49CC403 /* ClipboardItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardItemView.swift; sourceTree = "<group>"; };
 		8162541FBF9AAEDBC6767D29 /* CopyM8.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CopyM8.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -131,6 +133,7 @@
 				1618755D3C4A1DBB5CA9C33B /* ShortcutManager.swift */,
 				3486ED9F9756BC5D247DDD19 /* VisualEffectView.swift */,
 				59B3186F59FA098F2622B86B /* Views */,
+				6EE0E99A460014BA522DC1D3 /* SettingsWindowManager.swift */,
 			);
 			path = CopyM8;
 			sourceTree = "<group>";
@@ -233,6 +236,7 @@
 				DE9397A2209DBADD86971C51 /* UngroupConfirmationView.swift in Sources */,
 				9A7DBBB05A39B362B9E45472 /* VisualEffectView.swift in Sources */,
 				36A8E0938FDB4759F8682B66 /* ReorderFooterView.swift in Sources */,
+				398857D327775480B3FB210C /* SettingsWindowManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

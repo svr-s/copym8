@@ -8,7 +8,6 @@ struct ExpandedView: View {
     @Binding var isDense: Bool
     @Binding var windowWidth: Double
     @Binding var windowHeight: Double
-    @Binding var showingSettings: Bool
     @Binding var draftHistoryCount: Int
     @Binding var maxHistoryCount: Int
     @Binding var activeTab: String
@@ -56,7 +55,6 @@ struct ExpandedView: View {
                     isDense: $isDense,
                     windowWidth: $windowWidth,
                     windowHeight: $windowHeight,
-                    showingSettings: $showingSettings,
                     draftHistoryCount: $draftHistoryCount,
                     maxHistoryCount: $maxHistoryCount,
                     adjustWindowFrame: adjustWindowFrame

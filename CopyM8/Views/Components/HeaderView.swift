@@ -3,13 +3,13 @@ import AppKit
 
 struct HeaderView: View {
     @EnvironmentObject var clipboard: ClipboardManager
+    @EnvironmentObject var shortcut: ShortcutManager
     @Binding var isHoveringClose: Bool
     @Binding var isEditMode: Bool
     @Binding var selectedItemsForDeletion: Set<UUID>
     @Binding var isDense: Bool
     @Binding var windowWidth: Double
     @Binding var windowHeight: Double
-    @Binding var showingSettings: Bool
     @Binding var draftHistoryCount: Int
     @Binding var maxHistoryCount: Int
     
@@ -58,19 +58,20 @@ struct HeaderView: View {
             .pickerStyle(.segmented)
             .frame(width: 60)
             
-            Button(action: { showingSettings.toggle() }) {
+            Button(action: {
+                SettingsWindowManager.shared.showSettings(
+                    draftHistoryCount: $draftHistoryCount,
+                    maxHistoryCount: $maxHistoryCount,
+                    clipboard: clipboard,
+                    shortcut: shortcut
+                )
+            }) {
                 Image(systemName: "gearshape").font(.system(size: 11)).foregroundColor(.primary.opacity(0.6))
             }
             .buttonStyle(PlainButtonStyle())
             .keyboardShortcut(",", modifiers: .command)
             .onHover { hover in
                 if hover { NSCursor.arrow.push() } else { NSCursor.pop() }
-            }
-            .popover(isPresented: $showingSettings) {
-                SettingsView(draftHistoryCount: $draftHistoryCount, maxHistoryCount: $maxHistoryCount)
-            }
-            .onChange(of: showingSettings) { _, isShowing in
-                if isShowing { draftHistoryCount = maxHistoryCount } else { maxHistoryCount = max(5, draftHistoryCount) }
             }
             
             Divider().frame(height: 12).background(Color.primary.opacity(0.2))

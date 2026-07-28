@@ -45,7 +45,6 @@ struct ContentView: View {
     @State var showingUngroupAlert = false
     @State var expandedItemIndex: Int? = nil
     @State var editingFolderId: UUID? = nil
-    @State var showingSettings = false
     @State var showingGroupAssignment = false
     @State var itemToAssignGroup: GroupAssignmentPayload? = nil
     @State var draftHistoryCount: Int = 25
@@ -247,7 +246,6 @@ struct ContentView: View {
                     isDense: $isDense,
                     windowWidth: $windowWidth,
                     windowHeight: $windowHeight,
-                    showingSettings: $showingSettings,
                     draftHistoryCount: $draftHistoryCount,
                     maxHistoryCount: $maxHistoryCount,
                     activeTab: $activeTab,
@@ -322,7 +320,6 @@ struct ContentView: View {
                     activeTab = "All"
                 }
                 itemToAssignGroup = nil
-                showingSettings = false
                 showingDeleteSelectedAlert = false
                 showingFolderDeleteAlert = false
                 expandedFolderIds.removeAll()
@@ -548,7 +545,7 @@ struct ContentView: View {
             if !expanded, let screenRect = window.screen?.visibleFrame {
                 frame.origin.y = screenRect.maxY - newSize.height
             } else {
-                frame.origin.y -= (newSize.height - oldHeight)
+                frame.origin.y -= (newSize.height - oldHeight) / 2
             }
         }
         frame.size = newSize
@@ -680,7 +677,6 @@ extension ContentView {
         let _selectedItemsForDeletion = self._selectedItemsForDeletion
         let _isSearchFocused = self._isSearchFocused
         let _itemToAssignGroup = self._itemToAssignGroup
-        let _showingSettings = self._showingSettings
         let _showingDeleteSelectedAlert = self._showingDeleteSelectedAlert
         let _showingFolderDeleteAlert = self._showingFolderDeleteAlert
         let _showingUngroupAlert = self._showingUngroupAlert
@@ -691,7 +687,7 @@ extension ContentView {
         let _expandedFolderIds = self._expandedFolderIds
         
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            if _showingSettings.wrappedValue || _showingDeleteSelectedAlert.wrappedValue || _showingFolderDeleteAlert.wrappedValue || _showingUngroupAlert.wrappedValue || _itemToAssignGroup.wrappedValue != nil {
+            if _showingDeleteSelectedAlert.wrappedValue || _showingFolderDeleteAlert.wrappedValue || _showingUngroupAlert.wrappedValue || _itemToAssignGroup.wrappedValue != nil {
                 if event.keyCode == 53 {
                     if _itemToAssignGroup.wrappedValue != nil { _itemToAssignGroup.wrappedValue = nil }
                     return event
@@ -755,9 +751,6 @@ extension ContentView {
                     return nil
                 case 2: // D
                     _isDense.wrappedValue.toggle()
-                    return nil
-                case 43: // , (comma)
-                    _showingSettings.wrappedValue.toggle()
                     return nil
                 default: break
                 }

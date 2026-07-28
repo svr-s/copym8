@@ -709,12 +709,17 @@ struct SettingsView: View {
             Spacer()
         }
         .onAppear {
+            draftHistoryCount = maxHistoryCount
+            
             if let saved = UserDefaults.standard.stringArray(forKey: "blacklistedApps") {
                 blacklistedApps = saved
             } else {
                 blacklistedApps = ["1Password", "Bitwarden", "Keychain Access"]
                 UserDefaults.standard.set(blacklistedApps, forKey: "blacklistedApps")
             }
+        }
+        .onDisappear {
+            maxHistoryCount = max(5, draftHistoryCount)
         }
     }
     
