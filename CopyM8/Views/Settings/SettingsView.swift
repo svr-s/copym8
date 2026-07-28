@@ -533,6 +533,12 @@ struct SettingsView: View {
         
         do {
             try fm.createDirectory(at: finalURL, withIntermediateDirectories: true, attributes: nil)
+            
+            var mutableURL = finalURL
+            var resourceValues = URLResourceValues()
+            resourceValues.isHidden = (finalURL == hiddenURL)
+            try? mutableURL.setResourceValues(resourceValues)
+            
             DispatchQueue.main.async {
                 self.syncFolderPath = finalURL.path
                 self.clipboard.enableSync()
@@ -553,12 +559,23 @@ struct SettingsView: View {
         if fm.fileExists(atPath: currentURL.path) {
             if fm.fileExists(atPath: newURL.path) {
                 // If destination already exists (e.g. leftover folder), just switch to it
+                var mutableURL = newURL
+                var resourceValues = URLResourceValues()
+                resourceValues.isHidden = !toVisible
+                try? mutableURL.setResourceValues(resourceValues)
+                
                 DispatchQueue.main.async {
                     self.syncFolderPath = newURL.path
                 }
             } else {
                 do {
                     try fm.moveItem(at: currentURL, to: newURL)
+                    
+                    var mutableURL = newURL
+                    var resourceValues = URLResourceValues()
+                    resourceValues.isHidden = !toVisible
+                    try? mutableURL.setResourceValues(resourceValues)
+                    
                     DispatchQueue.main.async {
                         self.syncFolderPath = newURL.path
                     }
