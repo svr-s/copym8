@@ -1206,8 +1206,12 @@ extension ContentView {
                     _selectedItemsForDeletion.wrappedValue.removeAll()
                 }
                 else { 
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { shortcut.isExpanded = false }
-                    previousApp?.activate(options: [])
+                    if SettingsWindowManager.shared.isSettingsOpen {
+                        SettingsWindowManager.shared.closeSettings()
+                    } else {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { shortcut.isExpanded = false }
+                        previousApp?.activate(options: [])
+                    }
                 }
                 return nil
             case 48: // Tab

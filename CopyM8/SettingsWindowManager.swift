@@ -6,6 +6,10 @@ class SettingsWindowManager {
     private var settingsWindow: NSWindow?
     private var eventMonitor: Any?
     
+    var isSettingsOpen: Bool {
+        return settingsWindow != nil && settingsWindow!.isVisible
+    }
+    
     func showSettings(draftHistoryCount: Binding<Int>, maxHistoryCount: Binding<Int>, clipboard: ClipboardManager, shortcut: ShortcutManager) {
         if let window = settingsWindow, window.isVisible {
             window.makeKeyAndOrderFront(nil)
