@@ -28,7 +28,17 @@ class SettingsWindowManager {
             defer: false
         )
         window.title = "CopyM8 Settings"
-        window.center()
+        
+        if let mainWindow = NSApp.windows.first(where: { $0.className == "CopyM8Window" || $0.title == "CopyM8" }) {
+            let mainFrame = mainWindow.frame
+            let x = mainFrame.midX - (380 / 2)
+            // Position it 40 points below the top edge of the main window to clear the CopyM8 heading
+            let y = mainFrame.maxY - 440 - 40
+            window.setFrameOrigin(NSPoint(x: x, y: y))
+        } else {
+            window.center()
+        }
+        
         window.level = .floating
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView: settingsView)
