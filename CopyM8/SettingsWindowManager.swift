@@ -22,7 +22,7 @@ class SettingsWindowManager {
             .environmentObject(shortcut)
             
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 380, height: 440),
+            contentRect: NSRect(x: 0, y: 0, width: 400, height: 440),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
@@ -34,14 +34,17 @@ class SettingsWindowManager {
             let screenRect = screen.visibleFrame
             let settingsFrame = window.frame
             
-            var x = mainFrame.midX - (settingsFrame.width / 2)
-            // Constrain X so it doesn't bleed off the screen
-            if x + settingsFrame.width > screenRect.maxX {
-                x = screenRect.maxX - settingsFrame.width - 12
+            var x: CGFloat = 0
+            if mainFrame.midX > screenRect.midX {
+                // Main window is on the right side of the screen. Anchor to its right edge.
+                x = mainFrame.maxX - settingsFrame.width - 12
+            } else {
+                // Main window is on the left side. Anchor to its left edge.
+                x = mainFrame.minX + 12
             }
-            if x < screenRect.minX {
-                x = screenRect.minX + 12
-            }
+            
+            // Ensure X is within screen bounds just in case main window is wider than screen
+            x = max(screenRect.minX + 12, min(x, screenRect.maxX - settingsFrame.width - 12))
             
             // Position it 55 points below the top edge of the main window to ensure the CopyM8 heading is fully visible
             var y = mainFrame.maxY - settingsFrame.height - 55
