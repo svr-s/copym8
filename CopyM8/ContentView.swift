@@ -1210,7 +1210,9 @@ extension ContentView {
                         SettingsWindowManager.shared.closeSettings()
                     } else {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { shortcut.isExpanded = false }
-                        previousApp?.activate(options: [])
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            previousApp?.activate(options: [])
+                        }
                     }
                 }
                 return nil
