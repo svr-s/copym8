@@ -68,6 +68,8 @@ struct SettingsView: View {
     @AppStorage("syncFolderPath") private var syncFolderPath: String = ""
     @State private var detectedProviders: [(CloudProvider, URL)] = []
     @State private var showVisibilityAlert = false
+    @State private var isRenaming = false
+    @State private var showRenameSuccess = false
     @AppStorage("syncDeviceName") private var syncDeviceName: String = Host.current().localizedName ?? "My Mac"
     
     @State private var selectedTab = "General"
@@ -284,18 +286,31 @@ struct SettingsView: View {
             
             Text("Device Name:")
                 .font(.system(size: 12))
-            TextField("e.g. MacBook Pro", text: $draftDeviceName)
-                .focused($isDeviceNameFocused)
-                .onChange(of: isDeviceNameFocused) { focused in
-                    if !focused {
-                        commitDeviceNameChange()
+            HStack(spacing: 8) {
+                TextField("e.g. MacBook Pro", text: $draftDeviceName)
+                    .focused($isDeviceNameFocused)
+                    .onSubmit {
+                        executeDeviceRename()
+                    }
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .font(.system(size: 12))
+                
+                Button(action: {
+                    executeDeviceRename()
+                }) {
+                    if isRenaming {
+                        ProgressView().controlSize(.small).scaleEffect(0.5).frame(width: 16, height: 16)
+                    } else if showRenameSuccess {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                    } else {
+                        Text("Update")
                     }
                 }
-                .onSubmit {
-                    commitDeviceNameChange()
-                }
-            .textFieldStyle(RoundedBorderTextFieldStyle())
-            .font(.system(size: 12))
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .disabled(draftDeviceName == syncDeviceName || draftDeviceName.isEmpty || isRenaming)
+            }
             
             Text("Sync Setup")
                 .font(.system(size: 12))
@@ -334,33 +349,55 @@ struct SettingsView: View {
                     .buttonStyle(.plain)
                 }
             } else {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text(syncFolderPath)
-                            .font(.system(size: 11))
-                            .foregroundColor(.primary)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(6)
-                            .background(Color.primary.opacity(0.05))
-                            .cornerRadius(4)
+                VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Sync Folder Location")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(.secondary)
+                        
+                        HStack {
+                            Text(syncFolderPath)
+                                .font(.system(size: 11))
+                                .foregroundColor(.primary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(6)
+                                .background(Color.primary.opacity(0.05))
+                                .cornerRadius(4)
+                            
+                            Button(action: {
+                                NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: syncFolderPath)
+                            }) {
+                                Image(systemName: "folder")
+                            }
+                            .buttonStyle(.plain)
+                            .help("Open in Finder")
+                        }
                     }
                     
-                    Toggle("Make raw sync files visible in Finder", isOn: Binding(
-                        get: { syncFolderPath.hasSuffix("CopyM8_Data") },
-                        set: { newValue in
-                            if newValue {
-                                // Defer the alert presentation slightly to prevent SwiftUI Toggle glitches
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                    showVisibilityAlert = true
-                                }
-                            } else {
+                    let isVisible = syncFolderPath.hasSuffix("CopyM8_Data")
+                    HStack {
+                        Text("Status:")
+                            .font(.system(size: 11))
+                        Text(isVisible ? "🟢 Visible in Finder" : "🔴 Hidden in Finder")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(isVisible ? .green : .secondary)
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            if isVisible {
                                 toggleVisibility(toVisible: false)
+                            } else {
+                                showVisibilityAlert = true
                             }
+                        }) {
+                            Text(isVisible ? "Hide Folder" : "Make Visible")
                         }
-                    ))
-                    .font(.system(size: 11))
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
                     .alert(isPresented: $showVisibilityAlert) {
                         Alert(
                             title: Text("Warning"),
@@ -368,14 +405,11 @@ struct SettingsView: View {
                             primaryButton: .destructive(Text("Make Visible")) {
                                 toggleVisibility(toVisible: true)
                             },
-                            secondaryButton: .cancel() {
-                                // Force a UI refresh if they cancel, so the toggle snaps back
-                                let current = syncFolderPath
-                                syncFolderPath = ""
-                                DispatchQueue.main.async { syncFolderPath = current }
-                            }
+                            secondaryButton: .cancel()
                         )
                     }
+                    
+                    Divider().padding(.vertical, 4)
                     
                     Button("Disable Sync") {
                         showDisableSyncAlert = true
@@ -479,6 +513,23 @@ struct SettingsView: View {
             
             // Re-detect on appear just in case
             scanForProviders()
+        }
+    }
+    
+    private func executeDeviceRename() {
+        guard draftDeviceName != syncDeviceName, !draftDeviceName.isEmpty else { return }
+        isDeviceNameFocused = false
+        isRenaming = true
+        
+        // Let the UI update to show the spinner
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            commitDeviceNameChange()
+            isRenaming = false
+            showRenameSuccess = true
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                showRenameSuccess = false
+            }
         }
     }
     
