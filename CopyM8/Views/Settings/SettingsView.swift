@@ -769,9 +769,21 @@ struct SettingsView: View {
                     .foregroundColor(.secondary)
                     .padding(.top, 4)
                     
-                KeyboardShortcuts.Recorder("Open CopyM8:", name: .toggleApp)
-                KeyboardShortcuts.Recorder("Open Pinned Tab:", name: .openPinned)
-                KeyboardShortcuts.Recorder("Open Groups Tab:", name: .openGroups)
+                HStack {
+                    Text("Open CopyM8:").font(.system(size: 12))
+                    Spacer()
+                    KeyboardShortcuts.Recorder("", name: .toggleApp)
+                }
+                HStack {
+                    Text("Open Pinned Tab:").font(.system(size: 12))
+                    Spacer()
+                    KeyboardShortcuts.Recorder("", name: .openPinned)
+                }
+                HStack {
+                    Text("Open Groups Tab:").font(.system(size: 12))
+                    Spacer()
+                    KeyboardShortcuts.Recorder("", name: .openGroups)
+                }
                 
                 Text("Tip: Use Cmd+Opt+P and Cmd+Opt+G for tabs!")
                     .font(.system(size: 10))
