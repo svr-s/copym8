@@ -49,6 +49,7 @@ struct ContentView: View {
     @State var itemToAssignGroup: GroupAssignmentPayload? = nil
     @State var showingDeviceSwitcher: Bool = false
     @State var showingReadOnlyToast: Bool = false
+    @State var showingImportSuccessToast: Bool = false
     @State var draftHistoryCount: Int = 25
     @State var searchText: String = ""
     @FocusState private var isSearchFocused: Bool
@@ -477,9 +478,38 @@ struct ContentView: View {
                             .padding(.bottom, 24)
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
+                } else if showingImportSuccessToast {
+                    VStack {
+                        Spacer()
+                        HStack(spacing: 6) {
+                            Image(systemName: "checkmark.circle.fill").foregroundColor(.green)
+                            Text("Import successful")
+                        }
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(Color.black.opacity(0.8))
+                        .cornerRadius(20)
+                        .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 2)
+                        .padding(.bottom, 24)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
                 }
             }
         )
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("ImportSuccessful"))) { _ in
+            if !showingImportSuccessToast {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    showingImportSuccessToast = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        showingImportSuccessToast = false
+                    }
+                }
+            }
+        }
         .onChange(of: clipboard.selectedDevice) { _, newDevice in
             if newDevice != "Local (This Mac)" {
                 if activeTab == "Images" || activeTab == "Files" {
@@ -754,7 +784,7 @@ extension ContentView {
             if clipboard.selectedDevice != "Local (This Mac)" {
                 let isDestructiveShortcut: Bool = {
                     if event.modifierFlags.contains(.command) {
-                        return [5, 35, 32].contains(event.keyCode) // G, P, U
+                        return [5, 35, 32, 15].contains(event.keyCode) // G, P, U, R
                             || event.keyCode == 125 || event.keyCode == 126 // Cmd+Up/Down
                     }
                     if event.keyCode == 51 || event.keyCode == 117 { // Delete, Backspace

@@ -1257,6 +1257,8 @@ var maxHistoryCount: Int {
             self.history.insert(item, at: 0)
         }
         
+        NotificationCenter.default.post(name: Notification.Name("ImportSuccessful"), object: nil)
+        
         if self.history.count > maxHistoryCount {
             let removedItems = Array(self.history[maxHistoryCount...])
             self.history = Array(self.history.prefix(maxHistoryCount))
