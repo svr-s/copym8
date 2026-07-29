@@ -39,8 +39,6 @@ struct HeaderView: View {
                     .foregroundColor(isEditMode ? .primary : .primary.opacity(0.6))
             }
             .buttonStyle(PlainButtonStyle())
-            .disabled(clipboard.selectedDevice != "Local (This Mac)")
-            .opacity(clipboard.selectedDevice != "Local (This Mac)" ? 0.3 : 1.0)
             
             Spacer()
             

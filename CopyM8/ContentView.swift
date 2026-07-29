@@ -461,6 +461,25 @@ struct ContentView: View {
                 }
             }
         )
+        .overlay(
+            Group {
+                if showingReadOnlyToast {
+                    VStack {
+                        Spacer()
+                        Text("Action disabled while viewing a remote source")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .background(Color.black.opacity(0.8))
+                            .cornerRadius(20)
+                            .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 2)
+                            .padding(.bottom, 24)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                }
+            }
+        )
         .onChange(of: clipboard.selectedDevice) { _, newDevice in
             if newDevice != "Local (This Mac)" {
                 if activeTab == "Images" || activeTab == "Files" {

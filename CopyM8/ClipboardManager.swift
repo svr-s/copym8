@@ -1266,7 +1266,5 @@ var maxHistoryCount: Int {
                 }
             }
         }
-        
-        self.selectedDevice = "Local (This Mac)"
     }
 }
