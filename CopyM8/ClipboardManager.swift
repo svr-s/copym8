@@ -23,7 +23,7 @@ struct ClipboardFolder: Identifiable, Equatable, Codable {
 struct ClipboardItem: Identifiable, Equatable, Codable {
     var id = UUID()
     let text: String
-    let timestamp: Date
+    var timestamp: Date
     var sourceApp: String?
     var hasRTF: Bool = false
     var hasHTML: Bool = false
@@ -1234,6 +1234,8 @@ var maxHistoryCount: Int {
         
         for var item in items {
             item.id = UUID()
+            item.orderIndex = 0
+            item.timestamp = Date()
             
             if let remoteFolderId = item.folderId {
                 if let remoteFolder = self.remoteFolders.first(where: { $0.id == remoteFolderId }) {

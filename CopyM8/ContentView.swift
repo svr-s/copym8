@@ -48,6 +48,7 @@ struct ContentView: View {
     @State var showingGroupAssignment = false
     @State var itemToAssignGroup: GroupAssignmentPayload? = nil
     @State var showingDeviceSwitcher: Bool = false
+    @State var showingReadOnlyToast: Bool = false
     @State var draftHistoryCount: Int = 25
     @State var searchText: String = ""
     @FocusState private var isSearchFocused: Bool
@@ -730,6 +731,34 @@ extension ContentView {
                 return event
             }
             
+            // GATEKEEPER for remote sources
+            if clipboard.selectedDevice != "Local (This Mac)" {
+                let isDestructiveShortcut: Bool = {
+                    if event.modifierFlags.contains(.command) {
+                        return [5, 35, 32].contains(event.keyCode) // G, P, U
+                            || event.keyCode == 125 || event.keyCode == 126 // Cmd+Up/Down
+                    }
+                    if event.keyCode == 51 || event.keyCode == 117 { // Delete, Backspace
+                        return true
+                    }
+                    return false
+                }()
+                
+                if isDestructiveShortcut {
+                    if !_showingReadOnlyToast.wrappedValue {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            _showingReadOnlyToast.wrappedValue = true
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                _showingReadOnlyToast.wrappedValue = false
+                            }
+                        }
+                    }
+                    return nil
+                }
+            }
+            
             let activeTab = _activeTab.wrappedValue
             let selectedIndex = _selectedIndex.wrappedValue
             let isEditMode = _isEditMode.wrappedValue
@@ -743,6 +772,24 @@ extension ContentView {
                         _isFreezeFieldFocused.wrappedValue = true
                     } else {
                         _isSearchFocused.wrappedValue = true
+                    }
+                    return nil
+                case 34: // I
+                    if clipboard.selectedDevice != "Local (This Mac)" {
+                        var itemsToImport: [ClipboardItem] = []
+                        if isEditMode {
+                            itemsToImport = clipboard.history.filter { _selectedItemsForDeletion.wrappedValue.contains($0.id) }
+                            _selectedItemsForDeletion.wrappedValue.removeAll()
+                            _isEditMode.wrappedValue = false
+                        } else if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
+                            let node = displayNodesLocal[selectedIndex]
+                            if !node.isFolder, let item = node.item {
+                                itemsToImport.append(item)
+                            }
+                        }
+                        if !itemsToImport.isEmpty {
+                            clipboard.importItems(itemsToImport)
+                        }
                     }
                     return nil
                 case 2: // D
