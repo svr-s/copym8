@@ -321,6 +321,7 @@ struct ContentView: View {
                     activeTab = "All"
                 }
                 itemToAssignGroup = nil
+                showingDeviceSwitcher = false
                 showingDeleteSelectedAlert = false
                 showingFolderDeleteAlert = false
                 expandedFolderIds.removeAll()
@@ -720,9 +721,10 @@ extension ContentView {
                 return event
             }
             
-            if _showingDeleteSelectedAlert.wrappedValue || _showingFolderDeleteAlert.wrappedValue || _showingUngroupAlert.wrappedValue || _itemToAssignGroup.wrappedValue != nil {
+            if _showingDeleteSelectedAlert.wrappedValue || _showingFolderDeleteAlert.wrappedValue || _showingUngroupAlert.wrappedValue || _itemToAssignGroup.wrappedValue != nil || _showingDeviceSwitcher.wrappedValue {
                 if event.keyCode == 53 {
                     if _itemToAssignGroup.wrappedValue != nil { _itemToAssignGroup.wrappedValue = nil }
+                    if _showingDeviceSwitcher.wrappedValue { _showingDeviceSwitcher.wrappedValue = false }
                     return event
                 }
                 return event
