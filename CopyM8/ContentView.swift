@@ -511,6 +511,9 @@ struct ContentView: View {
             }
         }
         .onChange(of: clipboard.selectedDevice) { _, newDevice in
+            selectedIndex = 0
+            selectionAnchorIndex = nil
+            expandedItemIndex = nil
             if newDevice != "Local (This Mac)" {
                 if activeTab == "Images" || activeTab == "Files" {
                     activeTab = "All"
