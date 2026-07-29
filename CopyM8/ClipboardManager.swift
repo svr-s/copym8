@@ -1232,29 +1232,58 @@ var maxHistoryCount: Int {
     func importItems(_ items: [ClipboardItem]) {
         let remoteDevice = self.selectedDevice != "Local (This Mac)" ? self.selectedDevice : "Remote"
         
-        for var item in items {
-            item.id = UUID()
-            item.orderIndex = 0
-            item.timestamp = Date()
-            
-            if let remoteFolderId = item.folderId {
-                if let remoteFolder = self.remoteFolders.first(where: { $0.id == remoteFolderId }) {
-                    let localFolderName = "\(remoteDevice) - \(remoteFolder.name)"
+        for item in items {
+            // Find existing local item by content match
+            if let existingIndex = self.history.firstIndex(where: { $0.text == item.text && $0.itemType == item.itemType }) {
+                var existingItem = self.history.remove(at: existingIndex)
+                existingItem.timestamp = Date()
+                
+                // Progressive upgrade logic
+                if !existingItem.isPinned && existingItem.folderId == nil {
+                    existingItem.isPinned = item.isPinned
                     
-                    if let existingLocalFolder = self.folders.first(where: { $0.name == localFolderName }) {
-                        item.folderId = existingLocalFolder.id
-                    } else {
-                        var newFolder = ClipboardFolder(name: localFolderName)
-                        newFolder.orderIndex = self.folders.count + 1
-                        self.folders.append(newFolder)
-                        item.folderId = newFolder.id
+                    if let remoteFolderId = item.folderId {
+                        if let remoteFolder = self.remoteFolders.first(where: { $0.id == remoteFolderId }) {
+                            let localFolderName = "\(remoteDevice) - \(remoteFolder.name)"
+                            
+                            if let existingLocalFolder = self.folders.first(where: { $0.name == localFolderName }) {
+                                existingItem.folderId = existingLocalFolder.id
+                            } else {
+                                var newFolder = ClipboardFolder(name: localFolderName)
+                                newFolder.orderIndex = self.folders.count + 1
+                                self.folders.append(newFolder)
+                                existingItem.folderId = newFolder.id
+                            }
+                        }
                     }
-                } else {
-                    item.folderId = nil // Fallback
                 }
+                
+                self.history.insert(existingItem, at: 0)
+            } else {
+                var newItem = item
+                newItem.id = UUID()
+                newItem.orderIndex = 0
+                newItem.timestamp = Date()
+                
+                if let remoteFolderId = newItem.folderId {
+                    if let remoteFolder = self.remoteFolders.first(where: { $0.id == remoteFolderId }) {
+                        let localFolderName = "\(remoteDevice) - \(remoteFolder.name)"
+                        
+                        if let existingLocalFolder = self.folders.first(where: { $0.name == localFolderName }) {
+                            newItem.folderId = existingLocalFolder.id
+                        } else {
+                            var newFolder = ClipboardFolder(name: localFolderName)
+                            newFolder.orderIndex = self.folders.count + 1
+                            self.folders.append(newFolder)
+                            newItem.folderId = newFolder.id
+                        }
+                    } else {
+                        newItem.folderId = nil // Fallback
+                    }
+                }
+                
+                self.history.insert(newItem, at: 0)
             }
-            
-            self.history.insert(item, at: 0)
         }
         
         NotificationCenter.default.post(name: Notification.Name("ImportSuccessful"), object: nil)
