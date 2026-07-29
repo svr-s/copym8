@@ -164,7 +164,7 @@ struct SettingsView: View {
                     .onSubmit {
                         maxHistoryCount = max(5, draftHistoryCount)
                     }
-                Stepper("", value: $draftHistoryCount, in: 5...500)
+                Stepper("", value: $draftHistoryCount, in: 5...1000)
                     .labelsHidden()
             }
             Text("Maximum number of unpinned items to keep in history.")
