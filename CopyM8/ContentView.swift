@@ -850,8 +850,10 @@ extension ContentView {
                             _showingDeviceSwitcher.wrappedValue = true
                         }
                         return nil
+                    } else {
+                        _isDense.wrappedValue.toggle()
+                        return nil
                     }
-                    return event
                 case 15: // R
                     if activeTab == "Pinned" || activeTab == "Groups" {
                         if _isReorderMode.wrappedValue {
@@ -890,9 +892,6 @@ extension ContentView {
                             _isReorderMode.wrappedValue = true
                         }
                     }
-                    return nil
-                case 2: // D
-                    _isDense.wrappedValue.toggle()
                     return nil
                 default: break
                 }

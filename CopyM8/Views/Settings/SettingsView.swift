@@ -861,7 +861,6 @@ struct SettingsView: View {
                 shortcutCategory("General & Navigation")
                 shortcutRow(action: "Open Search", key: "Cmd + F")
                 shortcutRow(action: "Toggle Layout", key: "Cmd + D")
-                shortcutRow(action: "Cycle Colors", key: "Cmd + K")
                 shortcutRow(action: "Device Switcher", key: "Cmd + Shift + D")
                 shortcutRow(action: "Import from Device", key: "Cmd + I")
                 shortcutRow(action: "Settings", key: "Cmd + ,")
