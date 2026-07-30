@@ -863,6 +863,7 @@ struct SettingsView: View {
                 shortcutRow(action: "Toggle Layout", key: "Cmd + D")
                 shortcutRow(action: "Cycle Colors", key: "Cmd + K")
                 shortcutRow(action: "Device Switcher", key: "Cmd + Shift + D")
+                shortcutRow(action: "Import from Device", key: "Cmd + I")
                 shortcutRow(action: "Settings", key: "Cmd + ,")
                 shortcutRow(action: "Close Window", key: "Esc")
             }
