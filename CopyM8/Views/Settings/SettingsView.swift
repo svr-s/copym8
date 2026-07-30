@@ -860,7 +860,7 @@ struct SettingsView: View {
             Group {
                 shortcutCategory("General & Navigation")
                 shortcutRow(action: "Open Search", key: "Cmd + F")
-                shortcutRow(action: "Toggle Layout", key: "Cmd + D")
+                shortcutRow(action: "Toggle Layout", key: "Cmd + L")
                 shortcutRow(action: "Device Switcher", key: "Cmd + Shift + D")
                 shortcutRow(action: "Import from Device", key: "Cmd + I")
                 shortcutRow(action: "Settings", key: "Cmd + ,")

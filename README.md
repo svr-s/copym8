@@ -6,7 +6,7 @@ CopyM8 is a modern, buttery-smooth, and lightweight clipboard manager built nati
 
 - **Magnetic Docking**: Drag the window and it snaps flawlessly to the left, right, or top edges of your screen using zero-lag, native AppKit window tracking.
 - **Edge Hover**: When snapped to an edge, CopyM8 collapses into an unobtrusive, beautifully glowing pill. Simply move your mouse to the edge of the screen to expand it.
-- **Dynamic Adaptive Layouts & Resizing**: Resize the window horizontally or vertically and the UI gracefully adapts. Press `Cmd + D` to instantly toggle between *Dense* and *Spaced* layouts.
+- **Dynamic Adaptive Layouts & Resizing**: Resize the window horizontally or vertically and the UI gracefully adapts. Press `Cmd + L` to instantly toggle between *Dense* and *Spaced* layouts.
 - **Smart Categorization (Tabs)**: Your clipboard history is automatically organized into *Text*, *Links*, *Images*, and *Files*. Use `Option + 1-6` to instantly switch tabs!
 - **Ultra-Low Memory Footprint**: Thanks to a highly optimized file-backed architecture, all heavy clipboard data (high-res images, massive rich text blocks, and file payloads) is instantly offloaded to secure local disk storage. This keeps CopyM8's RAM consumption virtually flat—whether you have 15 items or 2,500 items, the app stays lightning-fast and feather-light.
 - **Image & File Support**: Natively extracts copied images and data into local storage (with automatic disk-space pruning caps) and reads raw `.fileURL` references directly from macOS Finder and IDEs without duplicating the actual files. Features a unified, dynamically truncated UI for images and files, including automatic smart rounding for file sizes.

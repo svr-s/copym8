@@ -844,16 +844,17 @@ extension ContentView {
                         }
                     }
                     return nil
+                case 37: // L
+                    _isDense.wrappedValue.toggle()
+                    return nil
                 case 2: // D
                     if event.modifierFlags.contains(.shift) {
                         if !clipboard.availableDevices.isEmpty {
                             _showingDeviceSwitcher.wrappedValue = true
                         }
                         return nil
-                    } else {
-                        _isDense.wrappedValue.toggle()
-                        return nil
                     }
+                    return event
                 case 15: // R
                     if activeTab == "Pinned" || activeTab == "Groups" {
                         if _isReorderMode.wrappedValue {

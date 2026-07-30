@@ -6,7 +6,7 @@ Here is a comprehensive list of all keyboard shortcuts available in CopyM8, grou
 | Action | Shortcut | Description |
 | :--- | :--- | :--- |
 | **Open Search** | `Cmd + F` | Immediately focuses the search bar to filter copied text and source applications. |
-| **Toggle Layout** | `Cmd + D` | Instantly switches between the "Dense" and "Spaced" UI layouts. |
+| **Toggle Layout** | `Cmd + L` | Instantly switches between the "Dense" and "Spaced" UI layouts. |
 | **Device Switcher** | `Cmd + Shift + D` | Opens the device switcher modal for remote syncing. |
 | **Import from Device** | `Cmd + I` | Imports selected (or all) items from the currently viewed remote device. |
 | **Open Settings** | `Cmd + ,` | Toggles the Settings pane. |
