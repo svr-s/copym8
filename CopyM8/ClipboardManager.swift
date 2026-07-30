@@ -919,6 +919,13 @@ case .none:
                 fetchedFolders = (try? JSONDecoder().decode([ClipboardFolder].self, from: folderData)) ?? []
             }
             
+            // INJECT UNIFIED CLOUD COPY INTO REMOTE VIEW
+            let cloudFolder = ClipboardFolder(id: cloudFolderId, name: "Cloud Copy", orderIndex: -1)
+            fetchedFolders.insert(cloudFolder, at: 0)
+            
+            let currentCloudItems = self.history.filter { $0.folderId == cloudFolderId }
+            filtered.append(contentsOf: currentCloudItems)
+            
             DispatchQueue.main.async {
                 self.remoteHistory = filtered
                 self.remoteFolders = fetchedFolders
