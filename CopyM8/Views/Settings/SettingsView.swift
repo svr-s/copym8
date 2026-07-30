@@ -66,6 +66,10 @@ struct SettingsView: View {
     
     @State private var blacklistedApps: [String] = []
     
+    @AppStorage("ignorePasswords") private var ignorePasswords: Bool = true
+    @AppStorage("ignoreTransient") private var ignoreTransient: Bool = true
+    @AppStorage("ignoreUniversalClipboard") private var ignoreUniversalClipboard: Bool = false
+    
     @AppStorage("syncFolderPath") private var syncFolderPath: String = ""
     @State private var detectedProviders: [(CloudProvider, URL)] = []
     @State private var showVisibilityAlert = false
@@ -668,7 +672,48 @@ struct SettingsView: View {
     }
     
     private var privacyTab: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Clipboard Filters")
+                    .font(.system(size: 13, weight: .semibold))
+                
+                Toggle(isOn: $ignorePasswords) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Ignore Passwords & Sensitive Fields")
+                            .font(.system(size: 12))
+                        Text("e.g. 1Password, Bitwarden, Keychain, hidden fields")
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .toggleStyle(SwitchToggleStyle(tint: .blue))
+                
+                Toggle(isOn: $ignoreTransient) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Ignore Temporary & Macro Data")
+                            .font(.system(size: 12))
+                        Text("e.g. automated clipboard actions by Alfred, Raycast")
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .toggleStyle(SwitchToggleStyle(tint: .blue))
+                
+                Toggle(isOn: $ignoreUniversalClipboard) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Ignore Universal Clipboard")
+                            .font(.system(size: 12))
+                        Text("Ignore copies from your iPhone/iPad via Handoff")
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .toggleStyle(SwitchToggleStyle(tint: .blue))
+            }
+            
+            Divider()
+            
+            VStack(alignment: .leading, spacing: 12) {
             Text("App Blacklist")
                 .font(.system(size: 13, weight: .semibold))
             
@@ -703,6 +748,9 @@ struct SettingsView: View {
                 }
                 .font(.system(size: 11))
                 
+                Spacer()
+            }
+            
                 Spacer()
             }
             
