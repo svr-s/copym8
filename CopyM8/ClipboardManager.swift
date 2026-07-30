@@ -232,6 +232,72 @@ class LocalPayloadStore {
     }
 }
 
+class LocalFileStore {
+    static let shared = LocalFileStore()
+    private let fileManager = FileManager.default
+    
+    private var cloudDirectory: URL? {
+        guard let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty else { return nil }
+        let dir = URL(fileURLWithPath: syncPath).appendingPathComponent("Files")
+        if !fileManager.fileExists(atPath: dir.path) {
+            try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
+        }
+        return dir
+    }
+    
+    func migrateFiles(for id: UUID, fileURLs: [String], toCloud: Bool) -> [String] {
+        guard let destDir = cloudDirectory else { return fileURLs }
+        
+        if toCloud {
+            var newURLs: [String] = []
+            for path in fileURLs {
+                let sourceURL = URL(fileURLWithPath: path)
+                let destURL = destDir.appendingPathComponent("\(id.uuidString)_\(sourceURL.lastPathComponent)")
+                if fileManager.fileExists(atPath: sourceURL.path) {
+                    try? fileManager.copyItem(at: sourceURL, to: destURL)
+                    newURLs.append(destURL.path)
+                }
+            }
+            return newURLs
+        } else {
+            // Migrating out of cloud - just delete the cloud copies
+            for path in fileURLs {
+                let sourceURL = URL(fileURLWithPath: path)
+                if sourceURL.path.hasPrefix(destDir.path) {
+                    try? fileManager.removeItem(at: sourceURL)
+                }
+            }
+            return fileURLs // When moving out of cloud, we lose the files since they were in iCloud. Or we keep the iCloud path? Actually, for files, we should just delete the iCloud copy. The original files on local disk might still be there, but they aren't tracked.
+        }
+    }
+    
+    func deleteFiles(for id: UUID) {
+        guard let dir = cloudDirectory,
+              let files = try? fileManager.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil) else { return }
+        
+        for file in files {
+            if file.lastPathComponent.hasPrefix("\(id.uuidString)_") {
+                try? fileManager.removeItem(at: file)
+            }
+        }
+    }
+    
+    func getFileSizeMB(for id: UUID) -> Double {
+        guard let dir = cloudDirectory,
+              let files = try? fileManager.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.fileSizeKey]) else { return 0 }
+        
+        var totalBytes: Int64 = 0
+        for file in files {
+            if file.lastPathComponent.hasPrefix("\(id.uuidString)_") {
+                if let attrs = try? file.resourceValues(forKeys: [.fileSizeKey]), let size = attrs.fileSize {
+                    totalBytes += Int64(size)
+                }
+            }
+        }
+        return Double(totalBytes) / (1024.0 * 1024.0)
+    }
+}
+
 let cloudFolderId = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
 
 class ClipboardManager: ObservableObject {
@@ -369,7 +435,10 @@ class ClipboardManager: ObservableObject {
                 let deviceName = UserDefaults.standard.string(forKey: "syncDeviceName") ?? (Host.current().localizedName ?? "My Mac")
                 let safeName = deviceName.replacingOccurrences(of: "/", with: "-")
                 let syncURL = URL(fileURLWithPath: syncPath).appendingPathComponent("\(safeName)_entries.json")
-                try? encoded.write(to: syncURL, options: .atomic)
+                let syncHistory = history.filter { $0.folderId != cloudFolderId }
+                if let syncEncoded = try? JSONEncoder().encode(syncHistory) {
+                    try? syncEncoded.write(to: syncURL, options: .atomic)
+                }
             }
         }
     }
@@ -581,30 +650,146 @@ case .none:
     }
     
     
-    func setFolderId(for itemIds: [UUID], folderId: UUID?) {
+    func removeFromCloudCopyFile(itemId: UUID) {
+        guard let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty else { return }
+        let cloudURL = URL(fileURLWithPath: syncPath).appendingPathComponent("cloud_copy_entries.json")
+        if let data = try? Data(contentsOf: cloudURL),
+           var cloudItems = try? JSONDecoder().decode([ClipboardItem].self, from: data) {
+            cloudItems.removeAll { $0.id == itemId }
+            if let encoded = try? JSONEncoder().encode(cloudItems) {
+                try? encoded.write(to: cloudURL, options: .atomic)
+            }
+        }
+    }
+    
+    func moveToCloud(itemIds: [UUID]) -> Bool {
+        guard let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty else { return false }
+        
+        let cloudURL = URL(fileURLWithPath: syncPath).appendingPathComponent("cloud_copy_entries.json")
+        var cloudItems: [ClipboardItem] = []
+        if let data = try? Data(contentsOf: cloudURL),
+           let decoded = try? JSONDecoder().decode([ClipboardItem].self, from: data) {
+            cloudItems = decoded
+        }
+        
+        let maxSizeMB = Double(UserDefaults.standard.integer(forKey: "cloudCopyMaxTotalStorageMB"))
+        let maxItemMB = Double(UserDefaults.standard.integer(forKey: "cloudCopyMaxItemSizeMB"))
+        
         for itemId in itemIds {
-            if let idx = history.firstIndex(where: { $0.id == itemId }) {
-                let oldFolderId = history[idx].folderId
-                let newFolderId = folderId
-                history[idx].folderId = folderId
-                if folderId != nil {
-                    history[idx].isPinned = false
-                }
-                
-                // Cloud Migration
-                let wasInCloud = oldFolderId == cloudFolderId
-                let isInCloud = newFolderId == cloudFolderId
-                
-                if !wasInCloud && isInCloud {
-                    // Migrate to Cloud
-                    if history[idx].itemType == .image { LocalImageStore.shared.migrateImage(id: itemId, toCloud: true) }
-                    if history[idx].hasRTF || history[idx].hasHTML { LocalPayloadStore.shared.migratePayloads(for: itemId, toCloud: true) }
-                } else if wasInCloud && !isInCloud {
-                    // Migrate back to Local
-                    if history[idx].itemType == .image { LocalImageStore.shared.migrateImage(id: itemId, toCloud: false) }
-                    if history[idx].hasRTF || history[idx].hasHTML { LocalPayloadStore.shared.migratePayloads(for: itemId, toCloud: false) }
+            guard let idx = history.firstIndex(where: { $0.id == itemId }) else { continue }
+            var item = history[idx]
+            
+            var itemSizeMB = 0.0
+            if item.itemType == .image { itemSizeMB += LocalImageStore.shared.getFileSizeMB(id: item.id) }
+            if item.hasRTF { itemSizeMB += LocalPayloadStore.shared.getFileSizeMB(id: item.id, type: .rtf) }
+            if item.hasHTML { itemSizeMB += LocalPayloadStore.shared.getFileSizeMB(id: item.id, type: .html) }
+            if item.itemType == .file, let urls = item.fileURLs {
+                for u in urls {
+                    if let attrs = try? FileManager.default.attributesOfItem(atPath: URL(fileURLWithPath: u).path),
+                       let size = attrs[.size] as? UInt64 {
+                        itemSizeMB += Double(size) / (1024.0 * 1024.0)
+                    }
                 }
             }
+            
+            if itemSizeMB > maxItemMB {
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(name: NSNotification.Name("ShowToast"), object: "Error: Item exceeds max allowed size (\(Int(maxItemMB))MB).")
+                }
+                return false
+            }
+            
+            var currentTotalSize = 0.0
+            for cItem in cloudItems {
+                if cItem.itemType == .image { currentTotalSize += LocalImageStore.shared.getFileSizeMB(id: cItem.id, inCloud: true) }
+                if cItem.hasRTF { currentTotalSize += LocalPayloadStore.shared.getFileSizeMB(id: cItem.id, type: .rtf, inCloud: true) }
+                if cItem.hasHTML { currentTotalSize += LocalPayloadStore.shared.getFileSizeMB(id: cItem.id, type: .html, inCloud: true) }
+                if cItem.itemType == .file { currentTotalSize += LocalFileStore.shared.getFileSizeMB(for: cItem.id) }
+            }
+            
+            let spaceNeeded = (currentTotalSize + itemSizeMB) - maxSizeMB
+            if spaceNeeded > 0 {
+                var evictableItems = cloudItems.filter { $0.orderIndex == 0 && !$0.isPinned }
+                evictableItems.sort { $0.timestamp < $1.timestamp }
+                
+                var spaceAvailable = 0.0
+                var itemsToEvict: [ClipboardItem] = []
+                for evictable in evictableItems {
+                    if spaceAvailable >= spaceNeeded { break }
+                    itemsToEvict.append(evictable)
+                    if evictable.itemType == .image { spaceAvailable += LocalImageStore.shared.getFileSizeMB(id: evictable.id, inCloud: true) }
+                    if evictable.hasRTF { spaceAvailable += LocalPayloadStore.shared.getFileSizeMB(id: evictable.id, type: .rtf, inCloud: true) }
+                    if evictable.hasHTML { spaceAvailable += LocalPayloadStore.shared.getFileSizeMB(id: evictable.id, type: .html, inCloud: true) }
+                    if evictable.itemType == .file { spaceAvailable += LocalFileStore.shared.getFileSizeMB(for: evictable.id) }
+                }
+                
+                if spaceAvailable < spaceNeeded {
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name: NSNotification.Name("ShowToast"), object: "Error: Cloud Copy full. Unfreeze items to make space.")
+                    }
+                    return false
+                }
+                
+                for evict in itemsToEvict {
+                    cloudItems.removeAll { $0.id == evict.id }
+                    history.removeAll { $0.id == evict.id }
+                    LocalPayloadStore.shared.deletePayloads(for: evict.id, inCloud: true)
+                    LocalImageStore.shared.deleteImage(id: evict.id, inCloud: true)
+                    LocalFileStore.shared.deleteFiles(for: evict.id)
+                }
+            }
+            
+            item.folderId = cloudFolderId
+            item.isPinned = false
+            
+            if item.itemType == .image { LocalImageStore.shared.migrateImage(id: item.id, toCloud: true) }
+            if item.hasRTF || item.hasHTML { LocalPayloadStore.shared.migratePayloads(for: item.id, toCloud: true) }
+            if item.itemType == .file, let urls = item.fileURLs {
+                item.fileURLs = LocalFileStore.shared.migrateFiles(for: item.id, fileURLs: urls, toCloud: true)
+            }
+            
+            cloudItems.append(item)
+            history[idx] = item
+        }
+        
+        if let encoded = try? JSONEncoder().encode(cloudItems) {
+            try? encoded.write(to: cloudURL, options: .atomic)
+        }
+        
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: NSNotification.Name("ShowToast"), object: "Moved to Cloud Copy.")
+        }
+        return true
+    }
+
+    func setFolderId(for itemIds: [UUID], folderId: UUID?) {
+        var cloudMoves: [UUID] = []
+        for itemId in itemIds {
+            if folderId == cloudFolderId {
+                cloudMoves.append(itemId)
+            } else {
+                if let idx = history.firstIndex(where: { $0.id == itemId }) {
+                    let wasInCloud = history[idx].folderId == cloudFolderId
+                    history[idx].folderId = folderId
+                    if folderId != nil {
+                        history[idx].isPinned = false
+                    }
+                    
+                    if wasInCloud {
+                        if history[idx].itemType == .image { LocalImageStore.shared.migrateImage(id: itemId, toCloud: false) }
+                        if history[idx].hasRTF || history[idx].hasHTML { LocalPayloadStore.shared.migratePayloads(for: itemId, toCloud: false) }
+                        if history[idx].itemType == .file, let urls = history[idx].fileURLs {
+                            history[idx].fileURLs = LocalFileStore.shared.migrateFiles(for: itemId, fileURLs: urls, toCloud: false)
+                        }
+                        removeFromCloudCopyFile(itemId: itemId)
+                    }
+                }
+            }
+        }
+        
+        if !cloudMoves.isEmpty {
+            let success = moveToCloud(itemIds: cloudMoves)
+            if !success { return } // Abort if pre-flight check failed
         }
         saveHistory()
     }
@@ -663,10 +848,16 @@ case .none:
         guard let files = try? FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil) else { return }
         
         let devices = files
-            .filter { $0.lastPathComponent.hasSuffix("_entries.json") }
+            .filter { $0.lastPathComponent.hasSuffix("_entries.json") && !$0.lastPathComponent.hasPrefix("cloud_copy") }
             .map { $0.lastPathComponent.replacingOccurrences(of: "_entries.json", with: "") }
             .filter { $0 != localDeviceName }
             .sorted()
+            
+        let cloudURL = url.appendingPathComponent("cloud_copy_entries.json")
+        var cloudItems: [ClipboardItem]? = nil
+        if let data = try? Data(contentsOf: cloudURL) {
+            cloudItems = try? JSONDecoder().decode([ClipboardItem].self, from: data)
+        }
             
         DispatchQueue.main.async {
             if self.availableDevices != devices {
@@ -675,6 +866,17 @@ case .none:
             // Auto-refresh remote history if currently viewing one
             if self.selectedDevice != "Local (This Mac)" {
                 self.fetchRemoteHistory(for: self.selectedDevice)
+            }
+            
+            // Sync Cloud Copy items to local history
+            if let items = cloudItems {
+                let currentCloudIds = Set(self.history.filter { $0.folderId == cloudFolderId }.map { $0.id })
+                let newCloudIds = Set(items.map { $0.id })
+                
+                if currentCloudIds != newCloudIds {
+                    self.history.removeAll { $0.folderId == cloudFolderId }
+                    self.history.append(contentsOf: items)
+                }
             }
         }
     }
@@ -1250,10 +1452,17 @@ var maxHistoryCount: Int {
     
     func importItems(_ items: [ClipboardItem]) {
         let remoteDevice = self.selectedDevice != "Local (This Mac)" ? self.selectedDevice : "Remote"
+        var skippedCount = 0
+        var importedCount = 0
         
         for item in items {
             // Find existing local item by content match
             if let existingIndex = self.history.firstIndex(where: { $0.text == item.text && $0.itemType == item.itemType }) {
+                if self.history[existingIndex].folderId == cloudFolderId {
+                    skippedCount += 1
+                    continue
+                }
+                
                 var existingItem = self.history.remove(at: existingIndex)
                 existingItem.timestamp = Date()
                 
@@ -1303,9 +1512,15 @@ var maxHistoryCount: Int {
                 
                 self.history.insert(newItem, at: 0)
             }
+            importedCount += 1
         }
         
-        NotificationCenter.default.post(name: Notification.Name("ImportSuccessful"), object: nil)
+        var msg = "Import successful"
+        if skippedCount > 0 {
+            msg = "Imported \(importedCount), skipped \(skippedCount) (already in Cloud Copy)"
+        }
+        
+        NotificationCenter.default.post(name: Notification.Name("ImportSuccessful"), object: msg)
         
         if self.history.count > maxHistoryCount {
             let removedItems = Array(self.history[maxHistoryCount...])

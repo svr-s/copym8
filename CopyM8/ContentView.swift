@@ -50,6 +50,7 @@ struct ContentView: View {
     @State var showingDeviceSwitcher: Bool = false
     @State var showingReadOnlyToast: Bool = false
     @State var showingImportSuccessToast: Bool = false
+    @State var importSuccessMessage: String = "Import successful"
     @State var draftHistoryCount: Int = 25
     @State var searchText: String = ""
     @FocusState private var isSearchFocused: Bool
@@ -483,7 +484,7 @@ struct ContentView: View {
                         Spacer()
                         HStack(spacing: 6) {
                             Image(systemName: "checkmark.circle.fill").foregroundColor(.green)
-                            Text("Import successful")
+                            Text(importSuccessMessage)
                         }
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.white)
@@ -498,7 +499,12 @@ struct ContentView: View {
                 }
             }
         )
-        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("ImportSuccessful"))) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("ImportSuccessful"))) { notif in
+            if let msg = notif.object as? String {
+                importSuccessMessage = msg
+            } else {
+                importSuccessMessage = "Import successful"
+            }
             if !showingImportSuccessToast {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                     showingImportSuccessToast = true
