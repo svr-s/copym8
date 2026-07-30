@@ -783,10 +783,10 @@ case .none:
                     }
                     
                     if wasInCloud {
-                        if history[idx].itemType == .image { LocalImageStore.shared.migrateImage(id: itemId, toCloud: false) }
-                        if history[idx].hasRTF || history[idx].hasHTML { LocalPayloadStore.shared.migratePayloads(for: itemId, toCloud: false) }
+                        if history[idx].itemType == .image { try? LocalImageStore.shared.migrateImage(id: itemId, toCloud: false) }
+                        if history[idx].hasRTF || history[idx].hasHTML { try? LocalPayloadStore.shared.migratePayloads(for: itemId, toCloud: false) }
                         if history[idx].itemType == .file, let urls = history[idx].fileURLs {
-                            history[idx].fileURLs = LocalFileStore.shared.migrateFiles(for: itemId, fileURLs: urls, toCloud: false)
+                            history[idx].fileURLs = try? LocalFileStore.shared.migrateFiles(for: itemId, fileURLs: urls, toCloud: false)
                         }
                         removeFromCloudCopyFile(itemId: itemId)
                     }
@@ -862,6 +862,11 @@ case .none:
             
         let cloudURL = url.appendingPathComponent("cloud_copy_entries.json")
         var cloudItems: [ClipboardItem]? = nil
+        
+        if !FileManager.default.fileExists(atPath: cloudURL.path) {
+            try? FileManager.default.startDownloadingUbiquitousItem(at: cloudURL)
+        }
+        
         if let data = try? Data(contentsOf: cloudURL) {
             cloudItems = try? JSONDecoder().decode([ClipboardItem].self, from: data)
         }
@@ -877,10 +882,9 @@ case .none:
             
             // Sync Cloud Copy items to local history
             if let items = cloudItems {
-                let currentCloudIds = Set(self.history.filter { $0.folderId == cloudFolderId }.map { $0.id })
-                let newCloudIds = Set(items.map { $0.id })
+                let currentCloudItems = self.history.filter { $0.folderId == cloudFolderId }
                 
-                if currentCloudIds != newCloudIds {
+                if currentCloudItems != items {
                     self.history.removeAll { $0.folderId == cloudFolderId }
                     self.history.append(contentsOf: items)
                 }
