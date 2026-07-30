@@ -672,8 +672,10 @@ case .none:
             cloudItems = decoded
         }
         
-        let maxSizeMB = Double(UserDefaults.standard.integer(forKey: "cloudCopyMaxTotalStorageMB"))
-        let maxItemMB = Double(UserDefaults.standard.integer(forKey: "cloudCopyMaxItemSizeMB"))
+        let maxSizeInt = UserDefaults.standard.integer(forKey: "cloudCopyMaxTotalStorageMB")
+        let maxItemInt = UserDefaults.standard.integer(forKey: "cloudCopyMaxItemSizeMB")
+        let maxSizeMB = Double(maxSizeInt == 0 ? 50 : maxSizeInt)
+        let maxItemMB = Double(maxItemInt == 0 ? 10 : maxItemInt)
         
         for itemId in itemIds {
             guard let idx = history.firstIndex(where: { $0.id == itemId }) else { continue }
@@ -1366,7 +1368,15 @@ var maxHistoryCount: Int {
             
             if !isDownloading {
                 if hasFiles {
-                    let nsUrls = item.fileURLs!.map { NSURL(fileURLWithPath: $0) }
+                    var resolvedURLs = item.fileURLs!
+                    if item.folderId == cloudFolderId, let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty {
+                        let cloudDir = URL(fileURLWithPath: syncPath).appendingPathComponent("Files")
+                        resolvedURLs = item.fileURLs!.map { url in
+                            let filename = URL(fileURLWithPath: url).lastPathComponent
+                            return cloudDir.appendingPathComponent(filename).path
+                        }
+                    }
+                    let nsUrls = resolvedURLs.map { NSURL(fileURLWithPath: $0) }
                     pasteboard.writeObjects(nsUrls)
                 } else {
                     self.pasteboard.setString(item.text, forType: .string)
