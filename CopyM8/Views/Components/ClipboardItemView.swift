@@ -64,8 +64,8 @@ struct ClipboardItemView: View {
     private var titleAndMetaView: some View {
         HStack(spacing: 0) {
             Text(filenameText)
-                .lineLimit(isExpanded ? nil : 1)
-                .truncationMode(.middle)
+                .lineLimit(isExpanded ? nil : ((item.itemType == .file || item.itemType == .image) ? 1 : (isDense ? 1 : 2)))
+                .truncationMode((item.itemType == .file || item.itemType == .image) ? .middle : .tail)
             
             if let suffix = suffixText {
                 Text(suffix)
