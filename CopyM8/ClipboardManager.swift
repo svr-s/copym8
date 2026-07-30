@@ -105,12 +105,12 @@ class LocalImageStore {
     }
     
     
-    func migrateImage(id: UUID, toCloud: Bool) {
+    func migrateImage(id: UUID, toCloud: Bool) throws {
         guard let sourceDir = getDirectory(inCloud: !toCloud), let destDir = getDirectory(inCloud: toCloud) else { return }
         let sourceURL = sourceDir.appendingPathComponent("\(id.uuidString).png")
         let destURL = destDir.appendingPathComponent("\(id.uuidString).png")
         if fileManager.fileExists(atPath: sourceURL.path) {
-            try? fileManager.moveItem(at: sourceURL, to: destURL)
+            try fileManager.copyItem(at: sourceURL, to: destURL)
         }
     }
 
@@ -206,14 +206,14 @@ class LocalPayloadStore {
     }
     
     
-    func migratePayloads(for id: UUID, toCloud: Bool) {
+    func migratePayloads(for id: UUID, toCloud: Bool) throws {
         guard let sourceDir = getDirectory(inCloud: !toCloud), let destDir = getDirectory(inCloud: toCloud) else { return }
         let types: [PayloadType] = [.rtf, .html, .rtfd, .webArchive, .pdf]
         for type in types {
             let sourceURL = sourceDir.appendingPathComponent("\(id.uuidString).\(type.rawValue)")
             let destURL = destDir.appendingPathComponent("\(id.uuidString).\(type.rawValue)")
             if fileManager.fileExists(atPath: sourceURL.path) {
-                try? fileManager.moveItem(at: sourceURL, to: destURL)
+                try fileManager.copyItem(at: sourceURL, to: destURL)
             }
         }
     }
@@ -245,7 +245,7 @@ class LocalFileStore {
         return dir
     }
     
-    func migrateFiles(for id: UUID, fileURLs: [String], toCloud: Bool) -> [String] {
+    func migrateFiles(for id: UUID, fileURLs: [String], toCloud: Bool) throws -> [String] {
         guard let destDir = cloudDirectory else { return fileURLs }
         
         if toCloud {
@@ -254,7 +254,7 @@ class LocalFileStore {
                 let sourceURL = URL(fileURLWithPath: path)
                 let destURL = destDir.appendingPathComponent("\(id.uuidString)_\(sourceURL.lastPathComponent)")
                 if fileManager.fileExists(atPath: sourceURL.path) {
-                    try? fileManager.copyItem(at: sourceURL, to: destURL)
+                    try fileManager.copyItem(at: sourceURL, to: destURL)
                     newURLs.append(destURL.path)
                 }
             }
@@ -742,10 +742,17 @@ case .none:
             item.folderId = cloudFolderId
             item.isPinned = false
             
-            if item.itemType == .image { LocalImageStore.shared.migrateImage(id: item.id, toCloud: true) }
-            if item.hasRTF || item.hasHTML { LocalPayloadStore.shared.migratePayloads(for: item.id, toCloud: true) }
-            if item.itemType == .file, let urls = item.fileURLs {
-                item.fileURLs = LocalFileStore.shared.migrateFiles(for: item.id, fileURLs: urls, toCloud: true)
+            do {
+                if item.itemType == .image { try LocalImageStore.shared.migrateImage(id: item.id, toCloud: true) }
+                if item.hasRTF || item.hasHTML { try LocalPayloadStore.shared.migratePayloads(for: item.id, toCloud: true) }
+                if item.itemType == .file, let urls = item.fileURLs {
+                    item.fileURLs = try LocalFileStore.shared.migrateFiles(for: item.id, fileURLs: urls, toCloud: true)
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(name: NSNotification.Name("ShowToast"), object: "Error: Sync storage is full.")
+                }
+                return false
             }
             
             cloudItems.append(item)
