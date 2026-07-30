@@ -677,7 +677,7 @@ struct SettingsView: View {
                 Text("Clipboard Filters")
                     .font(.system(size: 13, weight: .semibold))
                 
-                Toggle(isOn: $ignorePasswords) {
+                HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Ignore Passwords & Sensitive Fields")
                             .font(.system(size: 12))
@@ -685,21 +685,27 @@ struct SettingsView: View {
                             .font(.system(size: 10))
                             .foregroundColor(.secondary)
                     }
+                    Spacer()
+                    Toggle("", isOn: $ignorePasswords)
+                        .labelsHidden()
+                        .toggleStyle(SwitchToggleStyle(tint: .blue))
                 }
-                .toggleStyle(SwitchToggleStyle(tint: .blue))
                 
-                Toggle(isOn: $ignoreTransient) {
+                HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Ignore Temporary & Macro Data")
                             .font(.system(size: 12))
-                        Text("e.g. automated clipboard actions by Alfred, Raycast")
+                        Text("e.g. background automation scripts or macro tools")
                             .font(.system(size: 10))
                             .foregroundColor(.secondary)
                     }
+                    Spacer()
+                    Toggle("", isOn: $ignoreTransient)
+                        .labelsHidden()
+                        .toggleStyle(SwitchToggleStyle(tint: .blue))
                 }
-                .toggleStyle(SwitchToggleStyle(tint: .blue))
                 
-                Toggle(isOn: $ignoreUniversalClipboard) {
+                HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Ignore Universal Clipboard")
                             .font(.system(size: 12))
@@ -707,8 +713,11 @@ struct SettingsView: View {
                             .font(.system(size: 10))
                             .foregroundColor(.secondary)
                     }
+                    Spacer()
+                    Toggle("", isOn: $ignoreUniversalClipboard)
+                        .labelsHidden()
+                        .toggleStyle(SwitchToggleStyle(tint: .blue))
                 }
-                .toggleStyle(SwitchToggleStyle(tint: .blue))
             }
             
             Divider()
