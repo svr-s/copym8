@@ -15,7 +15,7 @@ struct ClipboardFolderListView: View {
         ScrollView {
             ScrollViewReader { proxy in
                 LazyVStack(spacing: isDense ? 2 : 12) {
-                    let standardFolders = clipboard.folders.filter { $0.id != UUID(uuidString: "00000000-0000-0000-0000-000000000000")! }
+                    let standardFolders = clipboard.activeFolders.filter { $0.id != UUID(uuidString: "00000000-0000-0000-0000-000000000000")! }
                     ForEach(Array(folders.enumerated()), id: \.element.id) { index, folder in
                         ClipboardFolderView(
                             folder: folder,
