@@ -421,41 +421,37 @@ struct SettingsView: View {
                     
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Cloud Copy Storage Limits")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: 13, weight: .semibold))
                             .foregroundColor(.secondary)
                         
                         HStack {
                             Text("Max Item Size (MB):")
-                                .font(.system(size: 11))
+                                .font(.system(size: 13))
                             Spacer()
                             TextField("", value: $cloudCopyMaxItemSizeMB, format: .number)
                                 .frame(width: 50)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .font(.system(size: 11))
                                 .onChange(of: cloudCopyMaxItemSizeMB) { _, newValue in
                                     if newValue > 50 { cloudCopyMaxItemSizeMB = 50 }
                                     else if newValue < 1 { cloudCopyMaxItemSizeMB = 1 }
                                 }
                             Stepper("", value: $cloudCopyMaxItemSizeMB, in: 1...50)
                                 .labelsHidden()
-                                .controlSize(.small)
                         }
                         
                         HStack {
                             Text("Total Storage Cap (MB):")
-                                .font(.system(size: 11))
+                                .font(.system(size: 13))
                             Spacer()
                             TextField("", value: $cloudCopyMaxTotalStorageMB, format: .number)
                                 .frame(width: 50)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .font(.system(size: 11))
                                 .onChange(of: cloudCopyMaxTotalStorageMB) { _, newValue in
                                     if newValue > 200 { cloudCopyMaxTotalStorageMB = 200 }
                                     else if newValue < 1 { cloudCopyMaxTotalStorageMB = 1 }
                                 }
                             Stepper("", value: $cloudCopyMaxTotalStorageMB, in: 1...200)
                                 .labelsHidden()
-                                .controlSize(.small)
                         }
                     }
                     
