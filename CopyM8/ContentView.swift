@@ -1280,7 +1280,7 @@ extension ContentView {
                         for i in start...end {
                             if i < displayNodesLocal.count {
                                 if let id = displayNodesLocal[i].item?.id { idsToToggle.append(id) }
-                                else if let id = displayNodesLocal[i].folder?.id, id != cloudFolderId { idsToToggle.append(id) }
+                                else if let id = displayNodesLocal[i].folder?.id, id != cloudFolderId, clipboard.selectedDevice == "Local (This Mac)" { idsToToggle.append(id) }
                             }
                         }
                         
@@ -1297,7 +1297,7 @@ extension ContentView {
                         }
                     } else {
                         let node = displayNodesLocal[selectedIndex]
-                        if let id = node.item?.id ?? (node.folder?.id != cloudFolderId ? node.folder?.id : nil) {
+                        if let id = node.item?.id ?? (node.folder?.id != cloudFolderId && clipboard.selectedDevice == "Local (This Mac)" ? node.folder?.id : nil) {
                             withAnimation {
                                 if _selectedItemsForDeletion.wrappedValue.contains(id) { _selectedItemsForDeletion.wrappedValue.remove(id) }
                                 else { _selectedItemsForDeletion.wrappedValue.insert(id) }
@@ -1329,7 +1329,7 @@ extension ContentView {
             case 0: // A
                 if (isEditMode || _isReorderMode.wrappedValue) && event.modifierFlags.contains(.command) {
                     withAnimation {
-                        let ids = Set(displayNodesLocal.compactMap { $0.item?.id ?? $0.folder?.id })
+                        let ids = Set(displayNodesLocal.compactMap { $0.item?.id ?? (clipboard.selectedDevice == "Local (This Mac)" && $0.folder?.id != cloudFolderId ? $0.folder?.id : nil) })
                         if _selectedItemsForDeletion.wrappedValue.isSuperset(of: ids) { _selectedItemsForDeletion.wrappedValue.subtract(ids) }
                         else { _selectedItemsForDeletion.wrappedValue.formUnion(ids) }
                     }
