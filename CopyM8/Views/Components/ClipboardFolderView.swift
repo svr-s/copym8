@@ -35,7 +35,7 @@ struct ClipboardFolderView: View {
         Button(action: onTap) {
             HStack(spacing: 8) {
                 if isEditMode {
-                    if folder.id == UUID(uuidString: "00000000-0000-0000-0000-000000000000")! {
+                    if folder.id == UUID(uuidString: "00000000-0000-0000-0000-000000000000")! || clipboard.selectedDevice != "Local (This Mac)" {
                         Spacer().frame(width: 14)
                     } else {
                         Image(systemName: isChecked ? "checkmark.circle.fill" : "circle")

@@ -904,6 +904,9 @@ case .none:
             // Filter out files/images since they rely on local UUIDs or paths
             var filtered = decoded.filter { $0.itemType != .file && $0.itemType != .image }
             
+            // Remove remote Cloud Copy items to avoid duplicates; we will use the universal local synced ones
+            filtered.removeAll { $0.folderId == cloudFolderId }
+            
             // We append a tag so users know it's remote
             for i in 0..<filtered.count {
                 if let app = filtered[i].sourceApp {
@@ -920,6 +923,7 @@ case .none:
             }
             
             // INJECT UNIFIED CLOUD COPY INTO REMOTE VIEW
+            fetchedFolders.removeAll { $0.id == cloudFolderId }
             let cloudFolder = ClipboardFolder(id: cloudFolderId, name: "Cloud Copy", orderIndex: -1)
             fetchedFolders.insert(cloudFolder, at: 0)
             
