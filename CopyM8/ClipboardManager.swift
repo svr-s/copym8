@@ -320,6 +320,10 @@ class ClipboardManager: ObservableObject {
         return selectedDevice == "Local (This Mac)" ? history : remoteHistory
     }
     
+    var activeFolders: [ClipboardFolder] {
+        return selectedDevice == "Local (This Mac)" ? folders : remoteFolders
+    }
+    
     @Published var availableDevices: [String] = []
     @Published var selectedDevice: String = "Local (This Mac)" {
         didSet {
@@ -462,10 +466,10 @@ class ClipboardManager: ObservableObject {
     }
     
     func getFilteredFolders(searchText: String) -> [ClipboardFolder] {
-        if searchText.isEmpty { return folders }
-        return folders.filter { folder in
+        if searchText.isEmpty { return activeFolders }
+        return activeFolders.filter { folder in
             if folder.name.localizedCaseInsensitiveContains(searchText) { return true }
-            return history.contains(where: { $0.folderId == folder.id && $0.text.localizedCaseInsensitiveContains(searchText) })
+            return activeHistory.contains(where: { $0.folderId == folder.id && $0.text.localizedCaseInsensitiveContains(searchText) })
         }
     }
     
@@ -889,6 +893,7 @@ case .none:
                 if currentCloudItems != items {
                     self.history.removeAll { $0.folderId == cloudFolderId }
                     self.history.append(contentsOf: items)
+                    self.history.sort { $0.timestamp > $1.timestamp }
                 }
             }
         }

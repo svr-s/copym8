@@ -190,7 +190,7 @@ struct ContentView: View {
                 results = results.filter { item in
                     if item.text.localizedCaseInsensitiveContains(searchText) { return true }
                     if item.sourceApp?.localizedCaseInsensitiveContains(searchText) == true { return true }
-                    if let folderId = item.folderId, let folder = clipboard.folders.first(where: { $0.id == folderId }) {
+                    if let folderId = item.folderId, let folder = clipboard.activeFolders.first(where: { $0.id == folderId }) {
                         if folder.name.localizedCaseInsensitiveContains(searchText) { return true }
                     }
                     return false
@@ -516,15 +516,10 @@ struct ContentView: View {
                 }
             }
         }
-        .onChange(of: clipboard.selectedDevice) { _, newDevice in
+        .onChange(of: clipboard.selectedDevice) { _, _ in
             selectedIndex = 0
             selectionAnchorIndex = nil
             expandedItemIndex = nil
-            if newDevice != "Local (This Mac)" {
-                if activeTab == "Images" || activeTab == "Files" {
-                    activeTab = "All"
-                }
-            }
         }
     }
     

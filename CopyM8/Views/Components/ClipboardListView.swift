@@ -152,7 +152,7 @@ struct ClipboardListView: View {
             if folderId == UUID(uuidString: "00000000-0000-0000-0000-000000000000")! {
                 return "`"
             }
-            let standardFolders = clipboard.folders.filter { $0.id != UUID(uuidString: "00000000-0000-0000-0000-000000000000")! }
+            let standardFolders = clipboard.activeFolders.filter { $0.id != UUID(uuidString: "00000000-0000-0000-0000-000000000000")! }
             if let folderIndex = standardFolders.firstIndex(where: { $0.id == folderId }) {
                 return String(UnicodeScalar(UInt8(65 + folderIndex)))
             }
