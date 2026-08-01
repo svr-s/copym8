@@ -377,6 +377,7 @@ struct ContentView: View {
                         GroupAssignmentView(
                             itemIds: payload.itemIds, 
                             onComplete: payload.onComplete,
+                            onCancel: { itemToAssignGroup = nil }
                         )
                             .environmentObject(clipboard)
                             .frame(width: 280)
