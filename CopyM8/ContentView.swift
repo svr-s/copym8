@@ -901,7 +901,9 @@ extension ContentView {
                     }
                     return nil
                 case 17: // T
-                    if event.modifierFlags.contains(.shift) {
+                    let isCmd = event.modifierFlags.contains(.command)
+                    let isShift = event.modifierFlags.contains(.shift)
+                    if isCmd && isShift {
                         _showTrashBin.wrappedValue.toggle()
                         return nil
                     }
@@ -1387,8 +1389,11 @@ extension ContentView {
                 }
                 return event
             case 53: // Esc
-                if _isFreezeFieldFocused.wrappedValue {
-                    _isFreezeFieldFocused.wrappedValue = false
+                if _showTrashBin.wrappedValue {
+                    return event
+                }
+                if _isEditMode.wrappedValue {
+                    _isEditMode.wrappedValue = false
                     return nil
                 }
                 if isSearchFocused { _isSearchFocused.wrappedValue = false }
@@ -1690,23 +1695,25 @@ struct TrashBinView: View {
     }
     
     private func handleKeyDown(_ event: NSEvent) -> NSEvent? {
-        if showingEmptyTrashAlert || showingDeleteSelectedAlert {
+        if _showingEmptyTrashAlert.wrappedValue || _showingDeleteSelectedAlert.wrappedValue {
             if event.keyCode == 36 { // Enter
-                if showingEmptyTrashAlert {
+                if _showingEmptyTrashAlert.wrappedValue {
                     clipboard.deleteItems(where: { ($0.isDeleted ?? false) }, hardDelete: true)
-                    showingEmptyTrashAlert = false
-                } else if showingDeleteSelectedAlert {
-                    if selectedIndex >= 0 && selectedIndex < trashItems.count {
-                        let id = trashItems[selectedIndex].id
-                        if selectedIndex > 0 && selectedIndex == trashItems.count - 1 { selectedIndex -= 1 }
+                    _showingEmptyTrashAlert.wrappedValue = false
+                } else if _showingDeleteSelectedAlert.wrappedValue {
+                    let count = trashItems.count
+                    let index = _selectedIndex.wrappedValue
+                    if index >= 0 && index < count {
+                        let id = trashItems[index].id
+                        if index > 0 && index == count - 1 { _selectedIndex.wrappedValue -= 1 }
                         clipboard.deleteItems(where: { $0.id == id }, hardDelete: true)
                     }
-                    showingDeleteSelectedAlert = false
+                    _showingDeleteSelectedAlert.wrappedValue = false
                 }
                 return nil
             } else if event.keyCode == 53 { // Esc
-                showingEmptyTrashAlert = false
-                showingDeleteSelectedAlert = false
+                _showingEmptyTrashAlert.wrappedValue = false
+                _showingDeleteSelectedAlert.wrappedValue = false
                 return nil
             }
             return nil
@@ -1721,22 +1728,24 @@ struct TrashBinView: View {
             return nil
             
         case 125: // Down Arrow
-            if selectedIndex < trashItems.count - 1 {
-                selectedIndex += 1
+            if _selectedIndex.wrappedValue < trashItems.count - 1 {
+                _selectedIndex.wrappedValue += 1
             }
             return nil
             
         case 126: // Up Arrow
-            if selectedIndex > 0 {
-                selectedIndex -= 1
+            if _selectedIndex.wrappedValue > 0 {
+                _selectedIndex.wrappedValue -= 1
             }
             return nil
             
         case 6: // Cmd + Z -> Restore
             if isCmd && !isShift {
-                if selectedIndex >= 0 && selectedIndex < trashItems.count {
-                    let id = trashItems[selectedIndex].id
-                    if selectedIndex > 0 && selectedIndex == trashItems.count - 1 { selectedIndex -= 1 }
+                let count = trashItems.count
+                let index = _selectedIndex.wrappedValue
+                if index >= 0 && index < count {
+                    let id = trashItems[index].id
+                    if index > 0 && index == count - 1 { _selectedIndex.wrappedValue -= 1 }
                     clipboard.restoreItems(ids: [id])
                 }
                 return nil
@@ -1748,22 +1757,19 @@ struct TrashBinView: View {
                 if isShift {
                     // Cmd + Shift + Backspace -> Empty Trash
                     if !trashItems.isEmpty {
-                        showingEmptyTrashAlert = true
+                        _showingEmptyTrashAlert.wrappedValue = true
                     }
                 } else {
                     // Cmd + Backspace -> Hard Delete
                     if !trashItems.isEmpty {
-                        showingDeleteSelectedAlert = true
+                        _showingDeleteSelectedAlert.wrappedValue = true
                     }
                 }
                 return nil
             }
-            // Normal backspace -> soft delete -> in trash bin means hard delete? No, let's keep hard delete strictly to cmd+backspace
-            // Actually user said "Delete in the trashbin indicates hard delete and the pop up is perfect"
-            // Wait, does "Delete" mean Backspace or Cmd+Delete? Mac users usually mean Backspace.
-            // Okay, let's make simple Backspace trigger the popup for hard deletion in the trash bin.
+            // Normal backspace -> hard delete with popup
             if !trashItems.isEmpty {
-                showingDeleteSelectedAlert = true
+                _showingDeleteSelectedAlert.wrappedValue = true
             }
             return nil
             
