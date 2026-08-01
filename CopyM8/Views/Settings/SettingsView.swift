@@ -178,34 +178,42 @@ struct SettingsView: View {
                 .font(.system(size: 11))
                 .foregroundColor(.primary.opacity(0.5))
             
-            HStack {
-                Text("Max Item Size (MB):")
-                    .font(.system(size: 13))
-                Spacer()
-                TextField("", value: $maxItemSizeMB, format: .number)
-                    .frame(width: 50)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .onChange(of: maxItemSizeMB) { _, newValue in
-                        if newValue > 20 { maxItemSizeMB = 20 }
-                        else if newValue < 1 { maxItemSizeMB = 1 }
-                    }
-                Stepper("", value: $maxItemSizeMB, in: 1...20)
-                    .labelsHidden()
-            }
+            Divider().padding(.vertical, 4)
             
-            HStack {
-                Text("Total Storage Cap (MB):")
-                    .font(.system(size: 13))
-                Spacer()
-                TextField("", value: $maxTotalStorageMB, format: .number)
-                    .frame(width: 50)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .onChange(of: maxTotalStorageMB) { _, newValue in
-                        if newValue > 100 { maxTotalStorageMB = 100 }
-                        else if newValue < 1 { maxTotalStorageMB = 1 }
-                    }
-                Stepper("", value: $maxTotalStorageMB, in: 1...100)
-                    .labelsHidden()
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Local Storage Limits")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.secondary)
+                
+                HStack {
+                    Text("Max Item Size (MB):")
+                        .font(.system(size: 13))
+                    Spacer()
+                    TextField("", value: $maxItemSizeMB, format: .number)
+                        .frame(width: 50)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .onChange(of: maxItemSizeMB) { _, newValue in
+                            if newValue > 20 { maxItemSizeMB = 20 }
+                            else if newValue < 1 { maxItemSizeMB = 1 }
+                        }
+                    Stepper("", value: $maxItemSizeMB, in: 1...20)
+                        .labelsHidden()
+                }
+                
+                HStack {
+                    Text("Total Storage Cap (MB):")
+                        .font(.system(size: 13))
+                    Spacer()
+                    TextField("", value: $maxTotalStorageMB, format: .number)
+                        .frame(width: 50)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .onChange(of: maxTotalStorageMB) { _, newValue in
+                            if newValue > 100 { maxTotalStorageMB = 100 }
+                            else if newValue < 1 { maxTotalStorageMB = 1 }
+                        }
+                    Stepper("", value: $maxTotalStorageMB, in: 1...100)
+                        .labelsHidden()
+                }
             }
             
             Spacer()
