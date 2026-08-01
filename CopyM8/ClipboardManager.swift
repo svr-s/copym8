@@ -1217,12 +1217,40 @@ var maxHistoryCount: Int {
         return val == 0 ? 50 : val
     }
     
+    func cleanupTrashItems() {
+        let retentionDays = UserDefaults.standard.integer(forKey: "deleteAfterDays")
+        let limit = retentionDays == 0 ? 7 : retentionDays
+        let thresholdDate = Calendar.current.date(byAdding: .day, value: -limit, to: Date())!
+        
+        let expiredTrash = history.filter { ($0.isDeleted ?? false) && ($0.deletedAt ?? Date.distantFuture) < thresholdDate }
+        for item in expiredTrash {
+            if let idx = history.firstIndex(where: { $0.id == item.id }) {
+                deleteItem(at: idx, hardDelete: true)
+            }
+        }
+    }
+    
     func pruneStorageIfNeeded() {
+        cleanupTrashItems()
+        
         var currentSizeMB = LocalImageStore.shared.getTotalSizeMB()
+        let activeSizeMB = currentSizeMB // Since Trash doesn't count towards the limit, we evaluate on all active items. Actually, let's keep it simple: just consider all images, but we'll prioritize hard-deleting trash images first.
+        
+        // Hard-delete trash items first if we are over limit
+        var trashImages = history.filter { ($0.isDeleted ?? false) && $0.itemType == .image }.sorted { $0.timestamp < $1.timestamp }
+        for img in trashImages {
+            if currentSizeMB <= Double(maxTotalStorageMB) { break }
+            let size = LocalImageStore.shared.getFileSizeMB(id: img.id)
+            if let idx = history.firstIndex(where: { $0.id == img.id }) {
+                deleteItem(at: idx, hardDelete: true)
+                currentSizeMB -= size
+            }
+        }
+        
         if currentSizeMB <= Double(maxTotalStorageMB) { return }
         
         var idsToRemove = Set<UUID>()
-        let unpinnedImages = history.filter { !$0.isPinned && $0.folderId == nil && $0.itemType == .image }.sorted { $0.timestamp < $1.timestamp }
+        let unpinnedImages = history.filter { !($0.isDeleted ?? false) && !$0.isPinned && $0.folderId == nil && $0.itemType == .image }.sorted { $0.timestamp < $1.timestamp }
         
         for img in unpinnedImages {
             if currentSizeMB <= Double(maxTotalStorageMB) { break }
@@ -1233,7 +1261,7 @@ var maxHistoryCount: Int {
         }
         
         if !idsToRemove.isEmpty {
-            deleteItems(where: { idsToRemove.contains($0.id) })
+            deleteItems(where: { idsToRemove.contains($0.id) }, hardDelete: true)
         }
     }
     private func formatSize(_ bytes: Int64) -> String {

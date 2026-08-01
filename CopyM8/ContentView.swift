@@ -47,7 +47,8 @@ struct ContentView: View {
     @State var editingFolderId: UUID? = nil
     @State var showingGroupAssignment = false
     @State var itemToAssignGroup: GroupAssignmentPayload? = nil
-    @State var showingDeviceSwitcher: Bool = false
+    @State private var showingDeviceSwitcher = false
+    @State private var showTrashBin = false
     @State var showingReadOnlyToast: Bool = false
     @State var showingImportSuccessToast: Bool = false
     @State var importSuccessMessage: String = "Import successful"
@@ -96,7 +97,7 @@ struct ContentView: View {
             case .folders:
                 return clipboard.folders.map { DisplayNode(id: "folder_\($0.id.uuidString)", isFolder: true, folder: $0, item: nil, parentFolderId: nil) }
             case .items(let folderId):
-                var items = clipboard.activeHistory.filter { $0.folderId == folderId }
+                var items = clipboard.activeHistory.filter { !($0.isDeleted ?? false) && $0.folderId == folderId }
                 items.sort { item1, item2 in
                     if item1.orderIndex > 0 && item2.orderIndex > 0 { return item1.orderIndex < item2.orderIndex }
                     if item1.orderIndex > 0 { return true }
@@ -113,7 +114,7 @@ struct ContentView: View {
                 }
                 return nodes
             case .pinned:
-                var items = clipboard.activeHistory.filter { $0.isPinned && $0.folderId == nil }
+                var items = clipboard.activeHistory.filter { !($0.isDeleted ?? false) && $0.isPinned && $0.folderId == nil }
                 items.sort { item1, item2 in
                     if item1.orderIndex > 0 && item2.orderIndex > 0 { return item1.orderIndex < item2.orderIndex }
                     if item1.orderIndex > 0 { return true }
@@ -142,7 +143,7 @@ struct ContentView: View {
                 nodes.append(DisplayNode(id: "folder_\(folder.id.uuidString)", isFolder: true, folder: folder, item: nil, parentFolderId: nil))
                 
                 if expandedFolderIds.contains(folder.id) {
-                    var items = clipboard.activeHistory.filter { $0.folderId == folder.id }
+                    var items = clipboard.activeHistory.filter { !($0.isDeleted ?? false) && $0.folderId == folder.id }
                     if !searchText.isEmpty {
                         let bypassFilter = folder.name.localizedCaseInsensitiveContains(searchText)
                         if !bypassFilter {
@@ -175,7 +176,7 @@ struct ContentView: View {
             return nodes
         } else {
             // Re-use existing filteredHistory logic
-            var results = clipboard.activeHistory
+            var results = clipboard.activeHistory.filter { !($0.isDeleted ?? false) }
             
             switch activeTab {
             case "Pinned": results = results.filter { $0.isPinned && $0.folderId == nil }
@@ -376,7 +377,6 @@ struct ContentView: View {
                         GroupAssignmentView(
                             itemIds: payload.itemIds, 
                             onComplete: payload.onComplete,
-                            onCancel: { itemToAssignGroup = nil }
                         )
                             .environmentObject(clipboard)
                             .frame(width: 280)
@@ -386,6 +386,10 @@ struct ContentView: View {
                             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
                             .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
                     }
+                } else if showTrashBin {
+                    TrashBinView(isPresented: $showTrashBin)
+                        .environmentObject(clipboard)
+                        .environmentObject(shortcut)
                 } else if showingUngroupAlert {
                     ZStack {
                         Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
@@ -719,7 +723,7 @@ struct ContentView: View {
     }
     
     private func deleteSelectedItems() {
-        clipboard.deleteItems(where: { _selectedItemsForDeletion.wrappedValue.contains($0.id) })
+        clipboard.deleteItems(where: { _selectedItemsForDeletion.wrappedValue.contains($0.id) }, hardDelete: true)
         _selectedItemsForDeletion.wrappedValue.removeAll()
         _isEditMode.wrappedValue = false
     }
@@ -739,11 +743,11 @@ struct ContentView: View {
             clipboard.deleteItems(where: { item in
                 if let fId = item.folderId { return folderIds.contains(fId) }
                 return false
-            })
+            }, hardDelete: true)
         }
         
         clipboard.folders.removeAll { folderIds.contains($0.id) }
-        clipboard.deleteItems(where: { independentItemIds.contains($0.id) })
+        clipboard.deleteItems(where: { independentItemIds.contains($0.id) }, hardDelete: true)
         
         _selectedItemsForDeletion.wrappedValue.removeAll()
         _isEditMode.wrappedValue = false
@@ -889,10 +893,20 @@ extension ContentView {
                                     _reorderFreezeLimit.wrappedValue = "0"
                                 }
                             }
-                            _selectedItemsForDeletion.wrappedValue.removeAll()
                             _selectedIndex.wrappedValue = 0
                             _isReorderMode.wrappedValue = true
                         }
+                    }
+                    return nil
+                case 17: // T
+                    if event.modifierFlags.contains(.shift) {
+                        _showTrashBin.wrappedValue.toggle()
+                        return nil
+                    }
+                    return nil
+                case 6: // Z
+                    if !clipboard.history.isEmpty {
+                        // Undo logic would go here if needed, but 'Cmd+Z' to restore single item in Trash Bin is handled within TrashBinView.
                     }
                     return nil
                 default: break
@@ -1016,27 +1030,66 @@ extension ContentView {
                 }
                 return nil
             case 51: // Backspace
+                let isCmd = event.modifierFlags.contains(.command)
+                let isShift = event.modifierFlags.contains(.shift)
+                
+                if isCmd && isShift {
+                    // Empty Trash globally from anywhere
+                    withAnimation {
+                        clipboard.deleteItems(where: { ($0.isDeleted ?? false) }, hardDelete: true)
+                    }
+                    return nil
+                }
+                
                 if isEditMode {
-                    let validDeletions = _selectedItemsForDeletion.wrappedValue.filter { $0 != cloudFolderId }
+                    let validDeletions = _selectedItemsForDeletion.wrappedValue.filter { $0 != cloudFolderId && $0 != restoredFolderId }
                     if !validDeletions.isEmpty {
-                        _selectedItemsForDeletion.wrappedValue = validDeletions
-                        let hasFoldersSelected = validDeletions.contains { id in clipboard.folders.contains(where: { $0.id == id }) }
-                        if hasFoldersSelected {
-                            _showingFolderDeleteAlert.wrappedValue = true
+                        if isCmd {
+                            // Hard Delete (with popup)
+                            _selectedItemsForDeletion.wrappedValue = validDeletions
+                            let hasFoldersSelected = validDeletions.contains { id in clipboard.folders.contains(where: { $0.id == id }) }
+                            if hasFoldersSelected {
+                                _showingFolderDeleteAlert.wrappedValue = true
+                            } else {
+                                _showingDeleteSelectedAlert.wrappedValue = true
+                            }
                         } else {
-                            _showingDeleteSelectedAlert.wrappedValue = true
+                            // Soft Delete (no popup)
+                            let folderIds = validDeletions.filter { id in clipboard.folders.contains(where: { $0.id == id }) }
+                            let independentItemIds = validDeletions.filter { !folderIds.contains($0) }
+                            
+                            clipboard.deleteItems(where: { item in
+                                if let fId = item.folderId { return folderIds.contains(fId) }
+                                return false
+                            })
+                            clipboard.folders.removeAll { folderIds.contains($0.id) }
+                            clipboard.deleteItems(where: { independentItemIds.contains($0.id) })
+                            
+                            _selectedItemsForDeletion.wrappedValue.removeAll()
+                            _isEditMode.wrappedValue = false
                         }
                     }
                 } else if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
                     let node = displayNodesLocal[selectedIndex]
                     if node.isFolder, let folder = node.folder {
-                        if folder.id != cloudFolderId {
-                            _selectedItemsForDeletion.wrappedValue = [folder.id]
-                            _showingFolderDeleteAlert.wrappedValue = true
+                        if folder.id != cloudFolderId && folder.id != restoredFolderId {
+                            if isCmd {
+                                _selectedItemsForDeletion.wrappedValue = [folder.id]
+                                _showingFolderDeleteAlert.wrappedValue = true
+                            } else {
+                                clipboard.deleteItems(where: { $0.folderId == folder.id })
+                                clipboard.folders.removeAll(where: { $0.id == folder.id })
+                                if selectedIndex >= displayNodesLocal.count - 1 && selectedIndex > 0 { _selectedIndex.wrappedValue -= 1 }
+                            }
                         }
                     } else if let id = node.item?.id {
-                        if selectedIndex >= displayNodesLocal.count - 1 && selectedIndex > 0 { _selectedIndex.wrappedValue -= 1 }
-                        withAnimation { clipboard.deleteItems(where: { $0.id == id }) }
+                        if isCmd {
+                            _selectedItemsForDeletion.wrappedValue = [id]
+                            _showingDeleteSelectedAlert.wrappedValue = true
+                        } else {
+                            if selectedIndex >= displayNodesLocal.count - 1 && selectedIndex > 0 { _selectedIndex.wrappedValue -= 1 }
+                            withAnimation { clipboard.deleteItems(where: { $0.id == id }) }
+                        }
                     }
                 }
                 return nil
