@@ -55,6 +55,7 @@ struct SettingsView: View {
     
     @AppStorage("maxItemSizeMB") private var maxItemSizeMB: Int = 10
     @AppStorage("maxTotalStorageMB") private var maxTotalStorageMB: Int = 50
+    @AppStorage("deleteAfterDays") private var deleteAfterDays: Int = 7
     
     @AppStorage("cloudCopyMaxItemSizeMB") private var cloudCopyMaxItemSizeMB: Int = 10
     @AppStorage("cloudCopyMaxTotalStorageMB") private var cloudCopyMaxTotalStorageMB: Int = 50
@@ -214,6 +215,25 @@ struct SettingsView: View {
                     Stepper("", value: $maxTotalStorageMB, in: 1...100)
                         .labelsHidden()
                 }
+                
+                HStack {
+                    Text("Trash Retention (Days):")
+                        .font(.system(size: 13))
+                    Spacer()
+                    TextField("", value: $deleteAfterDays, format: .number)
+                        .frame(width: 50)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .onChange(of: deleteAfterDays) { _, newValue in
+                            if newValue > 30 { deleteAfterDays = 30 }
+                            else if newValue < 1 { deleteAfterDays = 1 }
+                        }
+                    Stepper("", value: $deleteAfterDays, in: 1...30)
+                        .labelsHidden()
+                }
+                
+                Text("Items in the Trash do not count towards the storage limits, but consume physical space until expired.")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
             }
             
             Spacer()
@@ -246,6 +266,24 @@ struct SettingsView: View {
                         .font(.system(size: 12))
                     Spacer()
                     Text(String(format: "%.1f MB", LocalImageStore.shared.getTotalSizeMB()))
+                        .font(.system(size: 12, weight: .medium))
+                }
+                
+                HStack {
+                    Text("Folder Items Size:")
+                        .font(.system(size: 12))
+                    Spacer()
+                    let folderSize = clipboard.history.filter { $0.folderId != nil && !($0.isDeleted ?? false) && $0.folderId != restoredFolderId }.reduce(0.0) { $0 + clipboard.getItemSizeMB(item: $1) }
+                    Text(String(format: "%.1f MB", folderSize))
+                        .font(.system(size: 12, weight: .medium))
+                }
+                
+                HStack {
+                    Text("Deleted Items Size:")
+                        .font(.system(size: 12))
+                    Spacer()
+                    let deletedSize = clipboard.history.filter { $0.isDeleted ?? false }.reduce(0.0) { $0 + clipboard.getItemSizeMB(item: $1) }
+                    Text(String(format: "%.1f MB", deletedSize))
                         .font(.system(size: 12, weight: .medium))
                 }
             }

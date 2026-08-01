@@ -35,7 +35,11 @@ struct ClipboardItem: Identifiable, Equatable, Codable {
     var fileURLs: [String]?
     var folderId: UUID? = nil
     var orderIndex: Int = 0
+    var isDeleted: Bool? = false
+    var deletedAt: Date? = nil
 }
+
+let restoredFolderId = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
 
 
 class LocalImageStore {
@@ -643,13 +647,18 @@ case .none:
         }
     }
 
-    func deleteItem(at index: Int) {
+    func deleteItem(at index: Int, hardDelete: Bool = false) {
         let item = history[index]
-        LocalPayloadStore.shared.deletePayloads(for: item.id)
-        if item.itemType == .image {
-            LocalImageStore.shared.deleteImage(id: item.id)
+        if hardDelete {
+            LocalPayloadStore.shared.deletePayloads(for: item.id)
+            if item.itemType == .image {
+                LocalImageStore.shared.deleteImage(id: item.id)
+            }
+            history.remove(at: index)
+        } else {
+            history[index].isDeleted = true
+            history[index].deletedAt = Date()
         }
-        history.remove(at: index)
         saveHistory()
     }
     
@@ -807,19 +816,54 @@ case .none:
         saveHistory()
     }
 
-    func deleteItems(where predicate: (ClipboardItem) -> Bool) {
-        let itemsToDelete = history.filter(predicate)
-        for item in itemsToDelete {
-            LocalPayloadStore.shared.deletePayloads(for: item.id)
-            if item.itemType == .image {
-                LocalImageStore.shared.deleteImage(id: item.id)
+    func deleteItems(where predicate: (ClipboardItem) -> Bool, hardDelete: Bool = false) {
+        if hardDelete {
+            let itemsToDelete = history.filter(predicate)
+            for item in itemsToDelete {
+                LocalPayloadStore.shared.deletePayloads(for: item.id)
+                if item.itemType == .image {
+                    LocalImageStore.shared.deleteImage(id: item.id)
+                }
+            }
+            history.removeAll(where: predicate)
+        } else {
+            for i in 0..<history.count {
+                if predicate(history[i]) {
+                    history[i].isDeleted = true
+                    history[i].deletedAt = Date()
+                }
             }
         }
-        history.removeAll(where: predicate)
     }
 
     func clearAll() {
         deleteItems(where: { _ in true })
+    }
+    
+    func restoreItems(ids: [UUID]) {
+        for id in ids {
+            if let index = history.firstIndex(where: { $0.id == id }) {
+                let item = history[index]
+                let isDuplicate = history.contains { $0.text == item.text && !($0.isDeleted ?? false) && $0.id != item.id }
+                if isDuplicate {
+                    deleteItem(at: index, hardDelete: true)
+                } else {
+                    history[index].isDeleted = false
+                    history[index].deletedAt = nil
+                    history[index].folderId = restoredFolderId
+                }
+            }
+        }
+        saveHistory()
+    }
+    
+    func getItemSizeMB(item: ClipboardItem) -> Double {
+        var size = 0.0
+        if item.itemType == .image { size += LocalImageStore.shared.getFileSizeMB(id: item.id) }
+        if item.hasRTF { size += LocalPayloadStore.shared.getFileSizeMB(id: item.id, type: .rtf) }
+        if item.hasHTML { size += LocalPayloadStore.shared.getFileSizeMB(id: item.id, type: .html) }
+        if item.itemType == .file { size += LocalFileStore.shared.getFileSizeMB(for: item.id) }
+        return size
     }
     
     func togglePin(for id: UUID) {

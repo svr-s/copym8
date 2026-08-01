@@ -35,7 +35,7 @@ struct ClipboardFolderView: View {
         Button(action: onTap) {
             HStack(spacing: 8) {
                 if isEditMode {
-                    if folder.id == UUID(uuidString: "00000000-0000-0000-0000-000000000000")! || clipboard.selectedDevice != "Local (This Mac)" {
+                    if folder.id == cloudFolderId || folder.id == restoredFolderId || clipboard.selectedDevice != "Local (This Mac)" {
                         Spacer().frame(width: 14)
                     } else {
                         Image(systemName: isChecked ? "checkmark.circle.fill" : "circle")
@@ -43,8 +43,13 @@ struct ClipboardFolderView: View {
                             .font(.system(size: 14))
                     }
                 } else {
-                    if folder.id == UUID(uuidString: "00000000-0000-0000-0000-000000000000")! {
+                    if folder.id == cloudFolderId {
                         Text("`")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundColor(secondaryTextColor)
+                            .frame(width: 16, alignment: .leading)
+                    } else if folder.id == restoredFolderId {
+                        Text("=")
                             .font(.system(size: 11, weight: .bold, design: .monospaced))
                             .foregroundColor(secondaryTextColor)
                             .frame(width: 16, alignment: .leading)
@@ -62,7 +67,8 @@ struct ClipboardFolderView: View {
                 Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                     .font(.system(size: 10, weight: .bold))
                     .foregroundColor(secondaryTextColor.opacity(0.8))
-                    .frame(width: 10)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 10)
                 
                 HStack(spacing: 8) {
                     if folder.id == UUID(uuidString: "00000000-0000-0000-0000-000000000000")! {
