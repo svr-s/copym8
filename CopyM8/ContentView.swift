@@ -963,12 +963,21 @@ extension ContentView {
                     let isCmd = event.modifierFlags.contains(.command)
                     let isShift = event.modifierFlags.contains(.shift)
                     if isCmd && !isShift && _activeTab.wrappedValue == "Trash" {
-                        let selectedIndex = _selectedIndex.wrappedValue
-                        let trashItems = clipboard.history.filter { ($0.isDeleted ?? false) }.sorted { $0.deletedAt ?? Date() > $1.deletedAt ?? Date() }
-                        if selectedIndex >= 0 && selectedIndex < trashItems.count {
-                            let item = trashItems[selectedIndex]
-                            if selectedIndex > 0 && selectedIndex == trashItems.count - 1 { _selectedIndex.wrappedValue -= 1 }
-                            clipboard.restoreItems(ids: [item.id])
+                        if _isEditMode.wrappedValue {
+                            let ids = Array(_selectedItemsForDeletion.wrappedValue)
+                            if !ids.isEmpty {
+                                clipboard.restoreItems(ids: ids)
+                                _selectedItemsForDeletion.wrappedValue.removeAll()
+                                _isEditMode.wrappedValue = false
+                            }
+                        } else {
+                            if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
+                                let node = displayNodesLocal[selectedIndex]
+                                if let id = node.item?.id {
+                                    if selectedIndex > 0 && selectedIndex == displayNodesLocal.count - 1 { _selectedIndex.wrappedValue -= 1 }
+                                    clipboard.restoreItems(ids: [id])
+                                }
+                            }
                         }
                         return nil
                     }

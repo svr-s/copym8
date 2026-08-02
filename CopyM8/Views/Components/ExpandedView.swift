@@ -205,6 +205,7 @@ struct TrashFooterView: View {
                         if !selectedItemsForDeletion.isEmpty {
                             clipboard.restoreItems(ids: Array(selectedItemsForDeletion))
                             selectedItemsForDeletion.removeAll()
+                            isEditMode = false
                         }
                     } else {
                         let ids = getSelectedIds()
