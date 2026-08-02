@@ -325,7 +325,12 @@ class ClipboardManager: ObservableObject {
     }
     
     var activeFolders: [ClipboardFolder] {
-        return selectedDevice == "Local (This Mac)" ? folders : remoteFolders
+        var baseFolders = selectedDevice == "Local (This Mac)" ? folders : remoteFolders
+        if !baseFolders.contains(where: { $0.id == restoredFolderId }) {
+            let restored = ClipboardFolder(id: restoredFolderId, name: "Restored", orderIndex: Int.max)
+            baseFolders.append(restored)
+        }
+        return baseFolders
     }
     
     @Published var availableDevices: [String] = []
@@ -844,13 +849,19 @@ case .none:
         for id in ids {
             if let index = history.firstIndex(where: { $0.id == id }) {
                 let item = history[index]
-                let isDuplicate = history.contains { $0.text == item.text && !($0.isDeleted ?? false) && $0.id != item.id }
-                if isDuplicate {
+                if let activeIndex = history.firstIndex(where: { $0.text == item.text && !($0.isDeleted ?? false) && $0.id != item.id }) {
+                    history[activeIndex].timestamp = Date()
                     deleteItem(at: index, hardDelete: true)
                 } else {
                     history[index].isDeleted = false
                     history[index].deletedAt = nil
-                    history[index].folderId = restoredFolderId
+                    history[index].timestamp = Date()
+                    
+                    if history[index].isPinned {
+                        history[index].folderId = nil
+                    } else {
+                        history[index].folderId = restoredFolderId
+                    }
                 }
             }
         }
