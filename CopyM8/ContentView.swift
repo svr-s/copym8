@@ -1107,10 +1107,16 @@ extension ContentView {
                         if hasItems { _showingEmptyTrashAlert.wrappedValue = true }
                         return nil
                     }
-                    if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
-                        if let id = displayNodesLocal[selectedIndex].item?.id {
-                            _selectedItemsForDeletion.wrappedValue = [id]
+                    if _isEditMode.wrappedValue {
+                        if !_selectedItemsForDeletion.wrappedValue.isEmpty {
                             _showingDeleteSelectedAlert.wrappedValue = true
+                        }
+                    } else {
+                        if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
+                            if let id = displayNodesLocal[selectedIndex].item?.id ?? displayNodesLocal[selectedIndex].folder?.id {
+                                _selectedItemsForDeletion.wrappedValue = [id]
+                                _showingDeleteSelectedAlert.wrappedValue = true
+                            }
                         }
                     }
                     return nil

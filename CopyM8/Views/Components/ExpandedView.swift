@@ -201,10 +201,16 @@ struct TrashFooterView: View {
             
             HStack(spacing: 8) {
                 Button(action: {
-                    let ids = getSelectedIds()
-                    if !ids.isEmpty {
-                        clipboard.restoreItems(ids: ids)
-                        if isEditMode { selectedItemsForDeletion.removeAll() }
+                    if isEditMode {
+                        if !selectedItemsForDeletion.isEmpty {
+                            clipboard.restoreItems(ids: Array(selectedItemsForDeletion))
+                            selectedItemsForDeletion.removeAll()
+                        }
+                    } else {
+                        let ids = getSelectedIds()
+                        if !ids.isEmpty {
+                            clipboard.restoreItems(ids: ids)
+                        }
                     }
                 }) {
                     HStack(spacing: 4) {
@@ -220,10 +226,16 @@ struct TrashFooterView: View {
                 .disabled(!hasSelection)
                 
                 Button(action: {
-                    let ids = getSelectedIds()
-                    if !ids.isEmpty {
-                        selectedItemsForDeletion = Set(ids)
-                        showingDeleteSelectedAlert = true
+                    if isEditMode {
+                        if !selectedItemsForDeletion.isEmpty {
+                            showingDeleteSelectedAlert = true
+                        }
+                    } else {
+                        let ids = getSelectedIds()
+                        if !ids.isEmpty {
+                            selectedItemsForDeletion = Set(ids)
+                            showingDeleteSelectedAlert = true
+                        }
                     }
                 }) {
                     HStack(spacing: 4) {
