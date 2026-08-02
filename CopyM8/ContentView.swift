@@ -1186,6 +1186,7 @@ extension ContentView {
                 return nil
             case 35: // P
                 if event.modifierFlags.contains(.command) {
+                    if activeTab == "Trash" { return nil }
                     if isEditMode {
                         if activeTab != "Pinned" {
                             for id in _selectedItemsForDeletion.wrappedValue {
@@ -1204,6 +1205,7 @@ extension ContentView {
                 return nil
             case 5: // G
                 if event.modifierFlags.contains(.command) {
+                    if activeTab == "Trash" { return nil }
                     if isEditMode {
                         if !_selectedItemsForDeletion.wrappedValue.isEmpty {
                             _itemToAssignGroup.wrappedValue = GroupAssignmentPayload(itemIds: _selectedItemsForDeletion.wrappedValue) {
@@ -1221,6 +1223,7 @@ extension ContentView {
                 return nil
             case 32: // U
                 if event.modifierFlags.contains(.command) {
+                    if activeTab == "Trash" { return nil }
                     if isEditMode {
                         if activeTab == "Pinned" {
                             for id in _selectedItemsForDeletion.wrappedValue {
