@@ -11,6 +11,8 @@ struct ExpandedView: View {
     @Binding var draftHistoryCount: Int
     @Binding var maxHistoryCount: Int
     @Binding var activeTab: String
+    @Binding var previousTab: String
+    @Binding var showingEmptyTrashAlert: Bool
     
     @Binding var isReorderMode: Bool
     @Binding var reorderTarget: ReorderTarget?
@@ -57,6 +59,8 @@ struct ExpandedView: View {
                     windowHeight: $windowHeight,
                     draftHistoryCount: $draftHistoryCount,
                     maxHistoryCount: $maxHistoryCount,
+                    activeTab: $activeTab,
+                    previousTab: $previousTab,
                     adjustWindowFrame: adjustWindowFrame
                 )
                 
@@ -85,7 +89,14 @@ struct ExpandedView: View {
                     )
                 }
                 
-                if isEditMode {
+                if activeTab == "Trash" {
+                    TrashFooterView(
+                        activeTab: $activeTab,
+                        showingEmptyTrashAlert: $showingEmptyTrashAlert,
+                        selectedItemsForDeletion: $selectedItemsForDeletion,
+                        displayNodes: displayNodes
+                    )
+                } else if isEditMode {
                     EditModeFooterView(
                         selectedItemsForDeletion: $selectedItemsForDeletion,
                         isEditMode: $isEditMode,
@@ -126,5 +137,90 @@ struct ExpandedView: View {
             )
         )
         .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
+    }
+}
+
+struct TrashFooterView: View {
+    @EnvironmentObject var clipboard: ClipboardManager
+    @Binding var activeTab: String
+    @Binding var showingEmptyTrashAlert: Bool
+    @Binding var selectedItemsForDeletion: Set<UUID>
+    var displayNodes: [DisplayNode]
+
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack {
+                Button(action: {
+                    let allIds = Set(displayNodes.compactMap { $0.item?.id ?? $0.folder?.id })
+                    if selectedItemsForDeletion.count == allIds.count { selectedItemsForDeletion.removeAll() }
+                    else { selectedItemsForDeletion = allIds }
+                }) {
+                    let allIdsCount = Set(displayNodes.compactMap { $0.item?.id ?? $0.folder?.id }).count
+                    Text(selectedItemsForDeletion.count == allIdsCount && allIdsCount > 0 ? "Deselect All" : "Select All")
+                        .font(.system(size: 11)).foregroundColor(.primary.opacity(0.6))
+                }.buttonStyle(PlainButtonStyle())
+                
+                Spacer()
+                
+                Text("\(selectedItemsForDeletion.count) Items Selected")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.primary)
+                
+                Spacer()
+            }
+            
+            HStack(spacing: 8) {
+                Button(action: {
+                    clipboard.restoreItems(ids: Array(selectedItemsForDeletion))
+                    selectedItemsForDeletion.removeAll()
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.uturn.backward")
+                        Text("Restore")
+                    }
+                    .font(.system(size: 11, weight: .bold)).foregroundColor(selectedItemsForDeletion.isEmpty ? .primary.opacity(0.4) : .primary)
+                    .padding(.vertical, 6)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.primary.opacity(0.1)).cornerRadius(6)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .disabled(selectedItemsForDeletion.isEmpty)
+                
+                Button(action: {
+                    clipboard.deleteItems(where: { selectedItemsForDeletion.contains($0.id) }, hardDelete: true)
+                    selectedItemsForDeletion.removeAll()
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "trash.fill")
+                        Text("Delete")
+                    }
+                    .font(.system(size: 11, weight: .bold)).foregroundColor(selectedItemsForDeletion.isEmpty ? .primary.opacity(0.4) : .primary)
+                    .padding(.vertical, 6)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.primary.opacity(0.1)).cornerRadius(6)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .disabled(selectedItemsForDeletion.isEmpty)
+                
+                Button(action: {
+                    showingEmptyTrashAlert = true
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "trash.fill")
+                        Text("Empty Trash")
+                    }
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(.vertical, 6)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.red.opacity(0.8))
+                    .cornerRadius(6)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 12)
+        .background(Color.primary.opacity(0.05))
     }
 }

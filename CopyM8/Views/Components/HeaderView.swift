@@ -12,6 +12,8 @@ struct HeaderView: View {
     @Binding var windowHeight: Double
     @Binding var draftHistoryCount: Int
     @Binding var maxHistoryCount: Int
+    @Binding var activeTab: String
+    @Binding var previousTab: String
     
     var adjustWindowFrame: () -> Void
 
@@ -37,6 +39,22 @@ struct HeaderView: View {
                 Image(systemName: isEditMode ? "checkmark.circle.fill" : "checklist")
                     .font(.system(size: 11))
                     .foregroundColor(isEditMode ? .primary : .primary.opacity(0.6))
+            }
+            .buttonStyle(PlainButtonStyle())
+            
+            Button(action: {
+                withAnimation {
+                    if activeTab == "Trash" {
+                        activeTab = previousTab
+                    } else {
+                        previousTab = activeTab
+                        activeTab = "Trash"
+                    }
+                }
+            }) {
+                Image(systemName: activeTab == "Trash" ? "trash.fill" : "trash")
+                    .font(.system(size: 11))
+                    .foregroundColor(activeTab == "Trash" ? .primary : .primary.opacity(0.6))
             }
             .buttonStyle(PlainButtonStyle())
             

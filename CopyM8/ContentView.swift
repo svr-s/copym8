@@ -49,7 +49,8 @@ struct ContentView: View {
     @State var showingGroupAssignment = false
     @State var itemToAssignGroup: GroupAssignmentPayload? = nil
     @State private var showingDeviceSwitcher = false
-    @State private var showTrashBin = false
+    @State var previousTab: String = "All"
+    @State var showingEmptyTrashAlert: Bool = false
     @State var showingReadOnlyToast: Bool = false
     @State var showingImportSuccessToast: Bool = false
     @State var importSuccessMessage: String = "Import successful"
@@ -134,6 +135,17 @@ struct ContentView: View {
             case .none:
                 return []
             }
+        }
+        
+        if activeTab == "Trash" {
+            var items = clipboard.history.filter { ($0.isDeleted ?? false) }
+            items.sort { $0.deletedAt ?? Date() > $1.deletedAt ?? Date() }
+            
+            var nodes: [DisplayNode] = []
+            for item in items {
+                nodes.append(DisplayNode(id: "item_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: nil))
+            }
+            return nodes
         }
         
         if activeTab == "Groups" {
@@ -255,6 +267,8 @@ struct ContentView: View {
                     draftHistoryCount: $draftHistoryCount,
                     maxHistoryCount: $maxHistoryCount,
                     activeTab: $activeTab,
+                    previousTab: $previousTab,
+                    showingEmptyTrashAlert: $showingEmptyTrashAlert,
                     isReorderMode: $isReorderMode,
                     reorderTarget: $reorderTarget,
                     reorderFreezeLimit: $reorderFreezeLimit,
@@ -388,10 +402,6 @@ struct ContentView: View {
                             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
                             .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
                     }
-                } else if showTrashBin {
-                    TrashBinView(isPresented: $showTrashBin)
-                        .environmentObject(clipboard)
-                        .environmentObject(shortcut)
                 } else if showingUngroupAlert {
                     ZStack {
                         Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
@@ -426,6 +436,27 @@ struct ContentView: View {
                             .cornerRadius(12)
                             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
                             .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
+                    }
+                } else if showingEmptyTrashAlert {
+                    ZStack {
+                        Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
+                            .onTapGesture { showingEmptyTrashAlert = false }
+                        let trashCount = clipboard.history.filter { ($0.isDeleted ?? false) }.count
+                        DeleteConfirmationView(
+                            isFolderDeletion: false,
+                            itemCount: trashCount,
+                            onConfirm: { _ in
+                                clipboard.deleteItems(where: { ($0.isDeleted ?? false) }, hardDelete: true)
+                                showingEmptyTrashAlert = false
+                            },
+                            onCancel: { showingEmptyTrashAlert = false }
+                        )
+                        .frame(width: 280)
+                        .padding(20)
+                        .background(Color(NSColor.windowBackgroundColor))
+                        .cornerRadius(12)
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
+                        .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
                     }
                 } else if showingDeleteSelectedAlert {
                     ZStack {
@@ -770,6 +801,9 @@ extension ContentView {
         let _showingDeleteSelectedAlert = self._showingDeleteSelectedAlert
         let _showingFolderDeleteAlert = self._showingFolderDeleteAlert
         let _showingUngroupAlert = self._showingUngroupAlert
+        let _showingEmptyTrashAlert = self._showingEmptyTrashAlert
+        let _showingDeviceSwitcher = self._showingDeviceSwitcher
+        let _previousTab = self._previousTab
         
         let clipboard = self.clipboard
         let pasteItem = self.pasteItem
@@ -781,7 +815,7 @@ extension ContentView {
                 return event
             }
             
-            if _showingDeleteSelectedAlert.wrappedValue || _showingFolderDeleteAlert.wrappedValue || _showingUngroupAlert.wrappedValue || _itemToAssignGroup.wrappedValue != nil || _showingDeviceSwitcher.wrappedValue {
+            if _showingDeleteSelectedAlert.wrappedValue || _showingFolderDeleteAlert.wrappedValue || _showingUngroupAlert.wrappedValue || _itemToAssignGroup.wrappedValue != nil || _showingDeviceSwitcher.wrappedValue || _showingEmptyTrashAlert.wrappedValue {
                 if event.keyCode == 53 {
                     if _itemToAssignGroup.wrappedValue != nil { _itemToAssignGroup.wrappedValue = nil }
                     if _showingDeviceSwitcher.wrappedValue { _showingDeviceSwitcher.wrappedValue = false }
@@ -904,11 +938,28 @@ extension ContentView {
                     let isCmd = event.modifierFlags.contains(.command)
                     let isShift = event.modifierFlags.contains(.shift)
                     if isCmd && isShift {
-                        _showTrashBin.wrappedValue.toggle()
+                        if _activeTab.wrappedValue == "Trash" {
+                            _activeTab.wrappedValue = _previousTab.wrappedValue
+                        } else {
+                            _previousTab.wrappedValue = _activeTab.wrappedValue
+                            _activeTab.wrappedValue = "Trash"
+                        }
                         return nil
                     }
                     return nil
                 case 6: // Z
+                    let isCmd = event.modifierFlags.contains(.command)
+                    let isShift = event.modifierFlags.contains(.shift)
+                    if isCmd && !isShift && _activeTab.wrappedValue == "Trash" {
+                        let selectedIndex = _selectedIndex.wrappedValue
+                        let trashItems = clipboard.history.filter { ($0.isDeleted ?? false) }.sorted { $0.deletedAt ?? Date() > $1.deletedAt ?? Date() }
+                        if selectedIndex >= 0 && selectedIndex < trashItems.count {
+                            let item = trashItems[selectedIndex]
+                            if selectedIndex > 0 && selectedIndex == trashItems.count - 1 { _selectedIndex.wrappedValue -= 1 }
+                            clipboard.restoreItems(ids: [item.id])
+                        }
+                        return nil
+                    }
                     if !clipboard.history.isEmpty {
                         // Undo logic would go here if needed, but 'Cmd+Z' to restore single item in Trash Bin is handled within TrashBinView.
                     }
@@ -1037,14 +1088,22 @@ extension ContentView {
                 let isCmd = event.modifierFlags.contains(.command)
                 let isShift = event.modifierFlags.contains(.shift)
                 
-                if isCmd && isShift {
-                    // Empty Trash globally from anywhere
-                    withAnimation {
-                        clipboard.deleteItems(where: { ($0.isDeleted ?? false) }, hardDelete: true)
+                if activeTab == "Trash" {
+                    if isCmd && isShift {
+                        let hasItems = clipboard.history.contains { $0.isDeleted ?? false }
+                        if hasItems { _showingEmptyTrashAlert.wrappedValue = true }
+                        return nil
+                    }
+                    if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
+                        if let id = displayNodesLocal[selectedIndex].item?.id {
+                            _selectedItemsForDeletion.wrappedValue = [id]
+                            _showingDeleteSelectedAlert.wrappedValue = true
+                        }
                     }
                     return nil
                 }
                 
+
                 if isEditMode {
                     let validDeletions = _selectedItemsForDeletion.wrappedValue.filter { $0 != cloudFolderId && $0 != restoredFolderId }
                     if !validDeletions.isEmpty {
@@ -1251,6 +1310,9 @@ extension ContentView {
                 else { _selectedIndex.wrappedValue = 0 }
                 return nil
             case 36: // Enter
+                if activeTab == "Trash" {
+                    return nil
+                }
                 if _isFreezeFieldFocused.wrappedValue {
                     _isFreezeFieldFocused.wrappedValue = false
                     return nil
@@ -1389,8 +1451,9 @@ extension ContentView {
                 }
                 return event
             case 53: // Esc
-                if _showTrashBin.wrappedValue {
-                    return event
+                if _activeTab.wrappedValue == "Trash" {
+                    _activeTab.wrappedValue = _previousTab.wrappedValue
+                    return nil
                 }
                 if _isEditMode.wrappedValue {
                     _isEditMode.wrappedValue = false
@@ -1430,6 +1493,13 @@ extension ContentView {
                             : (currentIndex + 1) % visibleTabs.count
                         withAnimation {
                             _activeTab.wrappedValue = visibleTabs[nextIndex]
+                            _selectedIndex.wrappedValue = 0
+                            _expandedItemIndex.wrappedValue = nil
+                        }
+                    } else {
+                        // We are in a tab not in visibleTabs (like Trash). Jump to first or last tab.
+                        withAnimation {
+                            _activeTab.wrappedValue = isShift ? (visibleTabs.last ?? "All") : (visibleTabs.first ?? "All")
                             _selectedIndex.wrappedValue = 0
                             _expandedItemIndex.wrappedValue = nil
                         }
@@ -1525,331 +1595,5 @@ struct DeviceSwitcherView: View {
             }
         }
     }
-}
 
-
-struct TrashBinView: View {
-    @EnvironmentObject var clipboard: ClipboardManager
-    @EnvironmentObject var shortcut: ShortcutManager
-    @Binding var isPresented: Bool
-    
-    @State private var selectedIndex = 0
-    @State private var showingEmptyTrashAlert = false
-    @State private var showingDeleteSelectedAlert = false
-    
-    var trashItems: [ClipboardItem] {
-        clipboard.history.filter { ($0.isDeleted ?? false) }.sorted { $0.deletedAt ?? Date() > $1.deletedAt ?? Date() }
-    }
-    
-    var body: some View {
-        ZStack {
-            Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
-                .onTapGesture { isPresented = false }
-            
-            VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Text("Trash Bin")
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    Spacer()
-                    Button(action: {
-                        if !trashItems.isEmpty {
-                            showingEmptyTrashAlert = true
-                        }
-                    }) {
-                        Text("Empty Trash")
-                            .font(.subheadline)
-                            .foregroundColor(.red)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .disabled(trashItems.isEmpty)
-                }
-                .padding()
-                .background(Color(NSColor.controlBackgroundColor))
-                
-                Divider()
-                
-                if trashItems.isEmpty {
-                    VStack {
-                        Spacer()
-                        Image(systemName: "trash")
-                            .font(.system(size: 40))
-                            .foregroundColor(.secondary.opacity(0.5))
-                            .padding(.bottom, 10)
-                        Text("Trash is empty")
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                        Spacer()
-                    }
-                } else {
-                    ScrollViewReader { proxy in
-                        ScrollView {
-                            VStack(spacing: 8) {
-                                ForEach(Array(trashItems.enumerated()), id: \.element.id) { index, item in
-                                    TrashItemRow(item: item, isSelected: index == selectedIndex)
-                                        .id(index)
-                                        .onTapGesture {
-                                            selectedIndex = index
-                                        }
-                                }
-                            }
-                            .padding()
-                        }
-                        .onChange(of: selectedIndex) { _, newIndex in
-                            withAnimation { proxy.scrollTo(newIndex, anchor: .center) }
-                        }
-                    }
-                }
-                
-                Divider()
-                
-                // Footer
-                HStack {
-                    Text("Esc to close")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Spacer()
-                    Text("⌘Z to restore • ⌘⌫ to delete")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                .padding()
-                .background(Color(NSColor.controlBackgroundColor))
-            }
-            .frame(width: 400, height: 500)
-            .background(Color(NSColor.windowBackgroundColor))
-            .cornerRadius(12)
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
-            .shadow(color: Color.black.opacity(0.25), radius: 20, x: 0, y: 10)
-            
-            // Popups overlay
-            if showingEmptyTrashAlert {
-                ZStack {
-                    Color.black.opacity(0.4).edgesIgnoringSafeArea(.all)
-                    DeleteConfirmationView(
-                        isFolderDeletion: false,
-                        itemCount: trashItems.count,
-                        onConfirm: { _ in
-                            clipboard.deleteItems(where: { ($0.isDeleted ?? false) }, hardDelete: true)
-                            showingEmptyTrashAlert = false
-                        },
-                        onCancel: { showingEmptyTrashAlert = false }
-                    )
-                    .frame(width: 280)
-                    .padding(20)
-                    .background(Color(NSColor.windowBackgroundColor))
-                    .cornerRadius(12)
-                    .shadow(radius: 10)
-                }
-            } else if showingDeleteSelectedAlert {
-                ZStack {
-                    Color.black.opacity(0.4).edgesIgnoringSafeArea(.all)
-                    DeleteConfirmationView(
-                        isFolderDeletion: false,
-                        itemCount: 1,
-                        onConfirm: { _ in
-                            if selectedIndex >= 0 && selectedIndex < trashItems.count {
-                                let id = trashItems[selectedIndex].id
-                                if selectedIndex > 0 && selectedIndex == trashItems.count - 1 {
-                                    selectedIndex -= 1
-                                }
-                                clipboard.deleteItems(where: { $0.id == id }, hardDelete: true)
-                            }
-                            showingDeleteSelectedAlert = false
-                        },
-                        onCancel: { showingDeleteSelectedAlert = false }
-                    )
-                    .frame(width: 280)
-                    .padding(20)
-                    .background(Color(NSColor.windowBackgroundColor))
-                    .cornerRadius(12)
-                    .shadow(radius: 10)
-                }
-            }
-        }
-        .onAppear {
-            setupKeyboardMonitor()
-        }
-        .onDisappear {
-            teardownKeyboardMonitor()
-        }
-    }
-    
-    // MARK: - Keyboard Handling
-    @State private var localEventMonitor: Any?
-    
-    private func setupKeyboardMonitor() {
-        if localEventMonitor == nil {
-            localEventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-                return handleKeyDown(event)
-            }
-        }
-    }
-    
-    private func teardownKeyboardMonitor() {
-        if let monitor = localEventMonitor {
-            NSEvent.removeMonitor(monitor)
-            localEventMonitor = nil
-        }
-    }
-    
-    private func handleKeyDown(_ event: NSEvent) -> NSEvent? {
-        if _showingEmptyTrashAlert.wrappedValue || _showingDeleteSelectedAlert.wrappedValue {
-            if event.keyCode == 36 { // Enter
-                if _showingEmptyTrashAlert.wrappedValue {
-                    clipboard.deleteItems(where: { ($0.isDeleted ?? false) }, hardDelete: true)
-                    _showingEmptyTrashAlert.wrappedValue = false
-                } else if _showingDeleteSelectedAlert.wrappedValue {
-                    let count = trashItems.count
-                    let index = _selectedIndex.wrappedValue
-                    if index >= 0 && index < count {
-                        let id = trashItems[index].id
-                        if index > 0 && index == count - 1 { _selectedIndex.wrappedValue -= 1 }
-                        clipboard.deleteItems(where: { $0.id == id }, hardDelete: true)
-                    }
-                    _showingDeleteSelectedAlert.wrappedValue = false
-                }
-                return nil
-            } else if event.keyCode == 53 { // Esc
-                _showingEmptyTrashAlert.wrappedValue = false
-                _showingDeleteSelectedAlert.wrappedValue = false
-                return nil
-            }
-            return nil
-        }
-        
-        let isCmd = event.modifierFlags.contains(.command)
-        let isShift = event.modifierFlags.contains(.shift)
-        
-        switch event.keyCode {
-        case 53: // Esc
-            isPresented = false
-            return nil
-            
-        case 125: // Down Arrow
-            if _selectedIndex.wrappedValue < trashItems.count - 1 {
-                _selectedIndex.wrappedValue += 1
-            }
-            return nil
-            
-        case 126: // Up Arrow
-            if _selectedIndex.wrappedValue > 0 {
-                _selectedIndex.wrappedValue -= 1
-            }
-            return nil
-            
-        case 6: // Cmd + Z -> Restore
-            if isCmd && !isShift {
-                let count = trashItems.count
-                let index = _selectedIndex.wrappedValue
-                if index >= 0 && index < count {
-                    let id = trashItems[index].id
-                    if index > 0 && index == count - 1 { _selectedIndex.wrappedValue -= 1 }
-                    clipboard.restoreItems(ids: [id])
-                }
-                return nil
-            }
-            return event
-            
-        case 51: // Backspace
-            if isCmd {
-                if isShift {
-                    // Cmd + Shift + Backspace -> Empty Trash
-                    if !trashItems.isEmpty {
-                        _showingEmptyTrashAlert.wrappedValue = true
-                    }
-                } else {
-                    // Cmd + Backspace -> Hard Delete
-                    if !trashItems.isEmpty {
-                        _showingDeleteSelectedAlert.wrappedValue = true
-                    }
-                }
-                return nil
-            }
-            // Normal backspace -> hard delete with popup
-            if !trashItems.isEmpty {
-                _showingDeleteSelectedAlert.wrappedValue = true
-            }
-            return nil
-            
-        case 17: // Cmd + Shift + T
-            if isCmd && isShift {
-                isPresented = false
-                return nil
-            }
-            return event
-            
-        default:
-            return event
-        }
-    }
-}
-
-struct TrashItemRow: View {
-    let item: ClipboardItem
-    let isSelected: Bool
-    
-    var body: some View {
-        HStack {
-            if item.itemType == .image, let nsImage = LocalImageStore.shared.loadImage(id: item.id) {
-                Image(nsImage: nsImage)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: 40, height: 40)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-            } else if item.itemType == .link {
-                Image(systemName: "link")
-                    .frame(width: 40, height: 40)
-                    .background(Color.blue.opacity(0.1))
-                    .foregroundColor(.blue)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-            } else if item.itemType == .file {
-                Image(systemName: "doc")
-                    .frame(width: 40, height: 40)
-                    .background(Color.orange.opacity(0.1))
-                    .foregroundColor(.orange)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-            } else {
-                Text(item.text.prefix(2).uppercased())
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .frame(width: 40, height: 40)
-                    .background(Color.gray.opacity(0.2))
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-            }
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(item.text)
-                    .font(.subheadline)
-                    .lineLimit(1)
-                    .foregroundColor(isSelected ? .white : .primary)
-                
-                HStack {
-                    if let app = item.sourceApp {
-                        Text(app)
-                            .font(.caption2)
-                            .foregroundColor(isSelected ? .white.opacity(0.8) : .secondary)
-                    }
-                    Spacer()
-                    if let deletedAt = item.deletedAt {
-                        Text(formatDate(deletedAt))
-                            .font(.caption2)
-                            .foregroundColor(isSelected ? .white.opacity(0.8) : .secondary)
-                    }
-                }
-            }
-            .padding(.leading, 8)
-            Spacer()
-        }
-        .padding(8)
-        .background(isSelected ? Color.blue : Color(NSColor.controlBackgroundColor))
-        .cornerRadius(8)
-    }
-    
-    private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .short
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
-    }
 }

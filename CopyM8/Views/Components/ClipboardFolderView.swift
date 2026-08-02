@@ -67,8 +67,7 @@ struct ClipboardFolderView: View {
                 Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                     .font(.system(size: 10, weight: .bold))
                     .foregroundColor(secondaryTextColor.opacity(0.8))
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 10)
+                    .frame(width: 10)
                 
                 HStack(spacing: 8) {
                     if folder.id == UUID(uuidString: "00000000-0000-0000-0000-000000000000")! {
