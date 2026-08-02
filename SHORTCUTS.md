@@ -33,7 +33,6 @@ Here is a comprehensive list of all keyboard shortcuts available in CopyM8, grou
 | **Quick Paste Rich (1st-10th)**| `Cmd + 1-0` | Instantly pastes the rich text of the corresponding item. |
 | **Quick Paste Rich (No Links) (1st-10th)**| `Cmd + Control + 1-0` | Instantly pastes the rich text of the corresponding item without any hyperlinks. |
 | **Pin Item** | `Cmd + P` | Instantly pins the currently highlighted item. |
-| **Delete Item** | `Backspace` | Instantly deletes the currently highlighted item. |
 
 ### 📂 Groups & Folders
 | Action | Shortcut | Description |
@@ -56,7 +55,15 @@ Here is a comprehensive list of all keyboard shortcuts available in CopyM8, grou
 | **Toggle Selection** | `Space` | Selects/deselects the highlighted item. If a range is highlighted with Shift, toggles the entire range! |
 | **Select All in Tab** | `Cmd + A` | Selects or deselects all visible items in the current tab. |
 | **Unpin / Ungroup** | `Cmd + U` | Unpins items (Pinned tab) or triggers the Ungroup modal (Groups tab) for selected items. |
-| **Delete Selected** | `Backspace` | Triggers the "Delete Selected" action for checked items. |
+
+### 🗑 Trash & Deletion
+| Action | Shortcut | Description |
+| :--- | :--- | :--- |
+| **Soft Delete** | `Backspace` | Moves the highlighted item (or selected items in Edit Mode) to the Trash Bin. No confirmation popup. |
+| **Hard Delete** | `Cmd + Backspace` | Permanently deletes the highlighted item (or selected items in Edit Mode). Triggers a confirmation popup. |
+| **Toggle Trash Bin** | `Cmd + Shift + T` | Instantly switches to (or exits from) the Trash Bin tab. |
+| **Restore Item** | `Cmd + Z` | Restores the currently highlighted item (or selected items in Edit Mode) from the Trash Bin back to active history. |
+| **Empty Trash** | `Cmd + Shift + Backspace` | Permanently deletes all items inside the Trash Bin. Triggers a confirmation popup. (Only works while in the Trash tab). |
 
 ### 🖱 Mouse Interactions
 | Action | Shortcut | Description |

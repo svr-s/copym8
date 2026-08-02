@@ -972,7 +972,6 @@ struct SettingsView: View {
                 shortcutRow(action: "Quick Paste Rich (1st-10th)", key: "Cmd + 1 - 0")
                 shortcutRow(action: "Quick Paste Rich (No Links)", key: "Cmd + Ctrl + 1 - 0")
                 shortcutRow(action: "Pin Item", key: "Cmd + P")
-                shortcutRow(action: "Delete Item", key: "⌫ Delete")
             }
             
             Group {
@@ -995,6 +994,15 @@ struct SettingsView: View {
                 shortcutRow(action: "Toggle Selection", key: "Space")
                 shortcutRow(action: "Select All in Tab", key: "Cmd + A")
                 shortcutRow(action: "Unpin / Ungroup", key: "Cmd + U")
+            }
+            
+            Group {
+                shortcutCategory("Trash & Deletion")
+                shortcutRow(action: "Soft Delete Item", key: "⌫ Delete")
+                shortcutRow(action: "Hard Delete Item", key: "Cmd + ⌫ Delete")
+                shortcutRow(action: "Toggle Trash Bin", key: "Cmd + Shift + T")
+                shortcutRow(action: "Restore Item (in Trash)", key: "Cmd + Z")
+                shortcutRow(action: "Empty Trash (in Trash)", key: "Cmd + Shift + ⌫ Delete")
             }
             
             Group {
