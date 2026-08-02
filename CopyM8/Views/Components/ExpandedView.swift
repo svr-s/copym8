@@ -94,7 +94,9 @@ struct ExpandedView: View {
                         activeTab: $activeTab,
                         showingEmptyTrashAlert: $showingEmptyTrashAlert,
                         selectedItemsForDeletion: $selectedItemsForDeletion,
-                        displayNodes: displayNodes
+                        displayNodes: displayNodes,
+                        isEditMode: $isEditMode,
+                        selectedIndex: $selectedIndex
                     )
                 } else if isEditMode {
                     EditModeFooterView(
@@ -146,61 +148,93 @@ struct TrashFooterView: View {
     @Binding var showingEmptyTrashAlert: Bool
     @Binding var selectedItemsForDeletion: Set<UUID>
     var displayNodes: [DisplayNode]
+    @Binding var isEditMode: Bool
+    @Binding var selectedIndex: Int?
+
+    private var hasSelection: Bool {
+        if isEditMode {
+            return !selectedItemsForDeletion.isEmpty
+        } else {
+            return selectedIndex != nil && selectedIndex! < displayNodes.count
+        }
+    }
+
+    private func getSelectedIds() -> [UUID] {
+        if isEditMode {
+            return Array(selectedItemsForDeletion)
+        } else {
+            if let idx = selectedIndex, idx < displayNodes.count {
+                let node = displayNodes[idx]
+                if let id = node.item?.id ?? node.folder?.id {
+                    return [id]
+                }
+            }
+            return []
+        }
+    }
 
     var body: some View {
         VStack(spacing: 8) {
-            HStack {
-                Button(action: {
-                    let allIds = Set(displayNodes.compactMap { $0.item?.id ?? $0.folder?.id })
-                    if selectedItemsForDeletion.count == allIds.count { selectedItemsForDeletion.removeAll() }
-                    else { selectedItemsForDeletion = allIds }
-                }) {
-                    let allIdsCount = Set(displayNodes.compactMap { $0.item?.id ?? $0.folder?.id }).count
-                    Text(selectedItemsForDeletion.count == allIdsCount && allIdsCount > 0 ? "Deselect All" : "Select All")
-                        .font(.system(size: 11)).foregroundColor(.primary.opacity(0.6))
-                }.buttonStyle(PlainButtonStyle())
-                
-                Spacer()
-                
-                Text("\(selectedItemsForDeletion.count) Items Selected")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.primary)
-                
-                Spacer()
+            if isEditMode {
+                HStack {
+                    Button(action: {
+                        let allIds = Set(displayNodes.compactMap { $0.item?.id ?? $0.folder?.id })
+                        if selectedItemsForDeletion.count == allIds.count { selectedItemsForDeletion.removeAll() }
+                        else { selectedItemsForDeletion = allIds }
+                    }) {
+                        let allIdsCount = Set(displayNodes.compactMap { $0.item?.id ?? $0.folder?.id }).count
+                        Text(selectedItemsForDeletion.count == allIdsCount && allIdsCount > 0 ? "Deselect All" : "Select All")
+                            .font(.system(size: 11)).foregroundColor(.primary.opacity(0.6))
+                    }.buttonStyle(PlainButtonStyle())
+                    
+                    Spacer()
+                    
+                    Text("\(selectedItemsForDeletion.count) Items Selected")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.primary)
+                    
+                    Spacer()
+                }
             }
             
             HStack(spacing: 8) {
                 Button(action: {
-                    clipboard.restoreItems(ids: Array(selectedItemsForDeletion))
-                    selectedItemsForDeletion.removeAll()
+                    let ids = getSelectedIds()
+                    if !ids.isEmpty {
+                        clipboard.restoreItems(ids: ids)
+                        if isEditMode { selectedItemsForDeletion.removeAll() }
+                    }
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.uturn.backward")
                         Text("Restore")
                     }
-                    .font(.system(size: 11, weight: .bold)).foregroundColor(selectedItemsForDeletion.isEmpty ? .primary.opacity(0.4) : .primary)
+                    .font(.system(size: 11, weight: .bold)).foregroundColor(hasSelection ? .primary : .primary.opacity(0.4))
                     .padding(.vertical, 6)
                     .frame(maxWidth: .infinity)
                     .background(Color.primary.opacity(0.1)).cornerRadius(6)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .disabled(selectedItemsForDeletion.isEmpty)
+                .disabled(!hasSelection)
                 
                 Button(action: {
-                    clipboard.deleteItems(where: { selectedItemsForDeletion.contains($0.id) }, hardDelete: true)
-                    selectedItemsForDeletion.removeAll()
+                    let ids = getSelectedIds()
+                    if !ids.isEmpty {
+                        clipboard.deleteItems(where: { ids.contains($0.id) }, hardDelete: true)
+                        if isEditMode { selectedItemsForDeletion.removeAll() }
+                    }
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "trash.fill")
                         Text("Delete")
                     }
-                    .font(.system(size: 11, weight: .bold)).foregroundColor(selectedItemsForDeletion.isEmpty ? .primary.opacity(0.4) : .primary)
+                    .font(.system(size: 11, weight: .bold)).foregroundColor(hasSelection ? .primary : .primary.opacity(0.4))
                     .padding(.vertical, 6)
                     .frame(maxWidth: .infinity)
                     .background(Color.primary.opacity(0.1)).cornerRadius(6)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .disabled(selectedItemsForDeletion.isEmpty)
+                .disabled(!hasSelection)
                 
                 Button(action: {
                     showingEmptyTrashAlert = true
