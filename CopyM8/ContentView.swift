@@ -362,6 +362,8 @@ struct ContentView: View {
             restartKeyboardMonitor() 
             selectedItemsForDeletion.removeAll()
             selectionAnchorIndex = nil
+            selectedIndex = 0
+            expandedItemIndex = nil
         }
         .onChange(of: searchText) { _, _ in
             selectedIndex = 0
