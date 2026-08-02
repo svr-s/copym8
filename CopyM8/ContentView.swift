@@ -439,6 +439,9 @@ struct ContentView: View {
                             devices: devices,
                             onSelect: { selected in
                                 clipboard.selectedDevice = selected
+                                if selected != "Local (This Mac)" && activeTab == "Trash" {
+                                    activeTab = previousTab == "Trash" ? "All" : previousTab
+                                }
                                 showingDeviceSwitcher = false
                             },
                             onCancel: { showingDeviceSwitcher = false }
@@ -950,11 +953,13 @@ extension ContentView {
                     let isCmd = event.modifierFlags.contains(.command)
                     let isShift = event.modifierFlags.contains(.shift)
                     if isCmd && isShift {
-                        if _activeTab.wrappedValue == "Trash" {
-                            _activeTab.wrappedValue = _previousTab.wrappedValue
-                        } else {
-                            _previousTab.wrappedValue = _activeTab.wrappedValue
-                            _activeTab.wrappedValue = "Trash"
+                        if clipboard.selectedDevice == "Local (This Mac)" {
+                            if _activeTab.wrappedValue == "Trash" {
+                                _activeTab.wrappedValue = _previousTab.wrappedValue
+                            } else {
+                                _previousTab.wrappedValue = _activeTab.wrappedValue
+                                _activeTab.wrappedValue = "Trash"
+                            }
                         }
                         return nil
                     }

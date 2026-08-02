@@ -42,21 +42,23 @@ struct HeaderView: View {
             }
             .buttonStyle(PlainButtonStyle())
             
-            Button(action: {
-                withAnimation {
-                    if activeTab == "Trash" {
-                        activeTab = previousTab
-                    } else {
-                        previousTab = activeTab
-                        activeTab = "Trash"
+            if clipboard.selectedDevice == "Local (This Mac)" {
+                Button(action: {
+                    withAnimation {
+                        if activeTab == "Trash" {
+                            activeTab = previousTab
+                        } else {
+                            previousTab = activeTab
+                            activeTab = "Trash"
+                        }
                     }
+                }) {
+                    Image(systemName: activeTab == "Trash" ? "trash.fill" : "trash")
+                        .font(.system(size: 11))
+                        .foregroundColor(activeTab == "Trash" ? .primary : .primary.opacity(0.6))
                 }
-            }) {
-                Image(systemName: activeTab == "Trash" ? "trash.fill" : "trash")
-                    .font(.system(size: 11))
-                    .foregroundColor(activeTab == "Trash" ? .primary : .primary.opacity(0.6))
+                .buttonStyle(PlainButtonStyle())
             }
-            .buttonStyle(PlainButtonStyle())
             
             Spacer()
             
