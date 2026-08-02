@@ -148,11 +148,15 @@ struct ClipboardListView: View {
     }
     
     private func getFolderIdentifier(for item: ClipboardItem) -> String? {
+        if activeTab == "Trash" {
+            return item.isPinned ? nil : "="
+        }
+        
         if activeTab != "Groups", let folderId = item.folderId {
-            if folderId == UUID(uuidString: "00000000-0000-0000-0000-000000000000")! {
-                return "`"
-            }
-            let standardFolders = clipboard.activeFolders.filter { $0.id != UUID(uuidString: "00000000-0000-0000-0000-000000000000")! }
+            if folderId == cloudFolderId { return "`" }
+            if folderId == restoredFolderId { return "=" }
+            
+            let standardFolders = clipboard.activeFolders.filter { $0.id != cloudFolderId && $0.id != restoredFolderId }
             if let folderIndex = standardFolders.firstIndex(where: { $0.id == folderId }) {
                 return String(UnicodeScalar(UInt8(65 + folderIndex)))
             }
