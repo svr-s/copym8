@@ -161,6 +161,7 @@ struct ClipboardListView: View {
     }
     
     private func getRelativeIndex(for nodeId: String) -> Int? {
+        if activeTab == "Trash" { return nil }
         if activeTab == "Groups" {
             var currentFolderId: UUID? = nil
             var count = 0

@@ -1072,6 +1072,7 @@ extension ContentView {
             switch event.keyCode {
             case 18...29:
                 if _isFreezeFieldFocused.wrappedValue { return nil }
+                if activeTab == "Trash" { return event }
                 let keyMap: [UInt16: Int] = [18: 0, 19: 1, 20: 2, 21: 3, 23: 4, 22: 5, 26: 6, 28: 7, 25: 8, 29: 9]
                 if let relativeIndex = keyMap[event.keyCode] {
                     let hasCmd = event.modifierFlags.contains(.command)
