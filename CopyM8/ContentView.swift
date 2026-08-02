@@ -139,6 +139,16 @@ struct ContentView: View {
         
         if activeTab == "Trash" {
             var items = clipboard.history.filter { ($0.isDeleted ?? false) }
+            
+            if !searchText.isEmpty {
+                let searchLower = searchText.lowercased()
+                items = items.filter { item in
+                    let contentMatch = item.text.lowercased().contains(searchLower)
+                    let sourceMatch = item.sourceApp?.lowercased().contains(searchLower) ?? false
+                    return contentMatch || sourceMatch
+                }
+            }
+            
             items.sort { $0.deletedAt ?? Date() > $1.deletedAt ?? Date() }
             
             var nodes: [DisplayNode] = []

@@ -93,6 +93,7 @@ struct ExpandedView: View {
                     TrashFooterView(
                         activeTab: $activeTab,
                         showingEmptyTrashAlert: $showingEmptyTrashAlert,
+                        showingDeleteSelectedAlert: $showingDeleteSelectedAlert,
                         selectedItemsForDeletion: $selectedItemsForDeletion,
                         displayNodes: displayNodes,
                         isEditMode: $isEditMode,
@@ -146,16 +147,17 @@ struct TrashFooterView: View {
     @EnvironmentObject var clipboard: ClipboardManager
     @Binding var activeTab: String
     @Binding var showingEmptyTrashAlert: Bool
+    @Binding var showingDeleteSelectedAlert: Bool
     @Binding var selectedItemsForDeletion: Set<UUID>
     var displayNodes: [DisplayNode]
     @Binding var isEditMode: Bool
-    @Binding var selectedIndex: Int?
+    @Binding var selectedIndex: Int
 
     private var hasSelection: Bool {
         if isEditMode {
             return !selectedItemsForDeletion.isEmpty
         } else {
-            return selectedIndex != nil && selectedIndex! < displayNodes.count
+            return selectedIndex >= 0 && selectedIndex < displayNodes.count
         }
     }
 
@@ -163,8 +165,8 @@ struct TrashFooterView: View {
         if isEditMode {
             return Array(selectedItemsForDeletion)
         } else {
-            if let idx = selectedIndex, idx < displayNodes.count {
-                let node = displayNodes[idx]
+            if selectedIndex >= 0 && selectedIndex < displayNodes.count {
+                let node = displayNodes[selectedIndex]
                 if let id = node.item?.id ?? node.folder?.id {
                     return [id]
                 }
@@ -220,8 +222,8 @@ struct TrashFooterView: View {
                 Button(action: {
                     let ids = getSelectedIds()
                     if !ids.isEmpty {
-                        clipboard.deleteItems(where: { ids.contains($0.id) }, hardDelete: true)
-                        if isEditMode { selectedItemsForDeletion.removeAll() }
+                        selectedItemsForDeletion = Set(ids)
+                        showingDeleteSelectedAlert = true
                     }
                 }) {
                     HStack(spacing: 4) {
