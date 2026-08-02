@@ -122,6 +122,19 @@ struct SettingsView: View {
             .frame(height: 380)
         }
         .frame(width: 400)
+        .onAppear {
+            draftHistoryCount = maxHistoryCount
+            
+            if let saved = UserDefaults.standard.stringArray(forKey: "blacklistedApps") {
+                blacklistedApps = saved
+            } else {
+                blacklistedApps = ["1Password", "Bitwarden", "Keychain Access"]
+                UserDefaults.standard.set(blacklistedApps, forKey: "blacklistedApps")
+            }
+        }
+        .onDisappear {
+            maxHistoryCount = max(5, draftHistoryCount)
+        }
     }
     
     private var generalTab: some View {
@@ -174,6 +187,9 @@ struct SettingsView: View {
                     }
                 Stepper("", value: $draftHistoryCount, in: 5...1000)
                     .labelsHidden()
+                    .onChange(of: draftHistoryCount) { _, newValue in
+                        maxHistoryCount = max(5, newValue)
+                    }
             }
             Text("Maximum number of unpinned items to keep in history.")
                 .font(.system(size: 11))
@@ -851,19 +867,6 @@ struct SettingsView: View {
             }
             
             Spacer()
-        }
-        .onAppear {
-            draftHistoryCount = maxHistoryCount
-            
-            if let saved = UserDefaults.standard.stringArray(forKey: "blacklistedApps") {
-                blacklistedApps = saved
-            } else {
-                blacklistedApps = ["1Password", "Bitwarden", "Keychain Access"]
-                UserDefaults.standard.set(blacklistedApps, forKey: "blacklistedApps")
-            }
-        }
-        .onDisappear {
-            maxHistoryCount = max(5, draftHistoryCount)
         }
     }
     
