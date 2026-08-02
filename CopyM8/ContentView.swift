@@ -1059,6 +1059,20 @@ extension ContentView {
                         return nil
                     }
                 }
+
+                if activeTab == "Groups" && chars == "=" && !event.modifierFlags.contains(.command) && !event.modifierFlags.contains(.control) && !event.modifierFlags.contains(.option) {
+                    if let nodeIndex = displayNodesLocal.firstIndex(where: { $0.isFolder && $0.folder?.id == restoredFolderId }) {
+                        withAnimation {
+                            _selectedIndex.wrappedValue = nodeIndex
+                            if !_expandedFolderIds.wrappedValue.contains(restoredFolderId) {
+                                _expandedFolderIds.wrappedValue.insert(restoredFolderId)
+                            } else {
+                                _expandedFolderIds.wrappedValue.remove(restoredFolderId)
+                            }
+                        }
+                        return nil
+                    }
+                }
                 
                 if activeTab == "Groups" && char >= "A" && char <= "Z" && !event.modifierFlags.contains(.command) && !event.modifierFlags.contains(.control) && !event.modifierFlags.contains(.option) {
                     let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
