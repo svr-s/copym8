@@ -264,6 +264,141 @@ struct ContentView: View {
         }
     }
     
+    @ViewBuilder
+    private var modalsOverlay: some View {
+        Group {
+            if let payload = itemToAssignGroup {
+                ZStack {
+                    Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
+                        .onTapGesture { itemToAssignGroup = nil }
+                    GroupAssignmentView(
+                        itemIds: payload.itemIds, 
+                        onComplete: payload.onComplete,
+                        onCancel: { itemToAssignGroup = nil }
+                    )
+                        .environmentObject(clipboard)
+                        .frame(width: 280)
+                        .padding(20)
+                        .background(Color(NSColor.windowBackgroundColor))
+                        .cornerRadius(12)
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
+                        .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
+                }
+            } else if showingUngroupAlert {
+                ZStack {
+                    Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
+                        .onTapGesture { showingUngroupAlert = false }
+                    ActionConfirmationModalView(
+                        title: "Ungroup selected items?",
+                        message: "Do you want to keep these items in your Pinned list, or completely ungroup them?",
+                        options: [
+                            ModalOption(title: "Move to Pinned", icon: "pin.fill", isDestructive: false, action: { ungroupSelectedItems(pin: true); showingUngroupAlert = false }),
+                            ModalOption(title: "Completely Ungroup", icon: "folder.badge.minus", isDestructive: false, action: { ungroupSelectedItems(pin: false); showingUngroupAlert = false }),
+                            ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { showingUngroupAlert = false })
+                        ],
+                        onCancel: { showingUngroupAlert = false }
+                    )
+                        .frame(width: 280)
+                        .padding(20)
+                        .background(Color(NSColor.windowBackgroundColor))
+                        .cornerRadius(12)
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
+                        .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
+                }
+            } else if showingDeviceSwitcher {
+                ZStack {
+                    Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
+                        .onTapGesture { showingDeviceSwitcher = false }
+                    
+                    let devices = ["Local (This Mac)"] + clipboard.availableDevices.filter { $0 != "Local (This Mac)" }
+                    DeviceSwitcherView(
+                        devices: devices,
+                        onSelect: { selected in
+                            clipboard.selectedDevice = selected
+                            if selected != "Local (This Mac)" && activeTab == "Trash" {
+                                activeTab = previousTab == "Trash" ? "All" : previousTab
+                            }
+                            showingDeviceSwitcher = false
+                        },
+                        onCancel: { showingDeviceSwitcher = false }
+                    )
+                        .frame(width: 280)
+                        .background(Color(NSColor.windowBackgroundColor))
+                        .cornerRadius(12)
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
+                        .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
+                }
+            } else if showingEmptyTrashAlert {
+                ZStack {
+                    Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
+                        .onTapGesture { showingEmptyTrashAlert = false }
+                    let trashCount = clipboard.history.filter { ($0.isDeleted ?? false) }.count
+                    ActionConfirmationModalView(
+                        title: "Delete selected items?",
+                        message: "Are you sure you want to delete \(trashCount) items? This action cannot be undone.",
+                        options: [
+                            ModalOption(title: "Delete \(trashCount) Item\(trashCount == 1 ? "" : "s")", icon: "trash.fill", isDestructive: true, action: {
+                                clipboard.deleteItems(where: { ($0.isDeleted ?? false) }, hardDelete: true)
+                                showingEmptyTrashAlert = false
+                            }),
+                            ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { showingEmptyTrashAlert = false })
+                        ],
+                        onCancel: { showingEmptyTrashAlert = false }
+                    )
+                    .frame(width: 280)
+                    .padding(20)
+                    .background(Color(NSColor.windowBackgroundColor))
+                    .cornerRadius(12)
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
+                    .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
+                }
+            } else if showingDeleteSelectedAlert {
+                ZStack {
+                    Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
+                        .onTapGesture { showingDeleteSelectedAlert = false }
+                    let count = selectedItemsForDeletion.count
+                    ActionConfirmationModalView(
+                        title: "Delete selected items?",
+                        message: "Are you sure you want to delete \(count) items? This action cannot be undone.",
+                        options: [
+                            ModalOption(title: "Delete \(count) Item\(count == 1 ? "" : "s")", icon: "trash.fill", isDestructive: true, action: { deleteSelectedItems(); showingDeleteSelectedAlert = false }),
+                            ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { showingDeleteSelectedAlert = false })
+                        ],
+                        onCancel: { showingDeleteSelectedAlert = false }
+                    )
+                    .frame(width: 280)
+                    .padding(20)
+                    .background(Color(NSColor.windowBackgroundColor))
+                    .cornerRadius(12)
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
+                    .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
+                }
+            } else if showingFolderDeleteAlert {
+                ZStack {
+                    Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
+                        .onTapGesture { showingFolderDeleteAlert = false }
+                    let folderIds = selectedItemsForDeletion.filter { id in clipboard.folders.contains(where: { $0.id == id }) }
+                    ActionConfirmationModalView(
+                        title: "Delete selected folders?",
+                        message: "Do you want to keep the items inside the folders (move to Pinned) or delete them permanently?",
+                        options: [
+                            ModalOption(title: "Keep Items (Move to Pinned)", icon: "pin.fill", isDestructive: false, action: { deleteFolders(keepItems: true); showingFolderDeleteAlert = false }),
+                            ModalOption(title: "Delete All Permanently", icon: "trash.fill", isDestructive: true, action: { deleteFolders(keepItems: false); showingFolderDeleteAlert = false }),
+                            ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { showingFolderDeleteAlert = false })
+                        ],
+                        onCancel: { showingFolderDeleteAlert = false }
+                    )
+                    .frame(width: 280)
+                    .padding(20)
+                    .background(Color(NSColor.windowBackgroundColor))
+                    .cornerRadius(12)
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
+                    .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
+                }
+            }
+        }
+    }
+    
     var body: some View {
         ZStack {
             if shortcut.isExpanded {
@@ -395,139 +530,7 @@ struct ContentView: View {
         .onAppear { applyTheme(themePreference) }
         .environmentObject(clipboard)
         .environmentObject(shortcut)
-        .overlay(
-            Group {
-                if let payload = itemToAssignGroup {
-                    ZStack {
-                        Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
-                            .onTapGesture { itemToAssignGroup = nil }
-                        GroupAssignmentView(
-                            itemIds: payload.itemIds, 
-                            onComplete: payload.onComplete,
-                            onCancel: { itemToAssignGroup = nil }
-                        )
-                            .environmentObject(clipboard)
-                            .frame(width: 280)
-                            .padding(20)
-                            .background(Color(NSColor.windowBackgroundColor))
-                            .cornerRadius(12)
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
-                            .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
-                    }
-                } else if showingUngroupAlert {
-                    ZStack {
-                        Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
-                            .onTapGesture { showingUngroupAlert = false }
-                        ActionConfirmationModalView(
-                            title: "Ungroup selected items?",
-                            message: "Do you want to keep these items in your Pinned list, or completely ungroup them?",
-                            options: [
-                                ModalOption(title: "Move to Pinned", icon: "pin.fill", isDestructive: false, action: { ungroupSelectedItems(true); showingUngroupAlert = false }),
-                                ModalOption(title: "Completely Ungroup", icon: "folder.badge.minus", isDestructive: false, action: { ungroupSelectedItems(false); showingUngroupAlert = false }),
-                                ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { showingUngroupAlert = false })
-                            ],
-                            onCancel: { showingUngroupAlert = false }
-                        )
-                            .frame(width: 280)
-                            .padding(20)
-                            .background(Color(NSColor.windowBackgroundColor))
-                            .cornerRadius(12)
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
-                            .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
-                    }
-                } else if showingDeviceSwitcher {
-                    ZStack {
-                        Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
-                            .onTapGesture { showingDeviceSwitcher = false }
-                        
-                        let devices = ["Local (This Mac)"] + clipboard.availableDevices.filter { $0 != "Local (This Mac)" }
-                        DeviceSwitcherView(
-                            devices: devices,
-                            onSelect: { selected in
-                                clipboard.selectedDevice = selected
-                                if selected != "Local (This Mac)" && activeTab == "Trash" {
-                                    activeTab = previousTab == "Trash" ? "All" : previousTab
-                                }
-                                showingDeviceSwitcher = false
-                            },
-                            onCancel: { showingDeviceSwitcher = false }
-                        )
-                            .frame(width: 280)
-                            .background(Color(NSColor.windowBackgroundColor))
-                            .cornerRadius(12)
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
-                            .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
-                    }
-                } else if showingEmptyTrashAlert {
-                    ZStack {
-                        Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
-                            .onTapGesture { showingEmptyTrashAlert = false }
-                        let trashCount = clipboard.history.filter { ($0.isDeleted ?? false) }.count
-                        ActionConfirmationModalView(
-                            title: "Delete selected items?",
-                            message: "Are you sure you want to delete \(trashCount) items? This action cannot be undone.",
-                            options: [
-                                ModalOption(title: "Delete \(trashCount) Item\(trashCount == 1 ? "" : "s")", icon: "trash.fill", isDestructive: true, action: {
-                                    clipboard.deleteItems(where: { ($0.isDeleted ?? false) }, hardDelete: true)
-                                    showingEmptyTrashAlert = false
-                                }),
-                                ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { showingEmptyTrashAlert = false })
-                            ],
-                            onCancel: { showingEmptyTrashAlert = false }
-                        )
-                        .frame(width: 280)
-                        .padding(20)
-                        .background(Color(NSColor.windowBackgroundColor))
-                        .cornerRadius(12)
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
-                        .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
-                    }
-                } else if showingDeleteSelectedAlert {
-                    ZStack {
-                        Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
-                            .onTapGesture { showingDeleteSelectedAlert = false }
-                        let count = selectedItemsForDeletion.count
-                        ActionConfirmationModalView(
-                            title: "Delete selected items?",
-                            message: "Are you sure you want to delete \(count) items? This action cannot be undone.",
-                            options: [
-                                ModalOption(title: "Delete \(count) Item\(count == 1 ? "" : "s")", icon: "trash.fill", isDestructive: true, action: { deleteSelectedItems(); showingDeleteSelectedAlert = false }),
-                                ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { showingDeleteSelectedAlert = false })
-                            ],
-                            onCancel: { showingDeleteSelectedAlert = false }
-                        )
-                        .frame(width: 280)
-                        .padding(20)
-                        .background(Color(NSColor.windowBackgroundColor))
-                        .cornerRadius(12)
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
-                        .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
-                    }
-                } else if showingFolderDeleteAlert {
-                    ZStack {
-                        Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
-                            .onTapGesture { showingFolderDeleteAlert = false }
-                        let folderIds = selectedItemsForDeletion.filter { id in clipboard.folders.contains(where: { $0.id == id }) }
-                        ActionConfirmationModalView(
-                            title: "Delete selected folders?",
-                            message: "Do you want to keep the items inside the folders (move to Pinned) or delete them permanently?",
-                            options: [
-                                ModalOption(title: "Keep Items (Move to Pinned)", icon: "pin.fill", isDestructive: false, action: { deleteFolders(keepItems: true); showingFolderDeleteAlert = false }),
-                                ModalOption(title: "Delete All Permanently", icon: "trash.fill", isDestructive: true, action: { deleteFolders(keepItems: false); showingFolderDeleteAlert = false }),
-                                ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { showingFolderDeleteAlert = false })
-                            ],
-                            onCancel: { showingFolderDeleteAlert = false }
-                        )
-                        .frame(width: 280)
-                        .padding(20)
-                        .background(Color(NSColor.windowBackgroundColor))
-                        .cornerRadius(12)
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
-                        .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
-                    }
-                }
-            }
-        )
+        .overlay(modalsOverlay)
         .overlay(
             Group {
                 if showingReadOnlyToast {
