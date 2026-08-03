@@ -1,36 +1,30 @@
 import SwiftUI
 
-struct DeleteConfirmationView: View {
-    let isFolderDeletion: Bool
-    let itemCount: Int
-    var onConfirm: (Bool?) -> Void
-    var onCancel: () -> Void
+struct ModalOption: Identifiable {
+    let id = UUID()
+    let title: String
+    let icon: String
+    let isDestructive: Bool
+    let action: () -> Void
+}
+
+struct ActionConfirmationModalView: View {
+    let title: String
+    let message: String
+    let options: [ModalOption]
+    let onCancel: () -> Void
+    var fixedWidth: CGFloat = 320
     
     @State private var selectedIndex: Int = 0
     @State private var localEventMonitor: Any?
     
-    var options: [(title: String, icon: String, isDestructive: Bool)] {
-        if isFolderDeletion {
-            return [
-                (title: "Keep Items (Move to Pinned)", icon: "pin.fill", isDestructive: false),
-                (title: "Delete All Permanently", icon: "trash.fill", isDestructive: true),
-                (title: "Cancel", icon: "xmark", isDestructive: false)
-            ]
-        } else {
-            return [
-                (title: "Delete \(itemCount) Item\(itemCount == 1 ? "" : "s")", icon: "trash.fill", isDestructive: true),
-                (title: "Cancel", icon: "xmark", isDestructive: false)
-            ]
-        }
-    }
-    
     var body: some View {
         VStack(spacing: 16) {
-            Text(isFolderDeletion ? "Delete selected folders?" : "Delete selected items?")
+            Text(title)
                 .font(.system(size: 14, weight: .bold))
                 .padding(.top, 4)
             
-            Text(isFolderDeletion ? "Do you want to keep the items inside the folders (move to Pinned) or delete them permanently?" : "Are you sure you want to delete \(itemCount) items? This action cannot be undone.")
+            Text(message)
                 .font(.system(size: 12))
                 .multilineTextAlignment(.center)
                 .foregroundColor(.primary.opacity(0.8))
@@ -60,7 +54,7 @@ struct DeleteConfirmationView: View {
             .padding(.top, 8)
         }
         .padding(20)
-        .frame(width: 320)
+        .frame(width: fixedWidth)
         .onAppear {
             setupKeyboardMonitor()
         }
@@ -83,17 +77,7 @@ struct DeleteConfirmationView: View {
     }
     
     private func handleSelection(_ index: Int) {
-        if options[index].title == "Cancel" {
-            onCancel()
-        } else if isFolderDeletion {
-            // Index 0: Keep Items, Index 1: Delete All
-            onConfirm(index == 0)
-            onCancel()
-        } else {
-            // Index 0: Delete
-            onConfirm(nil) // nil means normal deletion
-            onCancel()
-        }
+        options[index].action()
     }
     
     private func setupKeyboardMonitor() {

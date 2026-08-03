@@ -418,8 +418,14 @@ struct ContentView: View {
                     ZStack {
                         Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
                             .onTapGesture { showingUngroupAlert = false }
-                        UngroupConfirmationView(
-                            onConfirm: ungroupSelectedItems,
+                        ActionConfirmationModalView(
+                            title: "Ungroup selected items?",
+                            message: "Do you want to keep these items in your Pinned list, or completely ungroup them?",
+                            options: [
+                                ModalOption(title: "Move to Pinned", icon: "pin.fill", isDestructive: false, action: { ungroupSelectedItems(true); showingUngroupAlert = false }),
+                                ModalOption(title: "Completely Ungroup", icon: "folder.badge.minus", isDestructive: false, action: { ungroupSelectedItems(false); showingUngroupAlert = false }),
+                                ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { showingUngroupAlert = false })
+                            ],
                             onCancel: { showingUngroupAlert = false }
                         )
                             .frame(width: 280)
@@ -457,13 +463,16 @@ struct ContentView: View {
                         Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
                             .onTapGesture { showingEmptyTrashAlert = false }
                         let trashCount = clipboard.history.filter { ($0.isDeleted ?? false) }.count
-                        DeleteConfirmationView(
-                            isFolderDeletion: false,
-                            itemCount: trashCount,
-                            onConfirm: { _ in
-                                clipboard.deleteItems(where: { ($0.isDeleted ?? false) }, hardDelete: true)
-                                showingEmptyTrashAlert = false
-                            },
+                        ActionConfirmationModalView(
+                            title: "Delete selected items?",
+                            message: "Are you sure you want to delete \(trashCount) items? This action cannot be undone.",
+                            options: [
+                                ModalOption(title: "Delete \(trashCount) Item\(trashCount == 1 ? "" : "s")", icon: "trash.fill", isDestructive: true, action: {
+                                    clipboard.deleteItems(where: { ($0.isDeleted ?? false) }, hardDelete: true)
+                                    showingEmptyTrashAlert = false
+                                }),
+                                ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { showingEmptyTrashAlert = false })
+                            ],
                             onCancel: { showingEmptyTrashAlert = false }
                         )
                         .frame(width: 280)
@@ -477,10 +486,14 @@ struct ContentView: View {
                     ZStack {
                         Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
                             .onTapGesture { showingDeleteSelectedAlert = false }
-                        DeleteConfirmationView(
-                            isFolderDeletion: false,
-                            itemCount: selectedItemsForDeletion.count,
-                            onConfirm: { _ in deleteSelectedItems() },
+                        let count = selectedItemsForDeletion.count
+                        ActionConfirmationModalView(
+                            title: "Delete selected items?",
+                            message: "Are you sure you want to delete \(count) items? This action cannot be undone.",
+                            options: [
+                                ModalOption(title: "Delete \(count) Item\(count == 1 ? "" : "s")", icon: "trash.fill", isDestructive: true, action: { deleteSelectedItems(); showingDeleteSelectedAlert = false }),
+                                ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { showingDeleteSelectedAlert = false })
+                            ],
                             onCancel: { showingDeleteSelectedAlert = false }
                         )
                         .frame(width: 280)
@@ -495,14 +508,14 @@ struct ContentView: View {
                         Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
                             .onTapGesture { showingFolderDeleteAlert = false }
                         let folderIds = selectedItemsForDeletion.filter { id in clipboard.folders.contains(where: { $0.id == id }) }
-                        DeleteConfirmationView(
-                            isFolderDeletion: true,
-                            itemCount: folderIds.count,
-                            onConfirm: { keepItems in
-                                if let keepItems = keepItems {
-                                    deleteFolders(keepItems: keepItems)
-                                }
-                            },
+                        ActionConfirmationModalView(
+                            title: "Delete selected folders?",
+                            message: "Do you want to keep the items inside the folders (move to Pinned) or delete them permanently?",
+                            options: [
+                                ModalOption(title: "Keep Items (Move to Pinned)", icon: "pin.fill", isDestructive: false, action: { deleteFolders(keepItems: true); showingFolderDeleteAlert = false }),
+                                ModalOption(title: "Delete All Permanently", icon: "trash.fill", isDestructive: true, action: { deleteFolders(keepItems: false); showingFolderDeleteAlert = false }),
+                                ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { showingFolderDeleteAlert = false })
+                            ],
                             onCancel: { showingFolderDeleteAlert = false }
                         )
                         .frame(width: 280)
