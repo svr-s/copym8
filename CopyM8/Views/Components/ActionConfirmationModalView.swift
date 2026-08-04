@@ -85,9 +85,11 @@ struct ActionConfirmationModalView: View {
             switch event.keyCode {
             case 126: // Up
                 if selectedIndex > 0 { selectedIndex -= 1 }
+                else { selectedIndex = options.count - 1 }
                 return nil
             case 125: // Down
                 if selectedIndex < options.count - 1 { selectedIndex += 1 }
+                else { selectedIndex = 0 }
                 return nil
             case 36, 76: // Enter / Return
                 handleSelection(selectedIndex)

@@ -286,6 +286,7 @@ struct ContentView: View {
                     let devices = ["Local (This Mac)"] + clipboard.availableDevices.filter { $0 != "Local (This Mac)" }
                     DeviceSwitcherView(
                         devices: devices,
+                        currentDevice: clipboard.selectedDevice,
                         onSelect: { selected in
                             clipboard.selectedDevice = selected
                             if selected != "Local (This Mac)" && viewModel.activeTab == "Trash" {
@@ -1551,6 +1552,7 @@ extension ContentView {
 
 struct DeviceSwitcherView: View {
     let devices: [String]
+    let currentDevice: String
     let onSelect: (String) -> Void
     let onCancel: () -> Void
     
@@ -1577,10 +1579,10 @@ struct DeviceSwitcherView: View {
                             .font(.system(size: 13, weight: index == selectedIndex ? .semibold : .regular))
                             .foregroundColor(index == selectedIndex ? .white : .primary)
                         Spacer()
-                        if index == selectedIndex {
+                        if device == currentDevice {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundColor(index == selectedIndex ? .white : .primary)
                         }
                     }
                     .padding(.horizontal, 12)
@@ -1605,12 +1607,12 @@ struct DeviceSwitcherView: View {
                 case 125: // Down arrow
                     if selectedIndex < devices.count - 1 {
                         selectedIndex += 1
-                    }
+                    } else { selectedIndex = 0 }
                     return nil
                 case 126: // Up arrow
                     if selectedIndex > 0 {
                         selectedIndex -= 1
-                    }
+                    } else { selectedIndex = devices.count - 1 }
                     return nil
                 case 36: // Enter
                     onSelect(devices[selectedIndex])
@@ -1621,6 +1623,9 @@ struct DeviceSwitcherView: View {
                 default:
                     return event
                 }
+            }
+            if let idx = devices.firstIndex(of: currentDevice) {
+                selectedIndex = idx
             }
         }
         .onDisappear {

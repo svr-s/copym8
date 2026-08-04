@@ -123,6 +123,7 @@ struct SettingsView: View {
         }
         .frame(width: 400)
         .onAppear {
+            setupKeyboardMonitor()
             draftHistoryCount = maxHistoryCount
             
             if let saved = UserDefaults.standard.stringArray(forKey: "blacklistedApps") {
@@ -133,7 +134,35 @@ struct SettingsView: View {
             }
         }
         .onDisappear {
+            teardownKeyboardMonitor()
             maxHistoryCount = max(5, draftHistoryCount)
+        }
+    }
+    
+    @State private var eventMonitor: Any?
+    
+    private func setupKeyboardMonitor() {
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if event.keyCode == 48 && event.modifierFlags.contains(.option) {
+                let tabs = ["General", "Types", "Sync", "Privacy", "Shortcuts"]
+                guard let idx = tabs.firstIndex(of: selectedTab) else { return event }
+                let isShift = event.modifierFlags.contains(.shift)
+                
+                var newIdx = isShift ? idx - 1 : idx + 1
+                if newIdx < 0 { newIdx = tabs.count - 1 }
+                if newIdx >= tabs.count { newIdx = 0 }
+                
+                selectedTab = tabs[newIdx]
+                return nil
+            }
+            return event
+        }
+    }
+    
+    private func teardownKeyboardMonitor() {
+        if let monitor = eventMonitor {
+            NSEvent.removeMonitor(monitor)
+            eventMonitor = nil
         }
     }
     
@@ -155,8 +184,13 @@ struct SettingsView: View {
             
             Divider()
             
-            Text("Accent Color:")
-                .font(.system(size: 13))
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Accent Color:")
+                    .font(.system(size: 13))
+                Text("Changes the color of the infinity glow in the CopyM8 pill.")
+                    .font(.system(size: 10))
+                    .foregroundColor(.secondary)
+            }
             
             HStack(spacing: 8) {
                 ForEach(colors, id: \.name) { c in
