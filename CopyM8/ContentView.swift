@@ -97,7 +97,7 @@ struct ContentView: View {
         if isReorderMode {
             switch reorderTarget {
             case .folders:
-                return clipboard.folders.map { DisplayNode(id: "folder_\($0.id.uuidString)", isFolder: true, folder: $0, item: nil, parentFolderId: nil) }
+                return clipboard.folders.filter { $0.id != cloudFolderId && $0.id != restoredFolderId }.map { DisplayNode(id: "folder_\($0.id.uuidString)", isFolder: true, folder: $0, item: nil, parentFolderId: nil) }
             case .items(let folderId):
                 var items = clipboard.activeHistory.filter { !($0.isDeleted ?? false) && $0.folderId == folderId }
                 items.sort { item1, item2 in
@@ -516,6 +516,8 @@ struct ContentView: View {
             if activeTab == "Groups" {
                 if editMode {
                     expandedFolderIds = Set(clipboard.folders.map { $0.id })
+                    expandedFolderIds.insert(cloudFolderId)
+                    expandedFolderIds.insert(restoredFolderId)
                 } else {
                     expandedFolderIds.removeAll()
                 }
@@ -1273,6 +1275,12 @@ extension ContentView {
                             if hasGroupedItem {
                                 _showingUngroupAlert.wrappedValue = true
                             }
+                        }
+                    } else if activeTab == "Groups" && selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
+                        let node = displayNodesLocal[selectedIndex]
+                        if !node.isFolder, let item = node.item, item.folderId != nil {
+                            _selectedItemsForDeletion.wrappedValue = [item.id]
+                            _showingUngroupAlert.wrappedValue = true
                         }
                     }
                 }
