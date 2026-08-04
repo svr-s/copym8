@@ -14,7 +14,6 @@ struct GroupAssignmentView: View {
     @FocusState private var isTextFieldFocused: Bool
     
     @State private var selectedIndex: Int = 0
-    @State private var localEventMonitor: Any?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -120,16 +119,7 @@ struct GroupAssignmentView: View {
         }
         .padding()
         .frame(width: 300)
-        .onAppear {
-            setupKeyboardMonitor()
-        }
-        .onDisappear {
-            teardownKeyboardMonitor()
-        }
-    }
-    
-    private func setupKeyboardMonitor() {
-        localEventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+        .onCustomKeyPress { event in
             guard !isCreatingNew else { return event }
             
             if let chars = event.charactersIgnoringModifiers?.uppercased(), chars.count == 1 {
@@ -172,13 +162,6 @@ struct GroupAssignmentView: View {
             }
             
             return event
-        }
-    }
-    
-    private func teardownKeyboardMonitor() {
-        if let monitor = localEventMonitor {
-            NSEvent.removeMonitor(monitor)
-            localEventMonitor = nil
         }
     }
     

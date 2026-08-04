@@ -477,9 +477,9 @@ struct ContentView: View {
                 viewModel.selectedIndex = 0
                 viewModel.selectionAnchorIndex = nil
                 viewModel.expandedItemIndex = nil
-                setupKeyboardMonitor()
+                // Keyboard monitor setup removed
             } else {
-                teardownKeyboardMonitor()
+                // Keyboard monitor teardown removed
                 if viewModel.isReorderMode {
                     clipboard.history = viewModel.reorderBackupHistory
                     clipboard.folders = viewModel.reorderBackupFolders
@@ -497,8 +497,8 @@ struct ContentView: View {
                 viewModel.selectedItemsForDeletion.removeAll()
             }
         }
+        .onCustomKeyPress(handleKeyPress)
         .onChange(of: viewModel.activeTab) { _, _ in 
-            restartKeyboardMonitor() 
             viewModel.selectedItemsForDeletion.removeAll()
             viewModel.selectionAnchorIndex = nil
             viewModel.selectedIndex = 0
@@ -508,12 +508,9 @@ struct ContentView: View {
             viewModel.selectedIndex = 0
             viewModel.selectionAnchorIndex = nil
             viewModel.expandedItemIndex = nil
-            restartKeyboardMonitor()
         }
-        .onChange(of: viewModel.expandedFolderIds) { _, _ in restartKeyboardMonitor() }
         .onChange(of: maxHistoryCount) { _, newValue in clipboard.truncateHistory(to: newValue) }
         .onChange(of: themePreference) { _, newTheme in applyTheme(newTheme) }
-        .onChange(of: clipboard.history) { _, _ in restartKeyboardMonitor() }
         .onChange(of: viewModel.isEditMode) { _, editMode in 
             viewModel.selectedItemsForDeletion.removeAll() 
             viewModel.selectionAnchorIndex = nil
@@ -723,24 +720,10 @@ struct ContentView: View {
         }
     }
     
-    @State var eventMonitor: Any?
+    // Keyboard monitor replaced with onCustomKeyPress modifier
     @State var previousApp: NSRunningApplication?
     
 
-    
-    private func teardownKeyboardMonitor() {
-        if let monitor = eventMonitor {
-            NSEvent.removeMonitor(monitor)
-            eventMonitor = nil
-        }
-    }
-    
-    private func restartKeyboardMonitor() {
-        teardownKeyboardMonitor()
-        if shortcut.isExpanded {
-            setupKeyboardMonitor()
-        }
-    }
     
     private func pasteItem(index: Int, format: PasteFormatType = .plain) {
         if index >= 0 && index < displayNodes.count {
@@ -827,14 +810,8 @@ struct ContentView: View {
 
 
 extension ContentView {
-    private func setupKeyboardMonitor() {
-        let _isSearchFocused = self._isSearchFocused
-        
-        let clipboard = self.clipboard
-        let pasteItem = self.pasteItem
-        let _isDense = self._isDense
-        
-        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+    private func handleKeyPress(_ event: NSEvent) -> NSEvent? {
+        guard NSApplication.shared.windows.first?.isVisible == true else { return event }
             if SettingsWindowManager.shared.isSettingsOpen {
                 return event
             }
@@ -1123,12 +1100,12 @@ extension ContentView {
                         if let targetFolderId = targetFolderId {
                             let folderItemIndices = displayNodesLocal.indices.filter { displayNodesLocal[$0].parentFolderId == targetFolderId }
                             if relativeIndex < folderItemIndices.count {
-                                pasteItem(folderItemIndices[relativeIndex], format)
+                                pasteItem(index: folderItemIndices[relativeIndex], format: format)
                             }
                         }
                     } else {
                         if relativeIndex < displayNodesLocal.count {
-                            pasteItem(relativeIndex, format)
+                            pasteItem(index: relativeIndex, format: format)
                         }
                     }
                 }
@@ -1410,7 +1387,7 @@ extension ContentView {
                         let hasCmd = event.modifierFlags.contains(.command)
                         let hasCtrl = event.modifierFlags.contains(.control)
                         let format: PasteFormatType = (hasCmd && hasCtrl) ? .richNoLinks : (hasCmd ? .rich : .plain)
-                        pasteItem(viewModel.selectedIndex, format)
+                        pasteItem(index: viewModel.selectedIndex, format: format)
                     }
                 }
                 return nil
@@ -1578,7 +1555,6 @@ extension ContentView {
             }
         }
     }
-}
 
 struct DeviceSwitcherView: View {
     let devices: [String]
@@ -1587,7 +1563,6 @@ struct DeviceSwitcherView: View {
     let onCancel: () -> Void
     
     @State private var selectedIndex: Int = 0
-    @State private var localEventMonitor: Any?
     @Environment(\.controlActiveState) private var controlActiveState
     
     var body: some View {
@@ -1631,37 +1606,31 @@ struct DeviceSwitcherView: View {
             }
             .padding(8)
         }
-        .onAppear {
-            localEventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-                switch event.keyCode {
-                case 125: // Down arrow
-                    if selectedIndex < devices.count - 1 {
-                        selectedIndex += 1
-                    } else { selectedIndex = 0 }
-                    return nil
-                case 126: // Up arrow
-                    if selectedIndex > 0 {
-                        selectedIndex -= 1
-                    } else { selectedIndex = devices.count - 1 }
-                    return nil
-                case 36: // Enter
-                    onSelect(devices[selectedIndex])
-                    return nil
-                case 53: // Esc
-                    onCancel()
-                    return nil
-                default:
-                    return event
-                }
-            }
-            if let idx = devices.firstIndex(of: currentDevice) {
-                selectedIndex = idx
+        .onCustomKeyPress { event in
+            switch event.keyCode {
+            case 125: // Down arrow
+                if selectedIndex < devices.count - 1 {
+                    selectedIndex += 1
+                } else { selectedIndex = 0 }
+                return nil
+            case 126: // Up arrow
+                if selectedIndex > 0 {
+                    selectedIndex -= 1
+                } else { selectedIndex = devices.count - 1 }
+                return nil
+            case 36: // Enter
+                onSelect(devices[selectedIndex])
+                return nil
+            case 53: // Esc
+                onCancel()
+                return nil
+            default:
+                return event
             }
         }
-        .onDisappear {
-            if let monitor = localEventMonitor {
-                NSEvent.removeMonitor(monitor)
-                localEventMonitor = nil
+        .onAppear {
+            if let idx = devices.firstIndex(of: currentDevice) {
+                selectedIndex = idx
             }
         }
     }

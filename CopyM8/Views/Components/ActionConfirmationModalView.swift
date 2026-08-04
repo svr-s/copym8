@@ -16,7 +16,6 @@ struct ActionConfirmationModalView: View {
     var fixedWidth: CGFloat = 320
     
     @State private var selectedIndex: Int = 0
-    @State private var localEventMonitor: Any?
     
     var body: some View {
         VStack(spacing: 16) {
@@ -55,33 +54,7 @@ struct ActionConfirmationModalView: View {
         }
         .padding(20)
         .frame(width: fixedWidth)
-        .onAppear {
-            setupKeyboardMonitor()
-        }
-        .onDisappear {
-            teardownKeyboardMonitor()
-        }
-    }
-    
-    private func backgroundColor(for index: Int) -> Color {
-        if index == selectedIndex {
-            if options[index].title == "Cancel" {
-                return Color.primary.opacity(0.4)
-            } else if options[index].isDestructive {
-                return Color.red.opacity(0.8)
-            } else {
-                return Color.accentColor
-            }
-        }
-        return Color.primary.opacity(0.05)
-    }
-    
-    private func handleSelection(_ index: Int) {
-        options[index].action()
-    }
-    
-    private func setupKeyboardMonitor() {
-        localEventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+        .onCustomKeyPress { event in
             switch event.keyCode {
             case 126: // Up
                 if selectedIndex > 0 { selectedIndex -= 1 }
@@ -104,10 +77,20 @@ struct ActionConfirmationModalView: View {
         }
     }
     
-    private func teardownKeyboardMonitor() {
-        if let monitor = localEventMonitor {
-            NSEvent.removeMonitor(monitor)
-            localEventMonitor = nil
+    private func backgroundColor(for index: Int) -> Color {
+        if index == selectedIndex {
+            if options[index].title == "Cancel" {
+                return Color.primary.opacity(0.4)
+            } else if options[index].isDestructive {
+                return Color.red.opacity(0.8)
+            } else {
+                return Color.accentColor
+            }
         }
+        return Color.primary.opacity(0.05)
+    }
+    
+    private func handleSelection(_ index: Int) {
+        options[index].action()
     }
 }
