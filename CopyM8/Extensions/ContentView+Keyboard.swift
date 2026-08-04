@@ -731,12 +731,18 @@ extension ContentView {
                             viewModel.selectedIndex = 0
                             viewModel.expandedItemIndex = nil
                         }
+                        DispatchQueue.main.async {
+                            isSearchFocused = false
+                        }
                     } else {
                         // We are in a tab not in visibleTabs (like Trash). Jump to first or last tab.
                         withAnimation {
                             viewModel.activeTab = isShift ? (visibleTabs.last ?? "All") : (visibleTabs.first ?? "All")
                             viewModel.selectedIndex = 0
                             viewModel.expandedItemIndex = nil
+                        }
+                        DispatchQueue.main.async {
+                            isSearchFocused = false
                         }
                     }
                     return nil
