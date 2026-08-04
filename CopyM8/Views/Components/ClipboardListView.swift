@@ -59,12 +59,14 @@ struct ClipboardListView: View {
                                             for i in start...end {
                                                 let n = displayNodes[i]
                                                 if let id = n.item?.id { selectedItemsForDeletion.insert(id) }
-                                                if let id = n.folder?.id { selectedItemsForDeletion.insert(id) }
+                                                if let id = n.folder?.id, id != cloudFolderId, id != restoredFolderId, clipboard.selectedDevice == "Local (This Mac)" { selectedItemsForDeletion.insert(id) }
                                             }
                                             selectedIndex = index
                                         } else {
-                                            if selectedItemsForDeletion.contains(folder.id) { selectedItemsForDeletion.remove(folder.id) }
-                                            else { selectedItemsForDeletion.insert(folder.id) }
+                                            if folder.id != cloudFolderId && folder.id != restoredFolderId && clipboard.selectedDevice == "Local (This Mac)" {
+                                                if selectedItemsForDeletion.contains(folder.id) { selectedItemsForDeletion.remove(folder.id) }
+                                                else { selectedItemsForDeletion.insert(folder.id) }
+                                            }
                                             selectionAnchorIndex = index
                                             selectedIndex = index
                                         }

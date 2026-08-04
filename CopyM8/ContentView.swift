@@ -266,10 +266,20 @@ struct ContentView: View {
                         message: "Do you want to keep these items in your Pinned list, or completely ungroup them?",
                         options: [
                             ModalOption(title: "Move to Pinned", icon: "pin.fill", isDestructive: false, action: { ungroupSelectedItems(pin: true); viewModel.showingUngroupAlert = false }),
-                            ModalOption(title: "Completely Ungroup", icon: "folder.badge.minus", isDestructive: false, action: { ungroupSelectedItems(pin: false); viewModel.showingUngroupAlert = false }),
-                            ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { viewModel.showingUngroupAlert = false })
+                            ModalOption(title: "Completely Ungroup", icon: "folder.badge.minus", isDestructive: false, action: { 
+                                ungroupSelectedItems(pin: false)
+                                viewModel.showingUngroupAlert = false 
+                                if !viewModel.isEditMode { viewModel.selectedItemsForDeletion.removeAll() }
+                            }),
+                            ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { 
+                                viewModel.showingUngroupAlert = false 
+                                if !viewModel.isEditMode { viewModel.selectedItemsForDeletion.removeAll() }
+                            })
                         ],
-                        onCancel: { viewModel.showingUngroupAlert = false }
+                        onCancel: { 
+                            viewModel.showingUngroupAlert = false 
+                            if !viewModel.isEditMode { viewModel.selectedItemsForDeletion.removeAll() }
+                        }
                     )
                         .frame(width: 280)
                         .padding(20)
@@ -335,10 +345,20 @@ struct ContentView: View {
                         title: "Delete selected items?",
                         message: "Are you sure you want to delete \(count) items? This action cannot be undone.",
                         options: [
-                            ModalOption(title: "Delete \(count) Item\(count == 1 ? "" : "s")", icon: "trash.fill", isDestructive: true, action: { deleteSelectedItems(); viewModel.showingDeleteSelectedAlert = false }),
-                            ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { viewModel.showingDeleteSelectedAlert = false })
+                            ModalOption(title: "Delete \(count) Item\(count == 1 ? "" : "s")", icon: "trash.fill", isDestructive: true, action: { 
+                                deleteSelectedItems()
+                                viewModel.showingDeleteSelectedAlert = false 
+                                if !viewModel.isEditMode { viewModel.selectedItemsForDeletion.removeAll() }
+                            }),
+                            ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { 
+                                viewModel.showingDeleteSelectedAlert = false 
+                                if !viewModel.isEditMode { viewModel.selectedItemsForDeletion.removeAll() }
+                            })
                         ],
-                        onCancel: { viewModel.showingDeleteSelectedAlert = false }
+                        onCancel: { 
+                            viewModel.showingDeleteSelectedAlert = false 
+                            if !viewModel.isEditMode { viewModel.selectedItemsForDeletion.removeAll() }
+                        }
                     )
                     .frame(width: 280)
                     .padding(20)
@@ -357,10 +377,20 @@ struct ContentView: View {
                         message: "Do you want to keep the items inside the folders (move to Pinned) or delete them permanently?",
                         options: [
                             ModalOption(title: "Keep Items (Move to Pinned)", icon: "pin.fill", isDestructive: false, action: { deleteFolders(keepItems: true); viewModel.showingFolderDeleteAlert = false }),
-                            ModalOption(title: "Delete All Permanently", icon: "trash.fill", isDestructive: true, action: { deleteFolders(keepItems: false); viewModel.showingFolderDeleteAlert = false }),
-                            ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { viewModel.showingFolderDeleteAlert = false })
+                            ModalOption(title: "Delete All Permanently", icon: "trash.fill", isDestructive: true, action: { 
+                                deleteFolders(keepItems: false)
+                                viewModel.showingFolderDeleteAlert = false 
+                                if !viewModel.isEditMode { viewModel.selectedItemsForDeletion.removeAll() }
+                            }),
+                            ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { 
+                                viewModel.showingFolderDeleteAlert = false 
+                                if !viewModel.isEditMode { viewModel.selectedItemsForDeletion.removeAll() }
+                            })
                         ],
-                        onCancel: { viewModel.showingFolderDeleteAlert = false }
+                        onCancel: { 
+                            viewModel.showingFolderDeleteAlert = false 
+                            if !viewModel.isEditMode { viewModel.selectedItemsForDeletion.removeAll() }
+                        }
                     )
                     .frame(width: 280)
                     .padding(20)
@@ -1430,7 +1460,7 @@ extension ContentView {
                         for i in start...end {
                             if i < displayNodesLocal.count {
                                 if let id = displayNodesLocal[i].item?.id { idsToToggle.append(id) }
-                                else if let id = displayNodesLocal[i].folder?.id, id != cloudFolderId, clipboard.selectedDevice == "Local (This Mac)" { idsToToggle.append(id) }
+                                else if let id = displayNodesLocal[i].folder?.id, id != cloudFolderId, id != restoredFolderId, clipboard.selectedDevice == "Local (This Mac)" { idsToToggle.append(id) }
                             }
                         }
                         
@@ -1447,7 +1477,7 @@ extension ContentView {
                         }
                     } else {
                         let node = displayNodesLocal[viewModel.selectedIndex]
-                        if let id = node.item?.id ?? (node.folder?.id != cloudFolderId && clipboard.selectedDevice == "Local (This Mac)" ? node.folder?.id : nil) {
+                        if let id = node.item?.id ?? (node.folder?.id != cloudFolderId && node.folder?.id != restoredFolderId && clipboard.selectedDevice == "Local (This Mac)" ? node.folder?.id : nil) {
                             withAnimation {
                                 if viewModel.selectedItemsForDeletion.contains(id) { viewModel.selectedItemsForDeletion.remove(id) }
                                 else { viewModel.selectedItemsForDeletion.insert(id) }

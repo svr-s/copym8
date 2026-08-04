@@ -13,7 +13,7 @@ class CloudSyncService {
     static let shared = CloudSyncService()
     weak var delegate: CloudSyncDelegate?
     private var syncTimer: Timer?
-    private let cloudFolderId = UUID(uuidString: "00000000-0000-0000-0000-000000000002")!
+    private let cloudFolderId = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
 
     func startPolling() {
         syncTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
