@@ -490,36 +490,12 @@ case .none:
                 return false
             }
             
-            var currentTotalSize = 0.0
-            for cItem in cloudItems {
-                if cItem.itemType == .image { currentTotalSize += LocalImageStore.shared.getFileSizeMB(id: cItem.id, inCloud: true) }
-                if cItem.hasRTF { currentTotalSize += LocalPayloadStore.shared.getFileSizeMB(id: cItem.id, type: .rtf, inCloud: true) }
-                if cItem.hasHTML { currentTotalSize += LocalPayloadStore.shared.getFileSizeMB(id: cItem.id, type: .html, inCloud: true) }
-                if cItem.itemType == .file { currentTotalSize += LocalFileStore.shared.getFileSizeMB(for: cItem.id) }
-            }
-            
-            let spaceNeeded = (currentTotalSize + itemSizeMB) - maxSizeMB
-            if spaceNeeded > 0 {
-                var evictableItems = cloudItems.filter { $0.orderIndex == 0 && !$0.isPinned }
-                evictableItems.sort { $0.timestamp < $1.timestamp }
-                
-                var spaceAvailable = 0.0
-                var itemsToEvict: [ClipboardItem] = []
-                for evictable in evictableItems {
-                    if spaceAvailable >= spaceNeeded { break }
-                    itemsToEvict.append(evictable)
-                    if evictable.itemType == .image { spaceAvailable += LocalImageStore.shared.getFileSizeMB(id: evictable.id, inCloud: true) }
-                    if evictable.hasRTF { spaceAvailable += LocalPayloadStore.shared.getFileSizeMB(id: evictable.id, type: .rtf, inCloud: true) }
-                    if evictable.hasHTML { spaceAvailable += LocalPayloadStore.shared.getFileSizeMB(id: evictable.id, type: .html, inCloud: true) }
-                    if evictable.itemType == .file { spaceAvailable += LocalFileStore.shared.getFileSizeMB(for: evictable.id) }
-                }
-                
-                if spaceAvailable < spaceNeeded {
-                    DispatchQueue.main.async {
-                        NotificationCenter.default.post(name: NSNotification.Name("ShowToast"), object: "Error: Cloud Copy full. Unfreeze items to make space.")
-                    }
-                    return false
-                }
+            do {
+                let itemsToEvict = try HistoryEvictionService.shared.getCloudItemsToEvict(
+                    forNewItemSizeMB: itemSizeMB,
+                    cloudItems: cloudItems,
+                    maxSizeMB: maxSizeMB
+                )
                 
                 for evict in itemsToEvict {
                     cloudItems.removeAll { $0.id == evict.id }
@@ -528,6 +504,11 @@ case .none:
                     LocalImageStore.shared.deleteImage(id: evict.id, inCloud: true)
                     LocalFileStore.shared.deleteFiles(for: evict.id)
                 }
+            } catch {
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(name: NSNotification.Name("ShowToast"), object: "Error: Cloud Copy full. Unfreeze items to make space.")
+                }
+                return false
             }
             
             item.folderId = cloudFolderId
@@ -900,51 +881,16 @@ var maxHistoryCount: Int {
         return val == 0 ? 50 : val
     }
     
-    func cleanupTrashItems() {
-        let retentionDays = UserDefaults.standard.integer(forKey: "deleteAfterDays")
-        let limit = retentionDays == 0 ? 7 : retentionDays
-        let thresholdDate = Calendar.current.date(byAdding: .day, value: -limit, to: Date())!
-        
-        let expiredTrash = history.filter { ($0.isDeleted ?? false) && ($0.deletedAt ?? Date.distantFuture) < thresholdDate }
-        for item in expiredTrash {
-            if let idx = history.firstIndex(where: { $0.id == item.id }) {
-                deleteItem(at: idx, hardDelete: true)
-            }
-        }
-    }
-    
     func pruneStorageIfNeeded() {
-        cleanupTrashItems()
-        
-        var currentSizeMB = LocalImageStore.shared.getTotalSizeMB() + LocalPayloadStore.shared.getTotalSizeMB()
-        let activeSizeMB = currentSizeMB // Since Trash doesn't count towards the limit, we evaluate on all active items. Actually, let's keep it simple: just consider all images, but we'll prioritize hard-deleting trash images first.
-        
-        // Hard-delete trash items first if we are over limit
-        var trashImages = history.filter { ($0.isDeleted ?? false) && $0.itemType == .image }.sorted { $0.timestamp < $1.timestamp }
-        for img in trashImages {
-            if currentSizeMB <= Double(maxTotalStorageMB) { break }
-            let size = LocalImageStore.shared.getFileSizeMB(id: img.id)
-            if let idx = history.firstIndex(where: { $0.id == img.id }) {
-                deleteItem(at: idx, hardDelete: true)
-                currentSizeMB -= size
-            }
+        let retentionDays = UserDefaults.standard.integer(forKey: "deleteAfterDays")
+        let expiredIDs = HistoryEvictionService.shared.getExpiredTrashIDs(from: history, retentionDays: retentionDays)
+        if !expiredIDs.isEmpty {
+            deleteItems(where: { expiredIDs.contains($0.id) }, hardDelete: true)
         }
         
-        if currentSizeMB <= Double(maxTotalStorageMB) { return }
-        
-        var idsToRemove = Set<UUID>()
-        let unpinnedImages = history.filter { !($0.isDeleted ?? false) && !$0.isPinned && $0.folderId == nil && $0.itemType == .image }.sorted { $0.timestamp < $1.timestamp }
-        
-        for img in unpinnedImages {
-            if currentSizeMB <= Double(maxTotalStorageMB) { break }
-            let size = LocalImageStore.shared.getFileSizeMB(id: img.id)
-            LocalImageStore.shared.deleteImage(id: img.id)
-            idsToRemove.insert(img.id)
-            currentSizeMB -= size
-        }
-        
-        if !idsToRemove.isEmpty {
-            deleteItems(where: { idsToRemove.contains($0.id) }, hardDelete: true)
+        let pruneIDs = HistoryEvictionService.shared.getIDsToPrune(from: history, maxTotalStorageMB: maxTotalStorageMB)
+        if !pruneIDs.isEmpty {
+            deleteItems(where: { pruneIDs.contains($0.id) }, hardDelete: true)
         }
     }
     private func formatSize(_ bytes: Int64) -> String {
