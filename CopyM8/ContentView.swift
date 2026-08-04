@@ -1184,6 +1184,7 @@ extension ContentView {
                 if event.modifierFlags.contains(.command) {
                     if viewModel.activeTab == "Trash" { return nil }
                     if viewModel.isEditMode {
+                        if viewModel.selectedItemsForDeletion.isEmpty { return nil }
                         if viewModel.activeTab != "Pinned" {
                             for id in viewModel.selectedItemsForDeletion {
                                 if let idx = clipboard.history.firstIndex(where: { $0.id == id }) {
@@ -1221,6 +1222,7 @@ extension ContentView {
                 if event.modifierFlags.contains(.command) {
                     if viewModel.activeTab == "Trash" { return nil }
                     if viewModel.isEditMode {
+                        if viewModel.selectedItemsForDeletion.isEmpty { return nil }
                         if viewModel.activeTab == "Pinned" {
                             for id in viewModel.selectedItemsForDeletion {
                                 if let idx = clipboard.history.firstIndex(where: { $0.id == id }) {

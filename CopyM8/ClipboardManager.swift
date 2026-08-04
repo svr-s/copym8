@@ -42,269 +42,10 @@ struct ClipboardItem: Identifiable, Equatable, Codable {
 let restoredFolderId = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
 
 
-class LocalImageStore {
-    static let shared = LocalImageStore()
-    
-    private let fileManager = FileManager.default
-    private var imagesDirectory: URL? {
-        guard let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return nil }
-        let dir = appSupport.appendingPathComponent("CopyM8/Images")
-        if !fileManager.fileExists(atPath: dir.path) {
-            try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
-        }
-        return dir
-    }
-    
-    private var cloudDirectory: URL? {
-        guard let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty else { return nil }
-        let dir = URL(fileURLWithPath: syncPath).appendingPathComponent("Images")
-        if !fileManager.fileExists(atPath: dir.path) {
-            try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
-        }
-        return dir
-    }
-    
-    func getDirectory(inCloud: Bool) -> URL? {
-        return inCloud ? cloudDirectory : imagesDirectory
-    }
-    
-    func saveImage(_ data: Data, id: UUID, inCloud: Bool = false) -> Bool {
-        guard let dir = getDirectory(inCloud: inCloud) else { return false }
-        let fileURL = dir.appendingPathComponent("\(id.uuidString).png")
-        do {
-            try data.write(to: fileURL)
-            return true
-        } catch {
-            print("Failed to save image: \(error)")
-            return false
-        }
-    }
-    
-    func loadImage(id: UUID, inCloud: Bool = false) -> NSImage? {
-        guard let dir = getDirectory(inCloud: inCloud) else { return nil }
-        let fileURL = dir.appendingPathComponent("\(id.uuidString).png")
-        if !fileManager.fileExists(atPath: fileURL.path) && inCloud {
-            let placeholder = fileURL.deletingPathExtension().appendingPathExtension("png.icloud")
-            if fileManager.fileExists(atPath: placeholder.path) {
-                try? fileManager.startDownloadingUbiquitousItem(at: fileURL)
-            }
-            return nil
-        }
-        return NSImage(contentsOf: fileURL)
-    }
-    
-    func deleteImage(id: UUID, inCloud: Bool = false) {
-        guard let dir = getDirectory(inCloud: inCloud) else { return }
-        let fileURL = dir.appendingPathComponent("\(id.uuidString).png")
-        try? fileManager.removeItem(at: fileURL)
-    }
-    
-    func getFileSizeMB(id: UUID, inCloud: Bool = false) -> Double {
-        guard let dir = getDirectory(inCloud: inCloud) else { return 0 }
-        let fileURL = dir.appendingPathComponent("\(id.uuidString).png")
-        if let attrs = try? fileManager.attributesOfItem(atPath: fileURL.path), let size = attrs[.size] as? UInt64 {
-            return Double(size) / (1024.0 * 1024.0)
-        }
-        return 0
-    }
-    
-    
-    func migrateImage(id: UUID, toCloud: Bool) throws {
-        guard let sourceDir = getDirectory(inCloud: !toCloud), let destDir = getDirectory(inCloud: toCloud) else { return }
-        let sourceURL = sourceDir.appendingPathComponent("\(id.uuidString).png")
-        let destURL = destDir.appendingPathComponent("\(id.uuidString).png")
-        if fileManager.fileExists(atPath: sourceURL.path) {
-            try fileManager.copyItem(at: sourceURL, to: destURL)
-        }
-    }
-
-    func getTotalSizeMB() -> Double {
-        guard let dir = imagesDirectory,
-              let files = try? fileManager.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.fileSizeKey]) else { return 0 }
-        
-        var totalBytes: Int64 = 0
-        for file in files {
-            if let attrs = try? file.resourceValues(forKeys: [.fileSizeKey]), let size = attrs.fileSize {
-                totalBytes += Int64(size)
-            }
-        }
-        return Double(totalBytes) / (1024.0 * 1024.0)
-    }
-}
-
-enum PayloadType: String {
-    case rtf
-    case html
-    case rtfd
-    case webArchive
-    case pdf
-}
-
-class LocalPayloadStore {
-    static let shared = LocalPayloadStore()
-    
-    private let fileManager = FileManager.default
-    private var payloadsDirectory: URL? {
-        guard let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return nil }
-        let dir = appSupport.appendingPathComponent("CopyM8/Payloads")
-        if !fileManager.fileExists(atPath: dir.path) {
-            try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
-        }
-        return dir
-    }
-    
-    private var cloudDirectory: URL? {
-        guard let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty else { return nil }
-        let dir = URL(fileURLWithPath: syncPath).appendingPathComponent("Payloads")
-        if !fileManager.fileExists(atPath: dir.path) {
-            try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
-        }
-        return dir
-    }
-    
-    func getDirectory(inCloud: Bool) -> URL? {
-        return inCloud ? cloudDirectory : payloadsDirectory
-    }
-    
-    func savePayload(_ data: Data, id: UUID, type: PayloadType, inCloud: Bool = false) -> Bool {
-        guard let dir = getDirectory(inCloud: inCloud) else { return false }
-        let fileURL = dir.appendingPathComponent("\(id.uuidString).\(type.rawValue)")
-        do {
-            try data.write(to: fileURL)
-            return true
-        } catch {
-            print("Failed to save payload: \(error)")
-            return false
-        }
-    }
-    
-    func loadPayload(id: UUID, type: PayloadType, inCloud: Bool = false) -> Data? {
-        guard let dir = getDirectory(inCloud: inCloud) else { return nil }
-        let fileURL = dir.appendingPathComponent("\(id.uuidString).\(type.rawValue)")
-        if !fileManager.fileExists(atPath: fileURL.path) && inCloud {
-            let placeholder = fileURL.deletingPathExtension().appendingPathExtension("\(type.rawValue).icloud")
-            if fileManager.fileExists(atPath: placeholder.path) {
-                try? fileManager.startDownloadingUbiquitousItem(at: fileURL)
-            }
-            return nil
-        }
-        return try? Data(contentsOf: fileURL)
-    }
-    
-    func deletePayloads(for id: UUID, inCloud: Bool = false) {
-        guard let dir = getDirectory(inCloud: inCloud) else { return }
-        let types: [PayloadType] = [.rtf, .html, .rtfd, .webArchive, .pdf]
-        for type in types {
-            let fileURL = dir.appendingPathComponent("\(id.uuidString).\(type.rawValue)")
-            try? fileManager.removeItem(at: fileURL)
-        }
-    }
-    
-    func getFileSizeMB(id: UUID, type: PayloadType, inCloud: Bool = false) -> Double {
-        guard let dir = getDirectory(inCloud: inCloud) else { return 0 }
-        let fileURL = dir.appendingPathComponent("\(id.uuidString).\(type.rawValue)")
-        if let attrs = try? fileManager.attributesOfItem(atPath: fileURL.path), let size = attrs[.size] as? UInt64 {
-            return Double(size) / (1024.0 * 1024.0)
-        }
-        return 0
-    }
-    
-    
-    func migratePayloads(for id: UUID, toCloud: Bool) throws {
-        guard let sourceDir = getDirectory(inCloud: !toCloud), let destDir = getDirectory(inCloud: toCloud) else { return }
-        let types: [PayloadType] = [.rtf, .html, .rtfd, .webArchive, .pdf]
-        for type in types {
-            let sourceURL = sourceDir.appendingPathComponent("\(id.uuidString).\(type.rawValue)")
-            let destURL = destDir.appendingPathComponent("\(id.uuidString).\(type.rawValue)")
-            if fileManager.fileExists(atPath: sourceURL.path) {
-                try fileManager.copyItem(at: sourceURL, to: destURL)
-            }
-        }
-    }
-
-    func getTotalSizeMB() -> Double {
-        guard let dir = payloadsDirectory,
-              let files = try? fileManager.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.fileSizeKey]) else { return 0 }
-        
-        var totalBytes: Int64 = 0
-        for file in files {
-            if let attrs = try? file.resourceValues(forKeys: [.fileSizeKey]), let size = attrs.fileSize {
-                totalBytes += Int64(size)
-            }
-        }
-        return Double(totalBytes) / (1024.0 * 1024.0)
-    }
-}
-
-class LocalFileStore {
-    static let shared = LocalFileStore()
-    private let fileManager = FileManager.default
-    
-    private var cloudDirectory: URL? {
-        guard let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty else { return nil }
-        let dir = URL(fileURLWithPath: syncPath).appendingPathComponent("Files")
-        if !fileManager.fileExists(atPath: dir.path) {
-            try? fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
-        }
-        return dir
-    }
-    
-    func migrateFiles(for id: UUID, fileURLs: [String], toCloud: Bool) throws -> [String] {
-        guard let destDir = cloudDirectory else { return fileURLs }
-        
-        if toCloud {
-            var newURLs: [String] = []
-            for path in fileURLs {
-                let sourceURL = URL(fileURLWithPath: path)
-                let destURL = destDir.appendingPathComponent("\(id.uuidString)_\(sourceURL.lastPathComponent)")
-                if fileManager.fileExists(atPath: sourceURL.path) {
-                    try fileManager.copyItem(at: sourceURL, to: destURL)
-                    newURLs.append(destURL.path)
-                }
-            }
-            return newURLs
-        } else {
-            // Migrating out of cloud - just delete the cloud copies
-            for path in fileURLs {
-                let sourceURL = URL(fileURLWithPath: path)
-                if sourceURL.path.hasPrefix(destDir.path) {
-                    try? fileManager.removeItem(at: sourceURL)
-                }
-            }
-            return fileURLs // When moving out of cloud, we lose the files since they were in iCloud. Or we keep the iCloud path? Actually, for files, we should just delete the iCloud copy. The original files on local disk might still be there, but they aren't tracked.
-        }
-    }
-    
-    func deleteFiles(for id: UUID) {
-        guard let dir = cloudDirectory,
-              let files = try? fileManager.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil) else { return }
-        
-        for file in files {
-            if file.lastPathComponent.hasPrefix("\(id.uuidString)_") {
-                try? fileManager.removeItem(at: file)
-            }
-        }
-    }
-    
-    func getFileSizeMB(for id: UUID) -> Double {
-        guard let dir = cloudDirectory,
-              let files = try? fileManager.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.fileSizeKey]) else { return 0 }
-        
-        var totalBytes: Int64 = 0
-        for file in files {
-            if file.lastPathComponent.hasPrefix("\(id.uuidString)_") {
-                if let attrs = try? file.resourceValues(forKeys: [.fileSizeKey]), let size = attrs.fileSize {
-                    totalBytes += Int64(size)
-                }
-            }
-        }
-        return Double(totalBytes) / (1024.0 * 1024.0)
-    }
-}
 
 let cloudFolderId = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
 
-class ClipboardManager: ObservableObject {
+class ClipboardManager: ObservableObject, CloudSyncDelegate {
     @Published var history: [ClipboardItem] = [] {
         didSet {
             saveHistory()
@@ -337,7 +78,7 @@ class ClipboardManager: ObservableObject {
     @Published var selectedDevice: String = "Local (This Mac)" {
         didSet {
             if selectedDevice != "Local (This Mac)" {
-                fetchRemoteHistory(for: selectedDevice)
+                CloudSyncService.shared.fetchRemoteHistory(for: selectedDevice)
             }
         }
     }
@@ -345,7 +86,6 @@ class ClipboardManager: ObservableObject {
     private let pasteboard = NSPasteboard.general
     private var lastChangeCount: Int = 0
     private var timer: Timer?
-    private var syncTimer: Timer?
     private let storageKey = "copym8_clipboard_history"
     private let foldersKey = "copym8_clipboard_folders"
     private let queue = DispatchQueue(label: "com.copym8.clipboard", qos: .userInteractive)
@@ -353,10 +93,41 @@ class ClipboardManager: ObservableObject {
     var isReordering: Bool = false
     
     init() {
+        CloudSyncService.shared.delegate = self
         loadHistory()
         lastChangeCount = pasteboard.changeCount
         startPolling()
-        startSyncPolling()
+        CloudSyncService.shared.startPolling()
+    }
+    
+    func disableSync() {
+        CloudSyncService.shared.disableSync()
+    }
+    
+    func enableSync() {
+        DispatchQueue.main.async {
+            if let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty {
+                if !self.folders.contains(where: { $0.id == cloudFolderId }) {
+                    let cloudFolder = ClipboardFolder(id: cloudFolderId, name: "Cloud Copy", orderIndex: -1)
+                    self.folders.insert(cloudFolder, at: 0)
+                    self.saveFolders()
+                }
+                self.saveHistory()
+                CloudSyncService.shared.startPolling()
+            }
+        }
+    }
+    
+    func renameDeviceFiles(from oldName: String, to newName: String) {
+        CloudSyncService.shared.renameDeviceFiles(from: oldName, to: newName)
+    }
+    
+    func purgeRemoteDevice(_ deviceName: String) {
+        CloudSyncService.shared.purgeRemoteDevice(deviceName)
+    }
+    
+    func fetchRemoteHistory(for device: String) {
+        CloudSyncService.shared.fetchRemoteHistory(for: device)
     }
     
     private var historyFileURL: URL? {
@@ -895,107 +666,8 @@ case .none:
         }
     }
     
-    private func startSyncPolling() {
-        syncTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
-            self?.pollSyncFolder()
-        }
-    }
     
-    private func pollSyncFolder() {
-        guard let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty else {
-            DispatchQueue.main.async {
-                if !self.availableDevices.isEmpty { self.availableDevices = [] }
-                if self.selectedDevice != "Local (This Mac)" { self.selectedDevice = "Local (This Mac)" }
-            }
-            return
-        }
-        
-        let localDeviceName = UserDefaults.standard.string(forKey: "syncDeviceName") ?? (Host.current().localizedName ?? "My Mac")
-        let url = URL(fileURLWithPath: syncPath)
-        
-        guard let files = try? FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil) else { return }
-        
-        let devices = files
-            .filter { $0.lastPathComponent.hasSuffix("_entries.json") && !$0.lastPathComponent.hasPrefix("cloud_copy") }
-            .map { $0.lastPathComponent.replacingOccurrences(of: "_entries.json", with: "") }
-            .filter { $0 != localDeviceName }
-            .sorted()
-            
-        let cloudURL = url.appendingPathComponent("cloud_copy_entries.json")
-        var cloudItems: [ClipboardItem]? = nil
-        
-        if !FileManager.default.fileExists(atPath: cloudURL.path) {
-            try? FileManager.default.startDownloadingUbiquitousItem(at: cloudURL)
-        }
-        
-        if let data = try? Data(contentsOf: cloudURL) {
-            cloudItems = try? JSONDecoder().decode([ClipboardItem].self, from: data)
-        }
-            
-        DispatchQueue.main.async {
-            if self.availableDevices != devices {
-                self.availableDevices = devices
-            }
-            // Auto-refresh remote history if currently viewing one
-            if self.selectedDevice != "Local (This Mac)" {
-                self.fetchRemoteHistory(for: self.selectedDevice)
-            }
-            
-            // Sync Cloud Copy items to local history
-            if let items = cloudItems {
-                let currentCloudItems = self.history.filter { $0.folderId == cloudFolderId }
-                
-                if currentCloudItems != items {
-                    self.history.removeAll { $0.folderId == cloudFolderId }
-                    self.history.append(contentsOf: items)
-                    self.history.sort { $0.timestamp > $1.timestamp }
-                }
-            }
-        }
-    }
     
-    func fetchRemoteHistory(for deviceName: String) {
-        guard let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty else { return }
-        let url = URL(fileURLWithPath: syncPath).appendingPathComponent("\(deviceName)_entries.json")
-        
-        guard let data = try? Data(contentsOf: url) else { return }
-        
-        if let decoded = try? JSONDecoder().decode([ClipboardItem].self, from: data) {
-            // Filter out files/images since they rely on local UUIDs or paths
-            var filtered = decoded.filter { $0.itemType != .file && $0.itemType != .image }
-            
-            // Remove remote Cloud Copy items to avoid duplicates; we will use the universal local synced ones
-            filtered.removeAll { $0.folderId == cloudFolderId }
-            
-            // We append a tag so users know it's remote
-            for i in 0..<filtered.count {
-                if let app = filtered[i].sourceApp {
-                    filtered[i].sourceApp = "\(app) (via \(deviceName))"
-                } else {
-                    filtered[i].sourceApp = "via \(deviceName)"
-                }
-            }
-            
-            let foldersUrl = URL(fileURLWithPath: syncPath).appendingPathComponent("\(deviceName)_folders.json")
-            var fetchedFolders: [ClipboardFolder] = []
-            if let folderData = try? Data(contentsOf: foldersUrl) {
-                fetchedFolders = (try? JSONDecoder().decode([ClipboardFolder].self, from: folderData)) ?? []
-            }
-            
-            // INJECT UNIFIED CLOUD COPY INTO REMOTE VIEW
-            fetchedFolders.removeAll { $0.id == cloudFolderId }
-            let cloudFolder = ClipboardFolder(id: cloudFolderId, name: "Cloud Copy", orderIndex: -1)
-            fetchedFolders.insert(cloudFolder, at: 0)
-            
-            let currentCloudItems = self.history.filter { $0.folderId == cloudFolderId }
-            filtered.append(contentsOf: currentCloudItems)
-            
-            DispatchQueue.main.async {
-                self.remoteHistory = filtered
-                self.remoteFolders = fetchedFolders
-            }
-        }
-    }
     
     private var ignoreNextChange = false
     
@@ -1244,7 +916,7 @@ var maxHistoryCount: Int {
     func pruneStorageIfNeeded() {
         cleanupTrashItems()
         
-        var currentSizeMB = LocalImageStore.shared.getTotalSizeMB()
+        var currentSizeMB = LocalImageStore.shared.getTotalSizeMB() + LocalPayloadStore.shared.getTotalSizeMB()
         let activeSizeMB = currentSizeMB // Since Trash doesn't count towards the limit, we evaluate on all active items. Actually, let's keep it simple: just consider all images, but we'll prioritize hard-deleting trash images first.
         
         // Hard-delete trash items first if we are over limit
@@ -1500,75 +1172,9 @@ var maxHistoryCount: Int {
         vUp?.post(tap: .cgAnnotatedSessionEventTap)
     }
     
-    func purgeRemoteDevice(_ deviceName: String) {
-        guard let folderPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !folderPath.isEmpty else { return }
-        let fileURL = URL(fileURLWithPath: folderPath).appendingPathComponent("\(deviceName)_entries.json")
-        let foldersURL = URL(fileURLWithPath: folderPath).appendingPathComponent("\(deviceName)_folders.json")
-        try? FileManager.default.removeItem(at: fileURL)
-        try? FileManager.default.removeItem(at: foldersURL)
-        DispatchQueue.main.async {
-            self.availableDevices.removeAll { $0 == deviceName }
-            if self.selectedDevice == deviceName {
-                self.selectedDevice = "Local (This Mac)"
-            }
-            
-            // Clean up memory: remove imported folders for this device
-            let foldersToRemove = self.folders.filter { $0.name.hasPrefix("\(deviceName) - ") }.map { $0.id }
-            self.history.removeAll { foldersToRemove.contains($0.folderId ?? UUID()) }
-            self.folders.removeAll { foldersToRemove.contains($0.id) }
-        }
-    }
     
-    func disableSync() {
-        DispatchQueue.main.async {
-            // Remove the main Cloud Copy folder and its items
-            self.history.removeAll { $0.folderId == cloudFolderId }
-            self.folders.removeAll { $0.id == cloudFolderId }
-            let remoteFolderIds = self.folders.filter { folder in
-                return folder.id == cloudFolderId || folder.name.contains(" - ")
-            }.map { $0.id }
-            
-            self.history.removeAll { remoteFolderIds.contains($0.folderId ?? UUID()) }
-            self.folders.removeAll { remoteFolderIds.contains($0.id) }
-            
-            self.availableDevices = ["Local (This Mac)"]
-            self.selectedDevice = "Local (This Mac)"
-            UserDefaults.standard.set("", forKey: "syncFolderPath")
-        }
-    }
     
-    func enableSync() {
-        DispatchQueue.main.async {
-            if let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty {
-                if !self.folders.contains(where: { $0.id == cloudFolderId }) {
-                    let cloudFolder = ClipboardFolder(id: cloudFolderId, name: "Cloud Copy", orderIndex: -1)
-                    self.folders.insert(cloudFolder, at: 0)
-                    self.saveFolders()
-                }
-                // Trigger an initial save to populate the cloud
-                self.saveHistory()
-            }
-        }
-    }
     
-    func renameDeviceFiles(from oldName: String, to newName: String) {
-        guard let folderPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !folderPath.isEmpty else { return }
-        
-        let fm = FileManager.default
-        let oldEntriesURL = URL(fileURLWithPath: folderPath).appendingPathComponent("\(oldName)_entries.json")
-        let oldFoldersURL = URL(fileURLWithPath: folderPath).appendingPathComponent("\(oldName)_folders.json")
-        
-        let newEntriesURL = URL(fileURLWithPath: folderPath).appendingPathComponent("\(newName)_entries.json")
-        let newFoldersURL = URL(fileURLWithPath: folderPath).appendingPathComponent("\(newName)_folders.json")
-        
-        if fm.fileExists(atPath: oldEntriesURL.path) {
-            try? fm.moveItem(at: oldEntriesURL, to: newEntriesURL)
-        }
-        
-        if fm.fileExists(atPath: oldFoldersURL.path) {
-            try? fm.moveItem(at: oldFoldersURL, to: newFoldersURL)
-        }
-    }
     
     func importItems(_ items: [ClipboardItem]) {
         let remoteDevice = self.selectedDevice != "Local (This Mac)" ? self.selectedDevice : "Remote"
