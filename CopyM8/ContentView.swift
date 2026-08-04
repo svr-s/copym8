@@ -38,38 +38,14 @@ enum ReorderTarget: Equatable {
 }
 
 struct ContentView: View {
+    @StateObject var viewModel = ContentViewModel()
     @StateObject var clipboard = ClipboardManager()
     @StateObject var shortcut = ShortcutManager()
-    @State var isHovering = false
-    @State var showingDeleteSelectedAlert = false
-    @State var showingFolderDeleteAlert = false
-    @State var showingUngroupAlert = false
-    @State var expandedItemIndex: Int? = nil
-    @State var editingFolderId: UUID? = nil
-    @State var showingGroupAssignment = false
-    @State var itemToAssignGroup: GroupAssignmentPayload? = nil
-    @State private var showingDeviceSwitcher = false
-    @State var previousTab: String = "All"
-    @State var showingEmptyTrashAlert: Bool = false
-    @State var showingReadOnlyToast: Bool = false
-    @State var showingImportSuccessToast: Bool = false
-    @State var importSuccessMessage: String = "Import successful"
-    @State var draftHistoryCount: Int = 25
-    @State var searchText: String = ""
     @FocusState private var isSearchFocused: Bool
     
-    @State var isEditMode: Bool = false
-    @State var selectedItemsForDeletion: Set<UUID> = []
     
-    @State var isReorderMode: Bool = false
-    @State var reorderTarget: ReorderTarget? = nil
-    @State var reorderFreezeLimit: String = "0"
-    @State var reorderBackupHistory: [ClipboardItem] = []
-    @State var reorderBackupFolders: [ClipboardFolder] = []
     @FocusState private var isFreezeFieldFocused: Bool
     
-    @State var activeTab: String = "All"
-    @State var selectedFolderId: UUID? = nil
     
     @AppStorage("activeColorName") private var activeColorName: String = "Glacier"
     @AppStorage("themePreference") private var themePreference: String = "System"
@@ -91,11 +67,10 @@ struct ContentView: View {
         colors.first(where: { $0.name == activeColorName })?.color ?? .cyan
     }
     
-    @State var expandedFolderIds: Set<UUID> = []
     
     private var displayNodes: [DisplayNode] {
-        if isReorderMode {
-            switch reorderTarget {
+        if viewModel.isReorderMode {
+            switch viewModel.reorderTarget {
             case .folders:
                 return clipboard.folders.filter { $0.id != cloudFolderId && $0.id != restoredFolderId }.map { DisplayNode(id: "folder_\($0.id.uuidString)", isFolder: true, folder: $0, item: nil, parentFolderId: nil) }
             case .items(let folderId):
@@ -107,7 +82,7 @@ struct ContentView: View {
                     return item1.timestamp > item2.timestamp
                 }
                 var nodes: [DisplayNode] = []
-                let freezeLimit = Int(reorderFreezeLimit) ?? 0
+                let freezeLimit = Int(viewModel.reorderFreezeLimit) ?? 0
                 for (i, item) in items.enumerated() {
                     if i == freezeLimit && freezeLimit > 0 {
                         nodes.append(DisplayNode(id: "divider_reorder", isFolder: false, folder: nil, item: nil, parentFolderId: folderId, isDivider: true))
@@ -124,7 +99,7 @@ struct ContentView: View {
                     return item1.timestamp > item2.timestamp
                 }
                 var nodes: [DisplayNode] = []
-                let freezeLimit = Int(reorderFreezeLimit) ?? 0
+                let freezeLimit = Int(viewModel.reorderFreezeLimit) ?? 0
                 for (i, item) in items.enumerated() {
                     if i == freezeLimit && freezeLimit > 0 {
                         nodes.append(DisplayNode(id: "divider_reorder", isFolder: false, folder: nil, item: nil, parentFolderId: nil, isDivider: true))
@@ -137,11 +112,11 @@ struct ContentView: View {
             }
         }
         
-        if activeTab == "Trash" {
+        if viewModel.activeTab == "Trash" {
             var items = clipboard.history.filter { ($0.isDeleted ?? false) }
             
-            if !searchText.isEmpty {
-                let searchLower = searchText.lowercased()
+            if !viewModel.searchText.isEmpty {
+                let searchLower = viewModel.searchText.lowercased()
                 items = items.filter { item in
                     let contentMatch = item.text.lowercased().contains(searchLower)
                     let sourceMatch = item.sourceApp?.lowercased().contains(searchLower) ?? false
@@ -158,21 +133,21 @@ struct ContentView: View {
             return nodes
         }
         
-        if activeTab == "Groups" {
-            let filteredFolders = clipboard.getFilteredFolders(searchText: searchText)
+        if viewModel.activeTab == "Groups" {
+            let filteredFolders = clipboard.getFilteredFolders(searchText: viewModel.searchText)
             var nodes: [DisplayNode] = []
             
             for folder in filteredFolders {
                 nodes.append(DisplayNode(id: "folder_\(folder.id.uuidString)", isFolder: true, folder: folder, item: nil, parentFolderId: nil))
                 
-                if expandedFolderIds.contains(folder.id) {
+                if viewModel.expandedFolderIds.contains(folder.id) {
                     var items = clipboard.activeHistory.filter { !($0.isDeleted ?? false) && $0.folderId == folder.id }
-                    if !searchText.isEmpty {
-                        let bypassFilter = folder.name.localizedCaseInsensitiveContains(searchText)
+                    if !viewModel.searchText.isEmpty {
+                        let bypassFilter = folder.name.localizedCaseInsensitiveContains(viewModel.searchText)
                         if !bypassFilter {
                             items = items.filter { item in
-                                if item.text.localizedCaseInsensitiveContains(searchText) { return true }
-                                if item.sourceApp?.localizedCaseInsensitiveContains(searchText) == true { return true }
+                                if item.text.localizedCaseInsensitiveContains(viewModel.searchText) { return true }
+                                if item.sourceApp?.localizedCaseInsensitiveContains(viewModel.searchText) == true { return true }
                                 return false
                             }
                         }
@@ -201,7 +176,7 @@ struct ContentView: View {
             // Re-use existing filteredHistory logic
             var results = clipboard.activeHistory.filter { !($0.isDeleted ?? false) }
             
-            switch activeTab {
+            switch viewModel.activeTab {
             case "Pinned": results = results.filter { $0.isPinned && $0.folderId == nil }
             case "Text": results = results.filter { $0.itemType == .text }
             case "Links": results = results.filter { $0.itemType == .link }
@@ -210,18 +185,18 @@ struct ContentView: View {
             default: break
             }
             
-            if !searchText.isEmpty {
+            if !viewModel.searchText.isEmpty {
                 results = results.filter { item in
-                    if item.text.localizedCaseInsensitiveContains(searchText) { return true }
-                    if item.sourceApp?.localizedCaseInsensitiveContains(searchText) == true { return true }
+                    if item.text.localizedCaseInsensitiveContains(viewModel.searchText) { return true }
+                    if item.sourceApp?.localizedCaseInsensitiveContains(viewModel.searchText) == true { return true }
                     if let folderId = item.folderId, let folder = clipboard.activeFolders.first(where: { $0.id == folderId }) {
-                        if folder.name.localizedCaseInsensitiveContains(searchText) { return true }
+                        if folder.name.localizedCaseInsensitiveContains(viewModel.searchText) { return true }
                     }
                     return false
                 }
             }
             
-            if activeTab == "Pinned" {
+            if viewModel.activeTab == "Pinned" {
                 results.sort { item1, item2 in
                     if item1.orderIndex > 0 && item2.orderIndex > 0 { return item1.orderIndex < item2.orderIndex }
                     if item1.orderIndex > 0 { return true }
@@ -250,8 +225,6 @@ struct ContentView: View {
     @State var dragOffset: CGSize = .zero
     @State var initialWindowPosition: NSPoint? = nil
     
-    @State var selectedIndex: Int = 0
-    @State var selectionAnchorIndex: Int? = nil
     @State var isResizing = false
     @State var resizeStartMouse: NSPoint?
     @State var resizeStartSize: NSSize?
@@ -267,14 +240,14 @@ struct ContentView: View {
     @ViewBuilder
     private var modalsOverlay: some View {
         Group {
-            if let payload = itemToAssignGroup {
+            if let payload = viewModel.itemToAssignGroup {
                 ZStack {
                     Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
-                        .onTapGesture { itemToAssignGroup = nil }
+                        .onTapGesture { viewModel.itemToAssignGroup = nil }
                     GroupAssignmentView(
                         itemIds: payload.itemIds, 
                         onComplete: payload.onComplete,
-                        onCancel: { itemToAssignGroup = nil }
+                        onCancel: { viewModel.itemToAssignGroup = nil }
                     )
                         .environmentObject(clipboard)
                         .frame(width: 280)
@@ -284,19 +257,19 @@ struct ContentView: View {
                         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
                         .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
                 }
-            } else if showingUngroupAlert {
+            } else if viewModel.showingUngroupAlert {
                 ZStack {
                     Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
-                        .onTapGesture { showingUngroupAlert = false }
+                        .onTapGesture { viewModel.showingUngroupAlert = false }
                     ActionConfirmationModalView(
                         title: "Ungroup selected items?",
                         message: "Do you want to keep these items in your Pinned list, or completely ungroup them?",
                         options: [
-                            ModalOption(title: "Move to Pinned", icon: "pin.fill", isDestructive: false, action: { ungroupSelectedItems(pin: true); showingUngroupAlert = false }),
-                            ModalOption(title: "Completely Ungroup", icon: "folder.badge.minus", isDestructive: false, action: { ungroupSelectedItems(pin: false); showingUngroupAlert = false }),
-                            ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { showingUngroupAlert = false })
+                            ModalOption(title: "Move to Pinned", icon: "pin.fill", isDestructive: false, action: { ungroupSelectedItems(pin: true); viewModel.showingUngroupAlert = false }),
+                            ModalOption(title: "Completely Ungroup", icon: "folder.badge.minus", isDestructive: false, action: { ungroupSelectedItems(pin: false); viewModel.showingUngroupAlert = false }),
+                            ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { viewModel.showingUngroupAlert = false })
                         ],
-                        onCancel: { showingUngroupAlert = false }
+                        onCancel: { viewModel.showingUngroupAlert = false }
                     )
                         .frame(width: 280)
                         .padding(20)
@@ -305,22 +278,22 @@ struct ContentView: View {
                         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
                         .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
                 }
-            } else if showingDeviceSwitcher {
+            } else if viewModel.showingDeviceSwitcher {
                 ZStack {
                     Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
-                        .onTapGesture { showingDeviceSwitcher = false }
+                        .onTapGesture { viewModel.showingDeviceSwitcher = false }
                     
                     let devices = ["Local (This Mac)"] + clipboard.availableDevices.filter { $0 != "Local (This Mac)" }
                     DeviceSwitcherView(
                         devices: devices,
                         onSelect: { selected in
                             clipboard.selectedDevice = selected
-                            if selected != "Local (This Mac)" && activeTab == "Trash" {
-                                activeTab = previousTab == "Trash" ? "All" : previousTab
+                            if selected != "Local (This Mac)" && viewModel.activeTab == "Trash" {
+                                viewModel.activeTab = viewModel.previousTab == "Trash" ? "All" : viewModel.previousTab
                             }
-                            showingDeviceSwitcher = false
+                            viewModel.showingDeviceSwitcher = false
                         },
-                        onCancel: { showingDeviceSwitcher = false }
+                        onCancel: { viewModel.showingDeviceSwitcher = false }
                     )
                         .frame(width: 280)
                         .background(Color(NSColor.windowBackgroundColor))
@@ -328,10 +301,10 @@ struct ContentView: View {
                         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
                         .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
                 }
-            } else if showingEmptyTrashAlert {
+            } else if viewModel.showingEmptyTrashAlert {
                 ZStack {
                     Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
-                        .onTapGesture { showingEmptyTrashAlert = false }
+                        .onTapGesture { viewModel.showingEmptyTrashAlert = false }
                     let trashCount = clipboard.history.filter { ($0.isDeleted ?? false) }.count
                     ActionConfirmationModalView(
                         title: "Delete selected items?",
@@ -339,11 +312,11 @@ struct ContentView: View {
                         options: [
                             ModalOption(title: "Delete \(trashCount) Item\(trashCount == 1 ? "" : "s")", icon: "trash.fill", isDestructive: true, action: {
                                 clipboard.deleteItems(where: { ($0.isDeleted ?? false) }, hardDelete: true)
-                                showingEmptyTrashAlert = false
+                                viewModel.showingEmptyTrashAlert = false
                             }),
-                            ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { showingEmptyTrashAlert = false })
+                            ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { viewModel.showingEmptyTrashAlert = false })
                         ],
-                        onCancel: { showingEmptyTrashAlert = false }
+                        onCancel: { viewModel.showingEmptyTrashAlert = false }
                     )
                     .frame(width: 280)
                     .padding(20)
@@ -352,19 +325,19 @@ struct ContentView: View {
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
                     .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
                 }
-            } else if showingDeleteSelectedAlert {
+            } else if viewModel.showingDeleteSelectedAlert {
                 ZStack {
                     Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
-                        .onTapGesture { showingDeleteSelectedAlert = false }
-                    let count = selectedItemsForDeletion.count
+                        .onTapGesture { viewModel.showingDeleteSelectedAlert = false }
+                    let count = viewModel.selectedItemsForDeletion.count
                     ActionConfirmationModalView(
                         title: "Delete selected items?",
                         message: "Are you sure you want to delete \(count) items? This action cannot be undone.",
                         options: [
-                            ModalOption(title: "Delete \(count) Item\(count == 1 ? "" : "s")", icon: "trash.fill", isDestructive: true, action: { deleteSelectedItems(); showingDeleteSelectedAlert = false }),
-                            ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { showingDeleteSelectedAlert = false })
+                            ModalOption(title: "Delete \(count) Item\(count == 1 ? "" : "s")", icon: "trash.fill", isDestructive: true, action: { deleteSelectedItems(); viewModel.showingDeleteSelectedAlert = false }),
+                            ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { viewModel.showingDeleteSelectedAlert = false })
                         ],
-                        onCancel: { showingDeleteSelectedAlert = false }
+                        onCancel: { viewModel.showingDeleteSelectedAlert = false }
                     )
                     .frame(width: 280)
                     .padding(20)
@@ -373,20 +346,20 @@ struct ContentView: View {
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
                     .shadow(color: Color.black.opacity(0.25), radius: 15, x: 0, y: 8)
                 }
-            } else if showingFolderDeleteAlert {
+            } else if viewModel.showingFolderDeleteAlert {
                 ZStack {
                     Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
-                        .onTapGesture { showingFolderDeleteAlert = false }
-                    let folderIds = selectedItemsForDeletion.filter { id in clipboard.folders.contains(where: { $0.id == id }) }
+                        .onTapGesture { viewModel.showingFolderDeleteAlert = false }
+                    let folderIds = viewModel.selectedItemsForDeletion.filter { id in clipboard.folders.contains(where: { $0.id == id }) }
                     ActionConfirmationModalView(
                         title: "Delete selected folders?",
                         message: "Do you want to keep the items inside the folders (move to Pinned) or delete them permanently?",
                         options: [
-                            ModalOption(title: "Keep Items (Move to Pinned)", icon: "pin.fill", isDestructive: false, action: { deleteFolders(keepItems: true); showingFolderDeleteAlert = false }),
-                            ModalOption(title: "Delete All Permanently", icon: "trash.fill", isDestructive: true, action: { deleteFolders(keepItems: false); showingFolderDeleteAlert = false }),
-                            ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { showingFolderDeleteAlert = false })
+                            ModalOption(title: "Keep Items (Move to Pinned)", icon: "pin.fill", isDestructive: false, action: { deleteFolders(keepItems: true); viewModel.showingFolderDeleteAlert = false }),
+                            ModalOption(title: "Delete All Permanently", icon: "trash.fill", isDestructive: true, action: { deleteFolders(keepItems: false); viewModel.showingFolderDeleteAlert = false }),
+                            ModalOption(title: "Cancel", icon: "xmark", isDestructive: false, action: { viewModel.showingFolderDeleteAlert = false })
                         ],
-                        onCancel: { showingFolderDeleteAlert = false }
+                        onCancel: { viewModel.showingFolderDeleteAlert = false }
                     )
                     .frame(width: 280)
                     .padding(20)
@@ -404,36 +377,36 @@ struct ContentView: View {
             if shortcut.isExpanded {
                 ExpandedView(
                     isHoveringClose: $isHoveringClose,
-                    isEditMode: $isEditMode,
-                    selectedItemsForDeletion: $selectedItemsForDeletion,
+                    isEditMode: $viewModel.isEditMode,
+                    selectedItemsForDeletion: $viewModel.selectedItemsForDeletion,
                     isDense: $isDense,
                     windowWidth: $windowWidth,
                     windowHeight: $windowHeight,
-                    draftHistoryCount: $draftHistoryCount,
+                    draftHistoryCount: $viewModel.draftHistoryCount,
                     maxHistoryCount: $maxHistoryCount,
-                    activeTab: $activeTab,
-                    previousTab: $previousTab,
-                    showingEmptyTrashAlert: $showingEmptyTrashAlert,
-                    isReorderMode: $isReorderMode,
-                    reorderTarget: $reorderTarget,
-                    reorderFreezeLimit: $reorderFreezeLimit,
-                    reorderBackupHistory: $reorderBackupHistory,
-                    reorderBackupFolders: $reorderBackupFolders,
+                    activeTab: $viewModel.activeTab,
+                    previousTab: $viewModel.previousTab,
+                    showingEmptyTrashAlert: $viewModel.showingEmptyTrashAlert,
+                    isReorderMode: $viewModel.isReorderMode,
+                    reorderTarget: $viewModel.reorderTarget,
+                    reorderFreezeLimit: $viewModel.reorderFreezeLimit,
+                    reorderBackupHistory: $viewModel.reorderBackupHistory,
+                    reorderBackupFolders: $viewModel.reorderBackupFolders,
                     isFreezeFieldFocused: $isFreezeFieldFocused,
-                    selectedIndex: $selectedIndex,
-                    selectionAnchorIndex: $selectionAnchorIndex,
+                    selectedIndex: $viewModel.selectedIndex,
+                    selectionAnchorIndex: $viewModel.selectionAnchorIndex,
                     activeColor: activeColor,
-                    searchText: $searchText,
+                    searchText: $viewModel.searchText,
                     isSearchFocused: $isSearchFocused,
                     displayNodes: displayNodes,
-                    expandedFolderIds: $expandedFolderIds,
-                    expandedItemIndex: $expandedItemIndex,
-                    editingFolderId: $editingFolderId,
+                    expandedFolderIds: $viewModel.expandedFolderIds,
+                    expandedItemIndex: $viewModel.expandedItemIndex,
+                    editingFolderId: $viewModel.editingFolderId,
                     activeColorName: activeColorName,
-                    showingDeleteSelectedAlert: $showingDeleteSelectedAlert,
-                    showingFolderDeleteAlert: $showingFolderDeleteAlert,
-                    showingUngroupAlert: $showingUngroupAlert,
-                    itemToAssignGroup: $itemToAssignGroup,
+                    showingDeleteSelectedAlert: $viewModel.showingDeleteSelectedAlert,
+                    showingFolderDeleteAlert: $viewModel.showingFolderDeleteAlert,
+                    showingUngroupAlert: $viewModel.showingUngroupAlert,
+                    itemToAssignGroup: $viewModel.itemToAssignGroup,
                     isResizing: $isResizing,
                     resizeStartMouse: $resizeStartMouse,
                     resizeStartSize: $resizeStartSize,
@@ -448,7 +421,7 @@ struct ContentView: View {
                     dockEdge: dockEdge,
                     activeColorName: activeColorName,
                     activeColor: activeColor,
-                    isHovering: $isHovering,
+                    isHovering: $viewModel.isHovering,
                     onExpanded: {
                         withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                             shortcut.isExpanded = true
@@ -468,64 +441,64 @@ struct ContentView: View {
                 previousApp = NSWorkspace.shared.frontmostApplication
                 NSApp.activate(ignoringOtherApps: true)
                 NSApp.windows.first(where: { $0 is CopyM8Window })?.makeKeyAndOrderFront(nil)
-                searchText = ""
-                activeTab = "All"
-                selectedIndex = 0
-                selectionAnchorIndex = nil
-                expandedItemIndex = nil
+                viewModel.searchText = ""
+                viewModel.activeTab = "All"
+                viewModel.selectedIndex = 0
+                viewModel.selectionAnchorIndex = nil
+                viewModel.expandedItemIndex = nil
                 setupKeyboardMonitor()
             } else {
                 teardownKeyboardMonitor()
-                if isReorderMode {
-                    clipboard.history = reorderBackupHistory
-                    clipboard.folders = reorderBackupFolders
+                if viewModel.isReorderMode {
+                    clipboard.history = viewModel.reorderBackupHistory
+                    clipboard.folders = viewModel.reorderBackupFolders
                     clipboard.isReordering = false
-                    isReorderMode = false
-                    reorderTarget = .none
-                    activeTab = "All"
+                    viewModel.isReorderMode = false
+                    viewModel.reorderTarget = .none
+                    viewModel.activeTab = "All"
                 }
-                itemToAssignGroup = nil
-                showingDeviceSwitcher = false
-                showingDeleteSelectedAlert = false
-                showingFolderDeleteAlert = false
-                expandedFolderIds.removeAll()
-                isEditMode = false
-                selectedItemsForDeletion.removeAll()
+                viewModel.itemToAssignGroup = nil
+                viewModel.showingDeviceSwitcher = false
+                viewModel.showingDeleteSelectedAlert = false
+                viewModel.showingFolderDeleteAlert = false
+                viewModel.expandedFolderIds.removeAll()
+                viewModel.isEditMode = false
+                viewModel.selectedItemsForDeletion.removeAll()
             }
         }
-        .onChange(of: activeTab) { _, _ in 
+        .onChange(of: viewModel.activeTab) { _, _ in 
             restartKeyboardMonitor() 
-            selectedItemsForDeletion.removeAll()
-            selectionAnchorIndex = nil
-            selectedIndex = 0
-            expandedItemIndex = nil
+            viewModel.selectedItemsForDeletion.removeAll()
+            viewModel.selectionAnchorIndex = nil
+            viewModel.selectedIndex = 0
+            viewModel.expandedItemIndex = nil
         }
-        .onChange(of: searchText) { _, _ in
-            selectedIndex = 0
-            selectionAnchorIndex = nil
-            expandedItemIndex = nil
+        .onChange(of: viewModel.searchText) { _, _ in
+            viewModel.selectedIndex = 0
+            viewModel.selectionAnchorIndex = nil
+            viewModel.expandedItemIndex = nil
             restartKeyboardMonitor()
         }
-        .onChange(of: expandedFolderIds) { _, _ in restartKeyboardMonitor() }
+        .onChange(of: viewModel.expandedFolderIds) { _, _ in restartKeyboardMonitor() }
         .onChange(of: maxHistoryCount) { _, newValue in clipboard.truncateHistory(to: newValue) }
         .onChange(of: themePreference) { _, newTheme in applyTheme(newTheme) }
         .onChange(of: clipboard.history) { _, _ in restartKeyboardMonitor() }
-        .onChange(of: isEditMode) { _, editMode in 
-            selectedItemsForDeletion.removeAll() 
-            selectionAnchorIndex = nil
-            if activeTab == "Groups" {
+        .onChange(of: viewModel.isEditMode) { _, editMode in 
+            viewModel.selectedItemsForDeletion.removeAll() 
+            viewModel.selectionAnchorIndex = nil
+            if viewModel.activeTab == "Groups" {
                 if editMode {
-                    expandedFolderIds = Set(clipboard.folders.map { $0.id })
-                    expandedFolderIds.insert(cloudFolderId)
-                    expandedFolderIds.insert(restoredFolderId)
+                    viewModel.expandedFolderIds = Set(clipboard.folders.map { $0.id })
+                    viewModel.expandedFolderIds.insert(cloudFolderId)
+                    viewModel.expandedFolderIds.insert(restoredFolderId)
                 } else {
-                    expandedFolderIds.removeAll()
+                    viewModel.expandedFolderIds.removeAll()
                 }
             }
         }
         .onChange(of: shortcut.requestedTab) { _, newTab in
             if let newTab = newTab {
-                activeTab = newTab
+                viewModel.activeTab = newTab
                 shortcut.requestedTab = nil
             }
         }
@@ -535,7 +508,7 @@ struct ContentView: View {
         .overlay(modalsOverlay)
         .overlay(
             Group {
-                if showingReadOnlyToast {
+                if viewModel.showingReadOnlyToast {
                     VStack {
                         Spacer()
                         Text("Action disabled while viewing a remote source")
@@ -549,12 +522,12 @@ struct ContentView: View {
                             .padding(.bottom, 24)
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
-                } else if showingImportSuccessToast {
+                } else if viewModel.showingImportSuccessToast {
                     VStack {
                         Spacer()
                         HStack(spacing: 6) {
                             Image(systemName: "checkmark.circle.fill").foregroundColor(.green)
-                            Text(importSuccessMessage)
+                            Text(viewModel.importSuccessMessage)
                         }
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.white)
@@ -571,39 +544,39 @@ struct ContentView: View {
         )
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("ImportSuccessful"))) { notif in
             if let msg = notif.object as? String {
-                importSuccessMessage = msg
+                viewModel.importSuccessMessage = msg
             } else {
-                importSuccessMessage = "Import successful"
+                viewModel.importSuccessMessage = "Import successful"
             }
-            if !showingImportSuccessToast {
+            if !viewModel.showingImportSuccessToast {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    showingImportSuccessToast = true
+                    viewModel.showingImportSuccessToast = true
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        showingImportSuccessToast = false
+                        viewModel.showingImportSuccessToast = false
                     }
                 }
             }
         }
         .onChange(of: clipboard.selectedDevice) { _, _ in
-            selectedIndex = 0
-            selectionAnchorIndex = nil
-            expandedItemIndex = nil
+            viewModel.selectedIndex = 0
+            viewModel.selectionAnchorIndex = nil
+            viewModel.expandedItemIndex = nil
         }
     }
     
     private func ungroupSelectedItems(pin: Bool) {
         for i in 0..<clipboard.history.count {
-            if selectedItemsForDeletion.contains(clipboard.history[i].id) {
+            if viewModel.selectedItemsForDeletion.contains(clipboard.history[i].id) {
                 clipboard.setFolderId(for: [clipboard.history[i].id], folderId: nil)
                 if pin {
                     clipboard.history[i].isPinned = true
                 }
             }
         }
-        selectedItemsForDeletion.removeAll()
-        isEditMode = false
+        viewModel.selectedItemsForDeletion.removeAll()
+        viewModel.isEditMode = false
     }
     
     private func applyTheme(_ theme: String) {
@@ -765,38 +738,38 @@ struct ContentView: View {
     
     private func moveSelectedItem(up: Bool) {
         let nodes = displayNodes
-        guard selectedIndex >= 0 && selectedIndex < nodes.count else { return }
+        guard viewModel.selectedIndex >= 0 && viewModel.selectedIndex < nodes.count else { return }
         
-        let targetIndex = up ? selectedIndex - 1 : selectedIndex + 1
+        let targetIndex = up ? viewModel.selectedIndex - 1 : viewModel.selectedIndex + 1
         guard targetIndex >= 0 && targetIndex < nodes.count else { return }
         
-        if let item1 = nodes[selectedIndex].item, let item2 = nodes[targetIndex].item {
+        if let item1 = nodes[viewModel.selectedIndex].item, let item2 = nodes[targetIndex].item {
             if let idx1 = clipboard.history.firstIndex(where: { $0.id == item1.id }),
                let idx2 = clipboard.history.firstIndex(where: { $0.id == item2.id }) {
                 clipboard.history.swapAt(idx1, idx2)
-                selectedIndex = targetIndex
+                viewModel.selectedIndex = targetIndex
             }
         }
     }
     
     private func moveSelectedFolder(up: Bool) {
-        guard selectedIndex >= 0 && selectedIndex < clipboard.folders.count else { return }
-        let targetIndex = up ? selectedIndex - 1 : selectedIndex + 1
+        guard viewModel.selectedIndex >= 0 && viewModel.selectedIndex < clipboard.folders.count else { return }
+        let targetIndex = up ? viewModel.selectedIndex - 1 : viewModel.selectedIndex + 1
         guard targetIndex >= 0 && targetIndex < clipboard.folders.count else { return }
         
-        clipboard.folders.swapAt(selectedIndex, targetIndex)
-        selectedIndex = targetIndex
+        clipboard.folders.swapAt(viewModel.selectedIndex, targetIndex)
+        viewModel.selectedIndex = targetIndex
     }
     
     private func deleteSelectedItems() {
-        clipboard.deleteItems(where: { _selectedItemsForDeletion.wrappedValue.contains($0.id) }, hardDelete: true)
-        _selectedItemsForDeletion.wrappedValue.removeAll()
-        _isEditMode.wrappedValue = false
+        clipboard.deleteItems(where: { viewModel.selectedItemsForDeletion.contains($0.id) }, hardDelete: true)
+        viewModel.selectedItemsForDeletion.removeAll()
+        viewModel.isEditMode = false
     }
     
     private func deleteFolders(keepItems: Bool) {
-        let folderIds = _selectedItemsForDeletion.wrappedValue.filter { id in clipboard.folders.contains(where: { $0.id == id }) && id != cloudFolderId }
-        let independentItemIds = _selectedItemsForDeletion.wrappedValue.filter { id in !clipboard.folders.contains(where: { $0.id == id }) }
+        let folderIds = viewModel.selectedItemsForDeletion.filter { id in clipboard.folders.contains(where: { $0.id == id }) && id != cloudFolderId }
+        let independentItemIds = viewModel.selectedItemsForDeletion.filter { id in !clipboard.folders.contains(where: { $0.id == id }) }
         
         if keepItems {
             for i in 0..<clipboard.history.count {
@@ -815,8 +788,8 @@ struct ContentView: View {
         clipboard.folders.removeAll { folderIds.contains($0.id) }
         clipboard.deleteItems(where: { independentItemIds.contains($0.id) }, hardDelete: true)
         
-        _selectedItemsForDeletion.wrappedValue.removeAll()
-        _isEditMode.wrappedValue = false
+        viewModel.selectedItemsForDeletion.removeAll()
+        viewModel.isEditMode = false
     }
 }
 
@@ -824,34 +797,21 @@ struct ContentView: View {
 
 extension ContentView {
     private func setupKeyboardMonitor() {
-        let _activeTab = self._activeTab
-        let _selectedIndex = self._selectedIndex
-        let _isEditMode = self._isEditMode
-        let _expandedItemIndex = self._expandedItemIndex
-        let _selectedItemsForDeletion = self._selectedItemsForDeletion
         let _isSearchFocused = self._isSearchFocused
-        let _itemToAssignGroup = self._itemToAssignGroup
-        let _showingDeleteSelectedAlert = self._showingDeleteSelectedAlert
-        let _showingFolderDeleteAlert = self._showingFolderDeleteAlert
-        let _showingUngroupAlert = self._showingUngroupAlert
-        let _showingEmptyTrashAlert = self._showingEmptyTrashAlert
-        let _showingDeviceSwitcher = self._showingDeviceSwitcher
-        let _previousTab = self._previousTab
         
         let clipboard = self.clipboard
         let pasteItem = self.pasteItem
         let _isDense = self._isDense
-        let _expandedFolderIds = self._expandedFolderIds
         
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if SettingsWindowManager.shared.isSettingsOpen {
                 return event
             }
             
-            if _showingDeleteSelectedAlert.wrappedValue || _showingFolderDeleteAlert.wrappedValue || _showingUngroupAlert.wrappedValue || _itemToAssignGroup.wrappedValue != nil || _showingDeviceSwitcher.wrappedValue || _showingEmptyTrashAlert.wrappedValue {
+            if viewModel.showingDeleteSelectedAlert || viewModel.showingFolderDeleteAlert || viewModel.showingUngroupAlert || viewModel.itemToAssignGroup != nil || viewModel.showingDeviceSwitcher || viewModel.showingEmptyTrashAlert {
                 if event.keyCode == 53 {
-                    if _itemToAssignGroup.wrappedValue != nil { _itemToAssignGroup.wrappedValue = nil }
-                    if _showingDeviceSwitcher.wrappedValue { _showingDeviceSwitcher.wrappedValue = false }
+                    if viewModel.itemToAssignGroup != nil { viewModel.itemToAssignGroup = nil }
+                    if viewModel.showingDeviceSwitcher { viewModel.showingDeviceSwitcher = false }
                     return event
                 }
                 return event
@@ -871,13 +831,13 @@ extension ContentView {
                 }()
                 
                 if isDestructiveShortcut {
-                    if !_showingReadOnlyToast.wrappedValue {
+                    if !viewModel.showingReadOnlyToast {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            _showingReadOnlyToast.wrappedValue = true
+                            viewModel.showingReadOnlyToast = true
                         }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                _showingReadOnlyToast.wrappedValue = false
+                                viewModel.showingReadOnlyToast = false
                             }
                         }
                     }
@@ -885,16 +845,15 @@ extension ContentView {
                 }
             }
             
-            let activeTab = _activeTab.wrappedValue
-            let selectedIndex = _selectedIndex.wrappedValue
-            let isEditMode = _isEditMode.wrappedValue
-            let expandedItemIndex = _expandedItemIndex.wrappedValue
+            let activeTab = viewModel.activeTab
+            let isEditMode = viewModel.isEditMode
+            let expandedItemIndex = viewModel.expandedItemIndex
             let displayNodesLocal = self.displayNodes
             
             if event.modifierFlags.contains(.command) {
                 switch event.keyCode {
                 case 3: // F
-                    if _isReorderMode.wrappedValue && (_reorderTarget.wrappedValue == .pinned || (activeTab == "Groups" && _reorderTarget.wrappedValue != .folders)) {
+                    if viewModel.isReorderMode && (viewModel.reorderTarget == .pinned || (viewModel.activeTab == "Groups" && viewModel.reorderTarget != .folders)) {
                         _isFreezeFieldFocused.wrappedValue = true
                     } else {
                         _isSearchFocused.wrappedValue = true
@@ -903,12 +862,12 @@ extension ContentView {
                 case 34: // I
                     if clipboard.selectedDevice != "Local (This Mac)" {
                         var itemsToImport: [ClipboardItem] = []
-                        if isEditMode {
-                            itemsToImport = clipboard.history.filter { _selectedItemsForDeletion.wrappedValue.contains($0.id) }
-                            _selectedItemsForDeletion.wrappedValue.removeAll()
-                            _isEditMode.wrappedValue = false
-                        } else if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
-                            let node = displayNodesLocal[selectedIndex]
+                        if viewModel.isEditMode {
+                            itemsToImport = clipboard.history.filter { viewModel.selectedItemsForDeletion.contains($0.id) }
+                            viewModel.selectedItemsForDeletion.removeAll()
+                            viewModel.isEditMode = false
+                        } else if viewModel.selectedIndex >= 0 && viewModel.selectedIndex < displayNodesLocal.count {
+                            let node = displayNodesLocal[viewModel.selectedIndex]
                             if !node.isFolder, let item = node.item {
                                 itemsToImport.append(item)
                             }
@@ -924,46 +883,46 @@ extension ContentView {
                 case 2: // D
                     if event.modifierFlags.contains(.shift) {
                         if !clipboard.availableDevices.isEmpty {
-                            _showingDeviceSwitcher.wrappedValue = true
+                            viewModel.showingDeviceSwitcher = true
                         }
                         return nil
                     }
                     return event
                 case 15: // R
-                    if activeTab == "Pinned" || activeTab == "Groups" {
-                        if _isReorderMode.wrappedValue {
-                            _isReorderMode.wrappedValue = false
+                    if viewModel.activeTab == "Pinned" || viewModel.activeTab == "Groups" {
+                        if viewModel.isReorderMode {
+                            viewModel.isReorderMode = false
                         } else {
-                            _isEditMode.wrappedValue = false
+                            viewModel.isEditMode = false
                             clipboard.isReordering = true
-                            _isReorderMode.wrappedValue = true
-                            _reorderBackupHistory.wrappedValue = clipboard.history
-                            _reorderBackupFolders.wrappedValue = clipboard.folders
+                            viewModel.isReorderMode = true
+                            viewModel.reorderBackupHistory = clipboard.history
+                            viewModel.reorderBackupFolders = clipboard.folders
                             
-                            if activeTab == "Pinned" {
-                                _reorderTarget.wrappedValue = .pinned
+                            if viewModel.activeTab == "Pinned" {
+                                viewModel.reorderTarget = .pinned
                                 let pinned = clipboard.history.filter { $0.isPinned && $0.folderId == nil }
                                 let frozenCount = pinned.filter { $0.orderIndex > 0 }.count
-                                _reorderFreezeLimit.wrappedValue = "\(frozenCount)"
-                            } else if activeTab == "Groups" {
-                                if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
-                                    let node = displayNodesLocal[selectedIndex]
+                                viewModel.reorderFreezeLimit = "\(frozenCount)"
+                            } else if viewModel.activeTab == "Groups" {
+                                if viewModel.selectedIndex >= 0 && viewModel.selectedIndex < displayNodesLocal.count {
+                                    let node = displayNodesLocal[viewModel.selectedIndex]
                                     if node.isFolder {
-                                        _reorderTarget.wrappedValue = .folders
-                                        _reorderFreezeLimit.wrappedValue = "0"
+                                        viewModel.reorderTarget = .folders
+                                        viewModel.reorderFreezeLimit = "0"
                                     } else if let fid = node.parentFolderId {
-                                        _reorderTarget.wrappedValue = .items(folderId: fid)
+                                        viewModel.reorderTarget = .items(folderId: fid)
                                         let items = clipboard.history.filter { $0.folderId == fid }
                                         let frozenCount = items.filter { $0.orderIndex > 0 }.count
-                                        _reorderFreezeLimit.wrappedValue = "\(frozenCount)"
+                                        viewModel.reorderFreezeLimit = "\(frozenCount)"
                                     }
                                 } else {
-                                    _reorderTarget.wrappedValue = .folders
-                                    _reorderFreezeLimit.wrappedValue = "0"
+                                    viewModel.reorderTarget = .folders
+                                    viewModel.reorderFreezeLimit = "0"
                                 }
                             }
-                            _selectedIndex.wrappedValue = 0
-                            _isReorderMode.wrappedValue = true
+                            viewModel.selectedIndex = 0
+                            viewModel.isReorderMode = true
                         }
                     }
                     return nil
@@ -972,11 +931,11 @@ extension ContentView {
                     let isShift = event.modifierFlags.contains(.shift)
                     if isCmd && isShift {
                         if clipboard.selectedDevice == "Local (This Mac)" {
-                            if _activeTab.wrappedValue == "Trash" {
-                                _activeTab.wrappedValue = _previousTab.wrappedValue
+                            if viewModel.activeTab == "Trash" {
+                                viewModel.activeTab = viewModel.previousTab
                             } else {
-                                _previousTab.wrappedValue = _activeTab.wrappedValue
-                                _activeTab.wrappedValue = "Trash"
+                                viewModel.previousTab = viewModel.activeTab
+                                viewModel.activeTab = "Trash"
                             }
                         }
                         return nil
@@ -985,19 +944,19 @@ extension ContentView {
                 case 6: // Z
                     let isCmd = event.modifierFlags.contains(.command)
                     let isShift = event.modifierFlags.contains(.shift)
-                    if isCmd && !isShift && _activeTab.wrappedValue == "Trash" {
-                        if _isEditMode.wrappedValue {
-                            let ids = Array(_selectedItemsForDeletion.wrappedValue)
+                    if isCmd && !isShift && viewModel.activeTab == "Trash" {
+                        if viewModel.isEditMode {
+                            let ids = Array(viewModel.selectedItemsForDeletion)
                             if !ids.isEmpty {
                                 clipboard.restoreItems(ids: ids)
-                                _selectedItemsForDeletion.wrappedValue.removeAll()
-                                _isEditMode.wrappedValue = false
+                                viewModel.selectedItemsForDeletion.removeAll()
+                                viewModel.isEditMode = false
                             }
                         } else {
-                            if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
-                                let node = displayNodesLocal[selectedIndex]
+                            if viewModel.selectedIndex >= 0 && viewModel.selectedIndex < displayNodesLocal.count {
+                                let node = displayNodesLocal[viewModel.selectedIndex]
                                 if let id = node.item?.id {
-                                    if selectedIndex > 0 && selectedIndex == displayNodesLocal.count - 1 { _selectedIndex.wrappedValue -= 1 }
+                                    if viewModel.selectedIndex > 0 && viewModel.selectedIndex == displayNodesLocal.count - 1 { viewModel.selectedIndex -= 1 }
                                     clipboard.restoreItems(ids: [id])
                                 }
                             }
@@ -1012,7 +971,7 @@ extension ContentView {
                 }
             }
             
-            if isSearchFocused || _editingFolderId.wrappedValue != nil {
+            if isSearchFocused || viewModel.editingFolderId != nil {
                 let allowedWhenFocused: Set<UInt16> = [36, 48, 53, 125, 126, 123, 124]
                 if !allowedWhenFocused.contains(event.keyCode) {
                     return event
@@ -1020,12 +979,12 @@ extension ContentView {
             }
             
             if event.modifierFlags.contains(.option) && event.keyCode == 15 { // Option + R
-                if activeTab == "Groups" && !_isEditMode.wrappedValue && !_isReorderMode.wrappedValue {
-                    if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
-                        let node = displayNodesLocal[selectedIndex]
+                if viewModel.activeTab == "Groups" && !viewModel.isEditMode && !viewModel.isReorderMode {
+                    if viewModel.selectedIndex >= 0 && viewModel.selectedIndex < displayNodesLocal.count {
+                        let node = displayNodesLocal[viewModel.selectedIndex]
                         if node.isFolder, let folder = node.folder {
                             if folder.id != cloudFolderId {
-                                _editingFolderId.wrappedValue = folder.id
+                                viewModel.editingFolderId = folder.id
                             }
                             return nil
                         }
@@ -1034,7 +993,7 @@ extension ContentView {
             }
             
             if event.modifierFlags.contains(.option) && event.keyCode != 48 && event.keyCode != 123 && event.keyCode != 15 {
-                if _isReorderMode.wrappedValue { return nil }
+                if viewModel.isReorderMode { return nil }
                 var newTab: String? = nil
                 switch event.keyCode {
                 case 35, 19: newTab = "Pinned" // P or 2
@@ -1047,11 +1006,11 @@ extension ContentView {
                 default: break
                 }
                 
-                if let tab = newTab, tab != activeTab {
+                if let tab = newTab, tab != viewModel.activeTab {
                     withAnimation {
-                        _activeTab.wrappedValue = tab
-                        _selectedIndex.wrappedValue = 0
-                        _expandedItemIndex.wrappedValue = nil
+                        viewModel.activeTab = tab
+                        viewModel.selectedIndex = 0
+                        viewModel.expandedItemIndex = nil
                     }
                     return nil
                 }
@@ -1059,40 +1018,40 @@ extension ContentView {
             
             if let chars = event.charactersIgnoringModifiers, chars.count == 1 {
                 let char = chars.uppercased()
-                if _isReorderMode.wrappedValue && char == "F" && event.modifierFlags.contains(.command) && event.modifierFlags.contains(.shift) {
+                if viewModel.isReorderMode && char == "F" && event.modifierFlags.contains(.command) && event.modifierFlags.contains(.shift) {
                     _isFreezeFieldFocused.wrappedValue.toggle()
                     return nil
                 }
                 
-                if activeTab == "Groups" && chars == "`" && !event.modifierFlags.contains(.command) && !event.modifierFlags.contains(.control) && !event.modifierFlags.contains(.option) {
+                if viewModel.activeTab == "Groups" && chars == "`" && !event.modifierFlags.contains(.command) && !event.modifierFlags.contains(.control) && !event.modifierFlags.contains(.option) {
                     if let nodeIndex = displayNodesLocal.firstIndex(where: { $0.isFolder && $0.folder?.id == UUID(uuidString: "00000000-0000-0000-0000-000000000000")! }) {
                         withAnimation {
-                            _selectedIndex.wrappedValue = nodeIndex
-                            if !_expandedFolderIds.wrappedValue.contains(UUID(uuidString: "00000000-0000-0000-0000-000000000000")!) {
-                                _expandedFolderIds.wrappedValue.insert(UUID(uuidString: "00000000-0000-0000-0000-000000000000")!)
+                            viewModel.selectedIndex = nodeIndex
+                            if !viewModel.expandedFolderIds.contains(UUID(uuidString: "00000000-0000-0000-0000-000000000000")!) {
+                                viewModel.expandedFolderIds.insert(UUID(uuidString: "00000000-0000-0000-0000-000000000000")!)
                             } else {
-                                _expandedFolderIds.wrappedValue.remove(UUID(uuidString: "00000000-0000-0000-0000-000000000000")!)
+                                viewModel.expandedFolderIds.remove(UUID(uuidString: "00000000-0000-0000-0000-000000000000")!)
                             }
                         }
                         return nil
                     }
                 }
 
-                if activeTab == "Groups" && chars == "=" && !event.modifierFlags.contains(.command) && !event.modifierFlags.contains(.control) && !event.modifierFlags.contains(.option) {
+                if viewModel.activeTab == "Groups" && chars == "=" && !event.modifierFlags.contains(.command) && !event.modifierFlags.contains(.control) && !event.modifierFlags.contains(.option) {
                     if let nodeIndex = displayNodesLocal.firstIndex(where: { $0.isFolder && $0.folder?.id == restoredFolderId }) {
                         withAnimation {
-                            _selectedIndex.wrappedValue = nodeIndex
-                            if !_expandedFolderIds.wrappedValue.contains(restoredFolderId) {
-                                _expandedFolderIds.wrappedValue.insert(restoredFolderId)
+                            viewModel.selectedIndex = nodeIndex
+                            if !viewModel.expandedFolderIds.contains(restoredFolderId) {
+                                viewModel.expandedFolderIds.insert(restoredFolderId)
                             } else {
-                                _expandedFolderIds.wrappedValue.remove(restoredFolderId)
+                                viewModel.expandedFolderIds.remove(restoredFolderId)
                             }
                         }
                         return nil
                     }
                 }
                 
-                if activeTab == "Groups" && char >= "A" && char <= "Z" && !event.modifierFlags.contains(.command) && !event.modifierFlags.contains(.control) && !event.modifierFlags.contains(.option) {
+                if viewModel.activeTab == "Groups" && char >= "A" && char <= "Z" && !event.modifierFlags.contains(.command) && !event.modifierFlags.contains(.control) && !event.modifierFlags.contains(.option) {
                     let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                     if let letterIndex = alphabet.firstIndex(of: Character(char)) {
                         let folderIndex = alphabet.distance(from: alphabet.startIndex, to: letterIndex)
@@ -1101,11 +1060,11 @@ extension ContentView {
                             let targetFolder = standardFolders[folderIndex]
                             if let nodeIndex = displayNodesLocal.firstIndex(where: { $0.isFolder && $0.folder?.id == targetFolder.id }) {
                                 withAnimation {
-                                    _selectedIndex.wrappedValue = nodeIndex
-                                    if !_expandedFolderIds.wrappedValue.contains(targetFolder.id) {
-                                        _expandedFolderIds.wrappedValue.insert(targetFolder.id)
+                                    viewModel.selectedIndex = nodeIndex
+                                    if !viewModel.expandedFolderIds.contains(targetFolder.id) {
+                                        viewModel.expandedFolderIds.insert(targetFolder.id)
                                     } else {
-                                        _expandedFolderIds.wrappedValue.remove(targetFolder.id)
+                                        viewModel.expandedFolderIds.remove(targetFolder.id)
                                     }
                                 }
                                 return nil
@@ -1118,16 +1077,16 @@ extension ContentView {
             switch event.keyCode {
             case 18...29:
                 if _isFreezeFieldFocused.wrappedValue { return nil }
-                if activeTab == "Trash" { return event }
+                if viewModel.activeTab == "Trash" { return event }
                 let keyMap: [UInt16: Int] = [18: 0, 19: 1, 20: 2, 21: 3, 23: 4, 22: 5, 26: 6, 28: 7, 25: 8, 29: 9]
                 if let relativeIndex = keyMap[event.keyCode] {
                     let hasCmd = event.modifierFlags.contains(.command)
                     let hasCtrl = event.modifierFlags.contains(.control)
                     let format: PasteFormatType = (hasCmd && hasCtrl) ? .richNoLinks : (hasCmd ? .rich : .plain)
-                    if activeTab == "Groups" {
+                    if viewModel.activeTab == "Groups" {
                         var targetFolderId: UUID? = nil
-                        if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
-                            let selectedNode = displayNodesLocal[selectedIndex]
+                        if viewModel.selectedIndex >= 0 && viewModel.selectedIndex < displayNodesLocal.count {
+                            let selectedNode = displayNodesLocal[viewModel.selectedIndex]
                             targetFolderId = selectedNode.isFolder ? selectedNode.folder?.id : selectedNode.parentFolderId
                         }
                         if let targetFolderId = targetFolderId {
@@ -1147,21 +1106,21 @@ extension ContentView {
                 let isCmd = event.modifierFlags.contains(.command)
                 let isShift = event.modifierFlags.contains(.shift)
                 
-                if activeTab == "Trash" {
+                if viewModel.activeTab == "Trash" {
                     if isCmd && isShift {
                         let hasItems = clipboard.history.contains { $0.isDeleted ?? false }
-                        if hasItems { _showingEmptyTrashAlert.wrappedValue = true }
+                        if hasItems { viewModel.showingEmptyTrashAlert = true }
                         return nil
                     }
-                    if _isEditMode.wrappedValue {
-                        if !_selectedItemsForDeletion.wrappedValue.isEmpty {
-                            _showingDeleteSelectedAlert.wrappedValue = true
+                    if viewModel.isEditMode {
+                        if !viewModel.selectedItemsForDeletion.isEmpty {
+                            viewModel.showingDeleteSelectedAlert = true
                         }
                     } else {
-                        if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
-                            if let id = displayNodesLocal[selectedIndex].item?.id ?? displayNodesLocal[selectedIndex].folder?.id {
-                                _selectedItemsForDeletion.wrappedValue = [id]
-                                _showingDeleteSelectedAlert.wrappedValue = true
+                        if viewModel.selectedIndex >= 0 && viewModel.selectedIndex < displayNodesLocal.count {
+                            if let id = displayNodesLocal[viewModel.selectedIndex].item?.id ?? displayNodesLocal[viewModel.selectedIndex].folder?.id {
+                                viewModel.selectedItemsForDeletion = [id]
+                                viewModel.showingDeleteSelectedAlert = true
                             }
                         }
                     }
@@ -1169,17 +1128,17 @@ extension ContentView {
                 }
                 
 
-                if isEditMode {
-                    let validDeletions = _selectedItemsForDeletion.wrappedValue.filter { $0 != cloudFolderId && $0 != restoredFolderId }
+                if viewModel.isEditMode {
+                    let validDeletions = viewModel.selectedItemsForDeletion.filter { $0 != cloudFolderId && $0 != restoredFolderId }
                     if !validDeletions.isEmpty {
                         if isCmd {
                             // Hard Delete (with popup)
-                            _selectedItemsForDeletion.wrappedValue = validDeletions
+                            viewModel.selectedItemsForDeletion = validDeletions
                             let hasFoldersSelected = validDeletions.contains { id in clipboard.folders.contains(where: { $0.id == id }) }
                             if hasFoldersSelected {
-                                _showingFolderDeleteAlert.wrappedValue = true
+                                viewModel.showingFolderDeleteAlert = true
                             } else {
-                                _showingDeleteSelectedAlert.wrappedValue = true
+                                viewModel.showingDeleteSelectedAlert = true
                             }
                         } else {
                             // Soft Delete (no popup)
@@ -1193,29 +1152,29 @@ extension ContentView {
                             clipboard.folders.removeAll { folderIds.contains($0.id) }
                             clipboard.deleteItems(where: { independentItemIds.contains($0.id) })
                             
-                            _selectedItemsForDeletion.wrappedValue.removeAll()
-                            _isEditMode.wrappedValue = false
+                            viewModel.selectedItemsForDeletion.removeAll()
+                            viewModel.isEditMode = false
                         }
                     }
-                } else if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
-                    let node = displayNodesLocal[selectedIndex]
+                } else if viewModel.selectedIndex >= 0 && viewModel.selectedIndex < displayNodesLocal.count {
+                    let node = displayNodesLocal[viewModel.selectedIndex]
                     if node.isFolder, let folder = node.folder {
                         if folder.id != cloudFolderId && folder.id != restoredFolderId {
                             if isCmd {
-                                _selectedItemsForDeletion.wrappedValue = [folder.id]
-                                _showingFolderDeleteAlert.wrappedValue = true
+                                viewModel.selectedItemsForDeletion = [folder.id]
+                                viewModel.showingFolderDeleteAlert = true
                             } else {
                                 clipboard.deleteItems(where: { $0.folderId == folder.id })
                                 clipboard.folders.removeAll(where: { $0.id == folder.id })
-                                if selectedIndex >= displayNodesLocal.count - 1 && selectedIndex > 0 { _selectedIndex.wrappedValue -= 1 }
+                                if viewModel.selectedIndex >= displayNodesLocal.count - 1 && viewModel.selectedIndex > 0 { viewModel.selectedIndex -= 1 }
                             }
                         }
                     } else if let id = node.item?.id {
                         if isCmd {
-                            _selectedItemsForDeletion.wrappedValue = [id]
-                            _showingDeleteSelectedAlert.wrappedValue = true
+                            viewModel.selectedItemsForDeletion = [id]
+                            viewModel.showingDeleteSelectedAlert = true
                         } else {
-                            if selectedIndex >= displayNodesLocal.count - 1 && selectedIndex > 0 { _selectedIndex.wrappedValue -= 1 }
+                            if viewModel.selectedIndex >= displayNodesLocal.count - 1 && viewModel.selectedIndex > 0 { viewModel.selectedIndex -= 1 }
                             withAnimation { clipboard.deleteItems(where: { $0.id == id }) }
                         }
                     }
@@ -1223,89 +1182,89 @@ extension ContentView {
                 return nil
             case 35: // P
                 if event.modifierFlags.contains(.command) {
-                    if activeTab == "Trash" { return nil }
-                    if isEditMode {
-                        if activeTab != "Pinned" {
-                            for id in _selectedItemsForDeletion.wrappedValue {
+                    if viewModel.activeTab == "Trash" { return nil }
+                    if viewModel.isEditMode {
+                        if viewModel.activeTab != "Pinned" {
+                            for id in viewModel.selectedItemsForDeletion {
                                 if let idx = clipboard.history.firstIndex(where: { $0.id == id }) {
                                     clipboard.history[idx].isPinned = true
                                     clipboard.setFolderId(for: [id], folderId: nil)
                                 }
                             }
-                            _selectedItemsForDeletion.wrappedValue.removeAll()
-                            _isEditMode.wrappedValue = false
+                            viewModel.selectedItemsForDeletion.removeAll()
+                            viewModel.isEditMode = false
                         }
-                    } else if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
-                        if let id = displayNodesLocal[selectedIndex].item?.id { clipboard.togglePin(for: id) }
+                    } else if viewModel.selectedIndex >= 0 && viewModel.selectedIndex < displayNodesLocal.count {
+                        if let id = displayNodesLocal[viewModel.selectedIndex].item?.id { clipboard.togglePin(for: id) }
                     }
                 }
                 return nil
             case 5: // G
                 if event.modifierFlags.contains(.command) {
-                    if activeTab == "Trash" { return nil }
-                    if isEditMode {
-                        if !_selectedItemsForDeletion.wrappedValue.isEmpty {
-                            _itemToAssignGroup.wrappedValue = GroupAssignmentPayload(itemIds: _selectedItemsForDeletion.wrappedValue) {
-                                _selectedItemsForDeletion.wrappedValue.removeAll()
-                                _isEditMode.wrappedValue = false
+                    if viewModel.activeTab == "Trash" { return nil }
+                    if viewModel.isEditMode {
+                        if !viewModel.selectedItemsForDeletion.isEmpty {
+                            viewModel.itemToAssignGroup = GroupAssignmentPayload(itemIds: viewModel.selectedItemsForDeletion) {
+                                viewModel.selectedItemsForDeletion.removeAll()
+                                viewModel.isEditMode = false
                             }
                         }
-                    } else if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
-                        let node = displayNodesLocal[selectedIndex]
+                    } else if viewModel.selectedIndex >= 0 && viewModel.selectedIndex < displayNodesLocal.count {
+                        let node = displayNodesLocal[viewModel.selectedIndex]
                         if !node.isFolder, let item = node.item {
-                            _itemToAssignGroup.wrappedValue = GroupAssignmentPayload(itemIds: [item.id])
+                            viewModel.itemToAssignGroup = GroupAssignmentPayload(itemIds: [item.id])
                         }
                     }
                 }
                 return nil
             case 32: // U
                 if event.modifierFlags.contains(.command) {
-                    if activeTab == "Trash" { return nil }
-                    if isEditMode {
-                        if activeTab == "Pinned" {
-                            for id in _selectedItemsForDeletion.wrappedValue {
+                    if viewModel.activeTab == "Trash" { return nil }
+                    if viewModel.isEditMode {
+                        if viewModel.activeTab == "Pinned" {
+                            for id in viewModel.selectedItemsForDeletion {
                                 if let idx = clipboard.history.firstIndex(where: { $0.id == id }) {
                                     clipboard.history[idx].isPinned = false
                                 }
                             }
-                            _selectedItemsForDeletion.wrappedValue.removeAll()
-                            _isEditMode.wrappedValue = false
-                        } else if activeTab == "Groups" {
-                            let hasGroupedItem = clipboard.history.contains { item in _selectedItemsForDeletion.wrappedValue.contains(item.id) && item.folderId != nil }
+                            viewModel.selectedItemsForDeletion.removeAll()
+                            viewModel.isEditMode = false
+                        } else if viewModel.activeTab == "Groups" {
+                            let hasGroupedItem = clipboard.history.contains { item in viewModel.selectedItemsForDeletion.contains(item.id) && item.folderId != nil }
                             if hasGroupedItem {
-                                _showingUngroupAlert.wrappedValue = true
+                                viewModel.showingUngroupAlert = true
                             }
                         }
-                    } else if activeTab == "Groups" && selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
-                        let node = displayNodesLocal[selectedIndex]
+                    } else if viewModel.activeTab == "Groups" && viewModel.selectedIndex >= 0 && viewModel.selectedIndex < displayNodesLocal.count {
+                        let node = displayNodesLocal[viewModel.selectedIndex]
                         if !node.isFolder, let item = node.item, item.folderId != nil {
-                            _selectedItemsForDeletion.wrappedValue = [item.id]
-                            _showingUngroupAlert.wrappedValue = true
+                            viewModel.selectedItemsForDeletion = [item.id]
+                            viewModel.showingUngroupAlert = true
                         }
                     }
                 }
                 return nil
             case 126: // Up
-                if _editingFolderId.wrappedValue != nil { return event }
+                if viewModel.editingFolderId != nil { return event }
                 if _isFreezeFieldFocused.wrappedValue {
-                    let current = Int(_reorderFreezeLimit.wrappedValue) ?? 0
-                    if current < 10 { _reorderFreezeLimit.wrappedValue = "\(current + 1)" }
+                    let current = Int(viewModel.reorderFreezeLimit) ?? 0
+                    if current < 10 { viewModel.reorderFreezeLimit = "\(current + 1)" }
                     return nil
                 }
-                if event.modifierFlags.contains(.command) && event.modifierFlags.contains(.shift) && activeTab == "Groups" {
-                    _expandedFolderIds.wrappedValue.removeAll()
+                if event.modifierFlags.contains(.command) && event.modifierFlags.contains(.shift) && viewModel.activeTab == "Groups" {
+                    viewModel.expandedFolderIds.removeAll()
                     return nil
                 }
-                if _isReorderMode.wrappedValue && event.modifierFlags.contains(.command) && (activeTab == "Pinned" || activeTab == "Groups") {
+                if viewModel.isReorderMode && event.modifierFlags.contains(.command) && (viewModel.activeTab == "Pinned" || viewModel.activeTab == "Groups") {
                     var idsToMove: [(index: Int, id: UUID, isFolder: Bool)] = []
-                    if _selectedItemsForDeletion.wrappedValue.isEmpty {
+                    if viewModel.selectedItemsForDeletion.isEmpty {
                         return nil
 
                     } else {
                         for (i, node) in displayNodesLocal.enumerated() {
-                            if node.isFolder, let fid = node.folder?.id, _selectedItemsForDeletion.wrappedValue.contains(fid) {
+                            if node.isFolder, let fid = node.folder?.id, viewModel.selectedItemsForDeletion.contains(fid) {
                                 idsToMove.append((i, fid, true))
-                            } else if let iid = node.item?.id, _selectedItemsForDeletion.wrappedValue.contains(iid) {
+                            } else if let iid = node.item?.id, viewModel.selectedItemsForDeletion.contains(iid) {
                                 idsToMove.append((i, iid, false))
                             }
                         }
@@ -1315,46 +1274,46 @@ extension ContentView {
                     let itemIds = idsToMove.filter { !$0.isFolder }.map { $0.id }
                     if !folderIds.isEmpty { clipboard.moveFolders(up: true, ids: folderIds) }
                     if !itemIds.isEmpty { clipboard.moveItems(up: true, ids: itemIds) }
-                    if selectedIndex > 0 { _selectedIndex.wrappedValue -= 1 }
+                    if viewModel.selectedIndex > 0 { viewModel.selectedIndex -= 1 }
                     return nil
                 }
                 
                 let maxIndex = displayNodesLocal.count - 1
-                if isEditMode || _isReorderMode.wrappedValue {
+                if viewModel.isEditMode || viewModel.isReorderMode {
                     if event.modifierFlags.contains(.shift) {
-                        if _selectionAnchorIndex.wrappedValue == nil { _selectionAnchorIndex.wrappedValue = selectedIndex }
+                        if viewModel.selectionAnchorIndex == nil { viewModel.selectionAnchorIndex = viewModel.selectedIndex }
                     } else {
-                        _selectionAnchorIndex.wrappedValue = nil
+                        viewModel.selectionAnchorIndex = nil
                     }
                 }
-                if selectedIndex > 0 {
-                    var nextIndex = selectedIndex - 1
+                if viewModel.selectedIndex > 0 {
+                    var nextIndex = viewModel.selectedIndex - 1
                     if nextIndex > 0 && displayNodesLocal[nextIndex].isDivider { nextIndex -= 1 }
-                    _selectedIndex.wrappedValue = nextIndex
+                    viewModel.selectedIndex = nextIndex
                 }
-                else { _selectedIndex.wrappedValue = maxIndex }
+                else { viewModel.selectedIndex = maxIndex }
                 return nil
             case 125: // Down
-                if _editingFolderId.wrappedValue != nil { return event }
+                if viewModel.editingFolderId != nil { return event }
                 if _isFreezeFieldFocused.wrappedValue {
-                    let current = Int(_reorderFreezeLimit.wrappedValue) ?? 0
-                    if current > 0 { _reorderFreezeLimit.wrappedValue = "\(current - 1)" }
+                    let current = Int(viewModel.reorderFreezeLimit) ?? 0
+                    if current > 0 { viewModel.reorderFreezeLimit = "\(current - 1)" }
                     return nil
                 }
-                if event.modifierFlags.contains(.command) && event.modifierFlags.contains(.shift) && activeTab == "Groups" {
-                    _expandedFolderIds.wrappedValue = Set(clipboard.folders.map { $0.id })
+                if event.modifierFlags.contains(.command) && event.modifierFlags.contains(.shift) && viewModel.activeTab == "Groups" {
+                    viewModel.expandedFolderIds = Set(clipboard.folders.map { $0.id })
                     return nil
                 }
-                if _isReorderMode.wrappedValue && event.modifierFlags.contains(.command) && (activeTab == "Pinned" || activeTab == "Groups") {
+                if viewModel.isReorderMode && event.modifierFlags.contains(.command) && (viewModel.activeTab == "Pinned" || viewModel.activeTab == "Groups") {
                     var idsToMove: [(index: Int, id: UUID, isFolder: Bool)] = []
-                    if _selectedItemsForDeletion.wrappedValue.isEmpty {
+                    if viewModel.selectedItemsForDeletion.isEmpty {
                         return nil
 
                     } else {
                         for (i, node) in displayNodesLocal.enumerated() {
-                            if node.isFolder, let fid = node.folder?.id, _selectedItemsForDeletion.wrappedValue.contains(fid) {
+                            if node.isFolder, let fid = node.folder?.id, viewModel.selectedItemsForDeletion.contains(fid) {
                                 idsToMove.append((i, fid, true))
-                            } else if let iid = node.item?.id, _selectedItemsForDeletion.wrappedValue.contains(iid) {
+                            } else if let iid = node.item?.id, viewModel.selectedItemsForDeletion.contains(iid) {
                                 idsToMove.append((i, iid, false))
                             }
                         }
@@ -1364,105 +1323,105 @@ extension ContentView {
                     let itemIds = idsToMove.filter { !$0.isFolder }.map { $0.id }
                     if !folderIds.isEmpty { clipboard.moveFolders(up: false, ids: folderIds) }
                     if !itemIds.isEmpty { clipboard.moveItems(up: false, ids: itemIds) }
-                    if selectedIndex < displayNodesLocal.count - 1 { _selectedIndex.wrappedValue += 1 }
+                    if viewModel.selectedIndex < displayNodesLocal.count - 1 { viewModel.selectedIndex += 1 }
                     return nil
                 }
                 
                 let maxIndex = displayNodesLocal.count - 1
-                if isEditMode || _isReorderMode.wrappedValue {
+                if viewModel.isEditMode || viewModel.isReorderMode {
                     if event.modifierFlags.contains(.shift) {
-                        if _selectionAnchorIndex.wrappedValue == nil { _selectionAnchorIndex.wrappedValue = selectedIndex }
+                        if viewModel.selectionAnchorIndex == nil { viewModel.selectionAnchorIndex = viewModel.selectedIndex }
                     } else {
-                        _selectionAnchorIndex.wrappedValue = nil
+                        viewModel.selectionAnchorIndex = nil
                     }
                 }
-                if selectedIndex < maxIndex {
-                    var nextIndex = selectedIndex + 1
+                if viewModel.selectedIndex < maxIndex {
+                    var nextIndex = viewModel.selectedIndex + 1
                     if nextIndex < maxIndex && displayNodesLocal[nextIndex].isDivider { nextIndex += 1 }
-                    _selectedIndex.wrappedValue = nextIndex
+                    viewModel.selectedIndex = nextIndex
                 }
-                else { _selectedIndex.wrappedValue = 0 }
+                else { viewModel.selectedIndex = 0 }
                 return nil
             case 36: // Enter
-                if activeTab == "Trash" {
+                if viewModel.activeTab == "Trash" {
                     return nil
                 }
                 if _isFreezeFieldFocused.wrappedValue {
                     _isFreezeFieldFocused.wrappedValue = false
                     return nil
                 }
-                if _editingFolderId.wrappedValue != nil {
+                if viewModel.editingFolderId != nil {
                     // Let the textfield handle the Enter key to submit
                     return event
                 }
-                if _isReorderMode.wrappedValue {
+                if viewModel.isReorderMode {
                     clipboard.isReordering = false
-                    _isReorderMode.wrappedValue = false
+                    viewModel.isReorderMode = false
                     
-                    let freezeLimit = Int(_reorderFreezeLimit.wrappedValue) ?? 0
-                    clipboard.applyReorder(target: _reorderTarget.wrappedValue, freezeLimit: freezeLimit)
+                    let freezeLimit = Int(viewModel.reorderFreezeLimit) ?? 0
+                    clipboard.applyReorder(target: viewModel.reorderTarget, freezeLimit: freezeLimit)
                     
-                    _reorderTarget.wrappedValue = .none
-                    _selectedItemsForDeletion.wrappedValue.removeAll()
+                    viewModel.reorderTarget = .none
+                    viewModel.selectedItemsForDeletion.removeAll()
                     return nil
                 }
                 
-                if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
-                    let node = displayNodesLocal[selectedIndex]
+                if viewModel.selectedIndex >= 0 && viewModel.selectedIndex < displayNodesLocal.count {
+                    let node = displayNodesLocal[viewModel.selectedIndex]
                     if node.isFolder, let folder = node.folder {
                         withAnimation {
-                            if _expandedFolderIds.wrappedValue.contains(folder.id) { _expandedFolderIds.wrappedValue.remove(folder.id) }
-                            else { _expandedFolderIds.wrappedValue.insert(folder.id) }
+                            if viewModel.expandedFolderIds.contains(folder.id) { viewModel.expandedFolderIds.remove(folder.id) }
+                            else { viewModel.expandedFolderIds.insert(folder.id) }
                         }
                     } else {
                         let hasCmd = event.modifierFlags.contains(.command)
                         let hasCtrl = event.modifierFlags.contains(.control)
                         let format: PasteFormatType = (hasCmd && hasCtrl) ? .richNoLinks : (hasCmd ? .rich : .plain)
-                        pasteItem(selectedIndex, format)
+                        pasteItem(viewModel.selectedIndex, format)
                     }
                 }
                 return nil
             case 124: // Right
-                if _editingFolderId.wrappedValue != nil { return event }
-                if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
-                    let node = displayNodesLocal[selectedIndex]
+                if viewModel.editingFolderId != nil { return event }
+                if viewModel.selectedIndex >= 0 && viewModel.selectedIndex < displayNodesLocal.count {
+                    let node = displayNodesLocal[viewModel.selectedIndex]
                     if node.isFolder, let folder = node.folder {
-                        withAnimation { _ = _expandedFolderIds.wrappedValue.insert(folder.id) }
+                        withAnimation { _ = viewModel.expandedFolderIds.insert(folder.id) }
                     } else {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _expandedItemIndex.wrappedValue = selectedIndex }
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { viewModel.expandedItemIndex = viewModel.selectedIndex }
                     }
                 }
                 return nil
             case 123: // Left
-                if _editingFolderId.wrappedValue != nil { return event }
-                if selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
-                    let node = displayNodesLocal[selectedIndex]
+                if viewModel.editingFolderId != nil { return event }
+                if viewModel.selectedIndex >= 0 && viewModel.selectedIndex < displayNodesLocal.count {
+                    let node = displayNodesLocal[viewModel.selectedIndex]
                     if event.modifierFlags.contains(.option) {
                         if let parentId = node.parentFolderId ?? node.folder?.id {
                             withAnimation {
-                                _expandedFolderIds.wrappedValue.remove(parentId)
-                                if let pIdx = displayNodesLocal.firstIndex(where: { $0.folder?.id == parentId }) { _selectedIndex.wrappedValue = pIdx }
-                                _expandedItemIndex.wrappedValue = nil
+                                viewModel.expandedFolderIds.remove(parentId)
+                                if let pIdx = displayNodesLocal.firstIndex(where: { $0.folder?.id == parentId }) { viewModel.selectedIndex = pIdx }
+                                viewModel.expandedItemIndex = nil
                             }
                         }
                         return nil
                     }
                     if node.isFolder, let folder = node.folder {
-                        withAnimation { _ = _expandedFolderIds.wrappedValue.remove(folder.id) }
-                    } else if expandedItemIndex == selectedIndex {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { _expandedItemIndex.wrappedValue = nil }
-                    } else if activeTab == "Groups", let parentId = node.parentFolderId {
+                        withAnimation { _ = viewModel.expandedFolderIds.remove(folder.id) }
+                    } else if viewModel.expandedItemIndex == viewModel.selectedIndex {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { viewModel.expandedItemIndex = nil }
+                    } else if viewModel.activeTab == "Groups", let parentId = node.parentFolderId {
                         if let pIdx = displayNodesLocal.firstIndex(where: { $0.folder?.id == parentId }) {
-                            withAnimation { _selectedIndex.wrappedValue = pIdx; _expandedItemIndex.wrappedValue = nil }
+                            withAnimation { viewModel.selectedIndex = pIdx; viewModel.expandedItemIndex = nil }
                         }
                     }
                 }
                 return nil
             case 49: // Space
-                if (isEditMode || _isReorderMode.wrappedValue) && selectedIndex >= 0 && selectedIndex < displayNodesLocal.count {
-                    if let anchor = _selectionAnchorIndex.wrappedValue {
-                        let start = min(anchor, selectedIndex)
-                        let end = max(anchor, selectedIndex)
+                if (viewModel.isEditMode || viewModel.isReorderMode) && viewModel.selectedIndex >= 0 && viewModel.selectedIndex < displayNodesLocal.count {
+                    if let anchor = viewModel.selectionAnchorIndex {
+                        let start = min(anchor, viewModel.selectedIndex)
+                        let end = max(anchor, viewModel.selectedIndex)
                         
                         var idsToToggle: [UUID] = []
                         for i in start...end {
@@ -1472,23 +1431,23 @@ extension ContentView {
                             }
                         }
                         
-                        let allSelected = idsToToggle.allSatisfy { _selectedItemsForDeletion.wrappedValue.contains($0) }
+                        let allSelected = idsToToggle.allSatisfy { viewModel.selectedItemsForDeletion.contains($0) }
                         withAnimation {
                             for id in idsToToggle {
                                 if allSelected {
-                                    _selectedItemsForDeletion.wrappedValue.remove(id)
+                                    viewModel.selectedItemsForDeletion.remove(id)
                                 } else {
-                                    _selectedItemsForDeletion.wrappedValue.insert(id)
+                                    viewModel.selectedItemsForDeletion.insert(id)
                                 }
                             }
-                            _selectionAnchorIndex.wrappedValue = nil
+                            viewModel.selectionAnchorIndex = nil
                         }
                     } else {
-                        let node = displayNodesLocal[selectedIndex]
+                        let node = displayNodesLocal[viewModel.selectedIndex]
                         if let id = node.item?.id ?? (node.folder?.id != cloudFolderId && clipboard.selectedDevice == "Local (This Mac)" ? node.folder?.id : nil) {
                             withAnimation {
-                                if _selectedItemsForDeletion.wrappedValue.contains(id) { _selectedItemsForDeletion.wrappedValue.remove(id) }
-                                else { _selectedItemsForDeletion.wrappedValue.insert(id) }
+                                if viewModel.selectedItemsForDeletion.contains(id) { viewModel.selectedItemsForDeletion.remove(id) }
+                                else { viewModel.selectedItemsForDeletion.insert(id) }
                             }
                         }
                     }
@@ -1499,51 +1458,51 @@ extension ContentView {
             case 14: // E
                 if event.modifierFlags.contains(.command) {
                     withAnimation {
-                        _isEditMode.wrappedValue.toggle()
-                        if _isEditMode.wrappedValue {
-                            if _isReorderMode.wrappedValue {
-                                clipboard.history = _reorderBackupHistory.wrappedValue
-                                clipboard.folders = _reorderBackupFolders.wrappedValue
+                        viewModel.isEditMode.toggle()
+                        if viewModel.isEditMode {
+                            if viewModel.isReorderMode {
+                                clipboard.history = viewModel.reorderBackupHistory
+                                clipboard.folders = viewModel.reorderBackupFolders
                                 clipboard.isReordering = false
-                                _isReorderMode.wrappedValue = false
+                                viewModel.isReorderMode = false
                             }
                         } else {
-                            _selectedItemsForDeletion.wrappedValue.removeAll()
+                            viewModel.selectedItemsForDeletion.removeAll()
                         }
                     }
                     return nil
                 }
                 return event
             case 0: // A
-                if (isEditMode || _isReorderMode.wrappedValue) && event.modifierFlags.contains(.command) {
+                if (viewModel.isEditMode || viewModel.isReorderMode) && event.modifierFlags.contains(.command) {
                     withAnimation {
                         let ids = Set(displayNodesLocal.compactMap { $0.item?.id ?? (clipboard.selectedDevice == "Local (This Mac)" && $0.folder?.id != cloudFolderId ? $0.folder?.id : nil) })
-                        if _selectedItemsForDeletion.wrappedValue.isSuperset(of: ids) { _selectedItemsForDeletion.wrappedValue.subtract(ids) }
-                        else { _selectedItemsForDeletion.wrappedValue.formUnion(ids) }
+                        if viewModel.selectedItemsForDeletion.isSuperset(of: ids) { viewModel.selectedItemsForDeletion.subtract(ids) }
+                        else { viewModel.selectedItemsForDeletion.formUnion(ids) }
                     }
                     return nil
                 }
                 return event
             case 53: // Esc
-                if _activeTab.wrappedValue == "Trash" {
-                    _activeTab.wrappedValue = _previousTab.wrappedValue
+                if viewModel.activeTab == "Trash" {
+                    viewModel.activeTab = viewModel.previousTab
                     return nil
                 }
-                if _isEditMode.wrappedValue {
-                    _isEditMode.wrappedValue = false
+                if viewModel.isEditMode {
+                    viewModel.isEditMode = false
                     return nil
                 }
                 if isSearchFocused { _isSearchFocused.wrappedValue = false }
-                else if _isReorderMode.wrappedValue {
-                    clipboard.history = _reorderBackupHistory.wrappedValue
-                    clipboard.folders = _reorderBackupFolders.wrappedValue
+                else if viewModel.isReorderMode {
+                    clipboard.history = viewModel.reorderBackupHistory
+                    clipboard.folders = viewModel.reorderBackupFolders
                     clipboard.isReordering = false
-                    _isReorderMode.wrappedValue = false
-                    _selectedItemsForDeletion.wrappedValue.removeAll()
+                    viewModel.isReorderMode = false
+                    viewModel.selectedItemsForDeletion.removeAll()
                 }
-                else if isEditMode {
-                    _isEditMode.wrappedValue = false
-                    _selectedItemsForDeletion.wrappedValue.removeAll()
+                else if viewModel.isEditMode {
+                    viewModel.isEditMode = false
+                    viewModel.selectedItemsForDeletion.removeAll()
                 }
                 else { 
                     if SettingsWindowManager.shared.isSettingsOpen {
@@ -1558,24 +1517,24 @@ extension ContentView {
                 return nil
             case 48: // Tab
                 if event.modifierFlags.contains(.option) {
-                    if _isReorderMode.wrappedValue { return nil }
+                    if viewModel.isReorderMode { return nil }
                     let isShift = event.modifierFlags.contains(.shift)
                     let visibleTabs = self.getVisibleTabs()
-                    if let currentIndex = visibleTabs.firstIndex(of: activeTab) {
+                    if let currentIndex = visibleTabs.firstIndex(of: viewModel.activeTab) {
                         let nextIndex = isShift 
                             ? (currentIndex - 1 + visibleTabs.count) % visibleTabs.count 
                             : (currentIndex + 1) % visibleTabs.count
                         withAnimation {
-                            _activeTab.wrappedValue = visibleTabs[nextIndex]
-                            _selectedIndex.wrappedValue = 0
-                            _expandedItemIndex.wrappedValue = nil
+                            viewModel.activeTab = visibleTabs[nextIndex]
+                            viewModel.selectedIndex = 0
+                            viewModel.expandedItemIndex = nil
                         }
                     } else {
                         // We are in a tab not in visibleTabs (like Trash). Jump to first or last tab.
                         withAnimation {
-                            _activeTab.wrappedValue = isShift ? (visibleTabs.last ?? "All") : (visibleTabs.first ?? "All")
-                            _selectedIndex.wrappedValue = 0
-                            _expandedItemIndex.wrappedValue = nil
+                            viewModel.activeTab = isShift ? (visibleTabs.last ?? "All") : (visibleTabs.first ?? "All")
+                            viewModel.selectedIndex = 0
+                            viewModel.expandedItemIndex = nil
                         }
                     }
                     return nil
