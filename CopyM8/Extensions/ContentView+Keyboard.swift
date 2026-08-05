@@ -764,7 +764,6 @@ extension ContentView {
             }
         }
 }
-}
 import AppKit
 
 extension NSEvent {
