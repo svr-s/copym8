@@ -749,7 +749,10 @@ extension ContentView {
                 }
                 return event
             default:
-                return event
+                if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.control) {
+                    return event
+                }
+                return nil
             }
         }
 
