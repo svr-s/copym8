@@ -12,7 +12,7 @@ extension ContentView {
                 if event.keyCode == 53 {
                     if viewModel.itemToAssignGroup != nil { viewModel.itemToAssignGroup = nil }
                     if viewModel.showingDeviceSwitcher { viewModel.showingDeviceSwitcher = false }
-                    return event
+                    return nil
                 }
                 return event
             }
@@ -754,7 +754,11 @@ extension ContentView {
                 return nil
             default:
                 if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.control) {
-                    return event
+                    let systemCommandKeys: Set<UInt16> = [12, 13, 46, 43] // Q, W, M, , (Settings)
+                    if systemCommandKeys.contains(event.keyCode) {
+                        return event
+                    }
+                    return nil
                 }
                 return nil
             }

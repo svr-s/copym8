@@ -69,7 +69,8 @@ struct DeviceSwitcherView: View {
                 onCancel()
                 return nil
             default:
-                return event
+                if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.control) { return event }
+                return nil
             }
         }
         .onAppear {
