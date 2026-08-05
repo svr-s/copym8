@@ -51,15 +51,25 @@ extension ContentView {
             frame.origin.y = max(screenRect.minY, min(frame.origin.y, screenRect.maxY - frame.height))
         }
         if animate {
-            NSAnimationContext.runAnimationGroup { context in
-                if bouncy {
-                    context.duration = 0.5
-                    context.timingFunction = CAMediaTimingFunction(controlPoints: 0.4, 1.2, 0.4, 1.0)
-                } else {
+            if bouncy {
+                let spring = CASpringAnimation()
+                spring.mass = 1.0
+                spring.stiffness = 200
+                spring.damping = 15
+                spring.initialVelocity = 0
+                
+                window.animations = ["frame": spring]
+                NSAnimationContext.runAnimationGroup { context in
+                    context.duration = spring.settlingDuration
+                    window.animator().setFrame(frame, display: true)
+                }
+            } else {
+                window.animations = ["frame": CABasicAnimation()]
+                NSAnimationContext.runAnimationGroup { context in
                     context.duration = 0.3
                     context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                    window.animator().setFrame(frame, display: true)
                 }
-                window.animator().setFrame(frame, display: true)
             }
         } else {
             window.setFrame(frame, display: true, animate: false)
