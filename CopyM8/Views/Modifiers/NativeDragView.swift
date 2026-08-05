@@ -57,9 +57,9 @@ class DragTrackingView: NSView {
             case .leftMouseUp:
                 keepOn = false
                 if !isDragging {
-                    onTap?()
+                    DispatchQueue.main.async { self.onTap?() }
                 } else {
-                    onDragEnded?()
+                    DispatchQueue.main.async { self.onDragEnded?() }
                 }
                 
             default:

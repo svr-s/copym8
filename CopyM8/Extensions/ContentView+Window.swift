@@ -77,29 +77,29 @@ extension ContentView {
         
         let distLeft = center.x - screenRect.minX
         let distRight = screenRect.maxX - center.x
-        let distTop = screenRect.maxY - center.y
-        let minEdge = min(distLeft, distRight, distTop)
         
         var targetX = windowRect.origin.x
-        var targetY = windowRect.origin.y
+        let targetY = windowRect.origin.y // Vertical remains untouched in Phase 1
         
-        if minEdge == distLeft { dockEdgeRaw = "left"; targetX = screenRect.minX }
-        else if minEdge == distRight { dockEdgeRaw = "right"; targetX = screenRect.maxX - windowRect.width }
-        else { dockEdgeRaw = "top"; targetY = screenRect.maxY - windowRect.height }
+        if distLeft < distRight { 
+            dockEdgeRaw = "left"
+            targetX = screenRect.minX 
+        } else { 
+            dockEdgeRaw = "right"
+            targetX = screenRect.maxX - windowRect.width 
+        }
         
         if !shortcut.isExpanded {
-            let isTop = dockEdgeRaw == "top"
-            let width: CGFloat = isTop ? 40 : 28
-            let height: CGFloat = isTop ? 28 : 40
+            let width: CGFloat = 28
+            let height: CGFloat = 40
             window.setContentSize(NSSize(width: width, height: height))
             if dockEdgeRaw == "left" { targetX = screenRect.minX }
             if dockEdgeRaw == "right" { targetX = screenRect.maxX - width }
-            if dockEdgeRaw == "top" { targetY = screenRect.maxY - height }
         }
         
         NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.3
-            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            context.duration = 0.5
+            context.timingFunction = CAMediaTimingFunction(controlPoints: 0.4, 1.2, 0.4, 1.0) // Bouncy spring curve
             window.animator().setFrameOrigin(NSPoint(x: targetX, y: targetY))
         }
     }
