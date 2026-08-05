@@ -22,7 +22,10 @@ struct KeyboardMonitorModifier: ViewModifier {
             .onAppear {
                 wrapper.closure = onKeyDown
                 localEventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-                    return wrapper.closure?(event) ?? event
+                    if let closure = wrapper.closure {
+                        return closure(event)
+                    }
+                    return event
                 }
             }
             .onDisappear {
