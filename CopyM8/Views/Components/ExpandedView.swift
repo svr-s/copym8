@@ -47,8 +47,6 @@ struct ExpandedView: View {
     
     var body: some View {
         ZStack {
-            NativeDragView(onDragEnded: { snapToEdge() }, onTap: {})
-            
             VStack(spacing: 0) {
                 HeaderView(
                     isHoveringClose: $isHoveringClose,
