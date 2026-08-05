@@ -161,9 +161,8 @@ struct GroupAssignmentView: View {
                 break
             }
             
-            if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.control) {
-                let allowedKeys: Set<UInt16> = [12, 13, 46, 43, 45] // Q, W, M, , N(New Group)
-                if allowedKeys.contains(event.keyCode) { return event }
+            if event.isAllowedSystemCommand(additionalAllowedKeys: [45]) { // 45 is N for New Group
+                return event
             }
             return nil
         }

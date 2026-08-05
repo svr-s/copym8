@@ -753,12 +753,8 @@ extension ContentView {
                 if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.control) { return event }
                 return nil
             default:
-                if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.control) {
-                    let systemCommandKeys: Set<UInt16> = [12, 13, 46, 43] // Q, W, M, , (Settings)
-                    if systemCommandKeys.contains(event.keyCode) {
-                        return event
-                    }
-                    return nil
+                if event.isAllowedSystemCommand() {
+                    return event
                 }
                 return nil
             }

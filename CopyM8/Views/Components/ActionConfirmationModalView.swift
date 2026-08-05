@@ -73,9 +73,8 @@ struct ActionConfirmationModalView: View {
             default:
                 break
             }
-            if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.control) {
-                let systemCommandKeys: Set<UInt16> = [12, 13, 46, 43] // Q, W, M, ,
-                if systemCommandKeys.contains(event.keyCode) { return event }
+            if event.isAllowedSystemCommand() {
+                return event
             }
             return nil
         }
