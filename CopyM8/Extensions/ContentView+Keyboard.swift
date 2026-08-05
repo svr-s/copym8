@@ -277,7 +277,7 @@ extension ContentView {
             switch event.keyCode {
             case 18...29:
                 if isFreezeFieldFocused { return nil }
-                if viewModel.activeTab == "Trash" { return event }
+                if viewModel.activeTab == "Trash" { return nil }
                 let keyMap: [UInt16: Int] = [18: 0, 19: 1, 20: 2, 21: 3, 23: 4, 22: 5, 26: 6, 28: 7, 25: 8, 29: 9]
                 if let relativeIndex = keyMap[event.keyCode] {
                     let hasCmd = event.modifierFlags.contains(.command)
@@ -655,7 +655,8 @@ extension ContentView {
                     }
                     return nil
                 }
-                return event
+                if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.control) { return event }
+                return nil
 
             case 14: // E
                 if event.modifierFlags.contains(.command) {
@@ -674,7 +675,8 @@ extension ContentView {
                     }
                     return nil
                 }
-                return event
+                if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.control) { return event }
+                return nil
             case 0: // A
                 if (viewModel.isEditMode || viewModel.isReorderMode) && event.modifierFlags.contains(.command) {
                     withAnimation {
@@ -684,7 +686,8 @@ extension ContentView {
                     }
                     return nil
                 }
-                return event
+                if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.control) { return event }
+                return nil
             case 53: // Esc
                 if viewModel.activeTab == "Trash" {
                     viewModel.activeTab = viewModel.previousTab
@@ -747,7 +750,8 @@ extension ContentView {
                     }
                     return nil
                 }
-                return event
+                if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.control) { return event }
+                return nil
             default:
                 if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.control) {
                     return event
