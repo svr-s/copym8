@@ -61,19 +61,14 @@ struct HeaderView: View {
             }
             
             Spacer()
-                .contentShape(Rectangle())
-                .overlay(NativeDragView(onDragEnded: { adjustWindowFrame() }, onTap: {}))
             
             HStack(spacing: 1) {
                 Text("copym").font(.custom("Gill Sans", size: 15))
                 Image(systemName: "infinity").font(.system(size: 19, weight: .heavy))
             }
             .foregroundColor(.primary)
-            .overlay(NativeDragView(onDragEnded: { adjustWindowFrame() }, onTap: {}))
                 
             Spacer()
-                .contentShape(Rectangle())
-                .overlay(NativeDragView(onDragEnded: { adjustWindowFrame() }, onTap: {}))
             
             Picker("", selection: $isDense) {
                 Image(systemName: "rectangle.grid.1x3").tag(true)
@@ -111,6 +106,10 @@ struct HeaderView: View {
                     .font(.system(size: 10)).foregroundColor(.primary.opacity(0.7))
             }.buttonStyle(PlainButtonStyle())
         }
+        .background(
+            Color.white.opacity(0.001)
+                .overlay(NativeDragView(onDragEnded: { adjustWindowFrame() }, onTap: {}))
+        )
         .padding(.horizontal, 10)
         .padding(.top, 16)
         .padding(.bottom, 8)
