@@ -2,6 +2,10 @@ import SwiftUI
 import AppKit
 
 extension ContentView {
+    /// Global key press handler for the main `ContentView`.
+    /// Intercepts and processes keyboard shortcuts for navigation, selection, editing, and clipboard actions.
+    /// - Parameter event: The `NSEvent` representing the keyboard activity.
+    /// - Returns: The unhandled `NSEvent` to pass up the responder chain, or `nil` if the event was fully handled locally.
     func handleKeyPress(_ event: NSEvent) -> NSEvent? {
         guard NSApplication.shared.windows.first?.isVisible == true else { return event }
             if SettingsWindowManager.shared.isSettingsOpen {
@@ -266,7 +270,7 @@ extension ContentView {
                                     } else {
                                         viewModel.expandedFolderIds.remove(targetFolder.id)
                                     }
-                                }
+                                 }
                                 return nil
                             }
                         }
@@ -759,7 +763,7 @@ extension ContentView {
                 return nil
             }
         }
-
+}
 }
 import AppKit
 

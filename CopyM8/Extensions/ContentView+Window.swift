@@ -2,6 +2,9 @@ import SwiftUI
 import AppKit
 
 extension ContentView {
+    /// Calculates the dynamic window size required based on current configuration and screen constraints.
+    /// Ensures the expanded window does not exceed the available screen dimensions.
+    /// - Returns: A `CGSize` representing the constrained dimensions for the expanded app window.
     func getDynamicWindowSize() -> CGSize {
         let calculatedHeight = windowHeight
         var finalWidth = max(340, windowWidth)
@@ -13,6 +16,12 @@ extension ContentView {
         return CGSize(width: finalWidth, height: finalHeight)
     }
 
+    /// Handles the resizing and repositioning of the main application window during state transitions.
+    /// Manages the visual expansion/collapse animation between the Pill state and the Expanded state.
+    /// - Parameters:
+    ///   - expanded: `true` if transitioning to the expanded state, `false` if collapsing into the pill state.
+    ///   - animate: `true` to animate the frame change, `false` to snap immediately.
+    ///   - bouncy: `true` to use a spring animation (for snapping to edge), `false` for standard ease-out.
     func adjustWindowFrame(expanded: Bool, animate: Bool = true, bouncy: Bool = false) {
         guard let window = NSApp.windows.first(where: { $0 is CopyM8Window }) ?? NSApp.windows.first else { return }
         let isTop = dockEdge == .top
@@ -84,6 +93,9 @@ extension ContentView {
         }
     }
 
+    /// Evaluates the window's current position and determines the closest screen edge.
+    /// Updates the `dockEdgeRaw` user default and triggers a bouncy frame adjustment 
+    /// to magnetize the window to the calculated edge.
     func snapToEdge() {
         guard let window = NSApp.windows.first(where: { $0 is CopyM8Window }) ?? NSApp.windows.first, let screen = window.screen else { return }
         let screenRect = screen.visibleFrame
@@ -107,5 +119,4 @@ extension ContentView {
             adjustWindowFrame(expanded: false, animate: true, bouncy: true)
         }
     }
-
 }

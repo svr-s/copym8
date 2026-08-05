@@ -1,31 +1,50 @@
 import Foundation
 import AppKit
 
+/// A delegate protocol for synchronizing cloud state with the main application state.
 protocol CloudSyncDelegate: AnyObject {
+    /// The currently selected device tab (e.g., "Local (This Mac)" or a remote device name).
     var selectedDevice: String { get set }
+    /// A list of available remote devices detected in the sync folder.
     var availableDevices: [String] { get set }
+    /// The local clipboard history array.
     var history: [ClipboardItem] { get set }
+    /// The clipboard history array loaded from a selected remote device.
     var remoteHistory: [ClipboardItem] { get set }
+    /// The folders loaded from a selected remote device.
     var remoteFolders: [ClipboardFolder] { get set }
 }
 
+/// `CloudSyncService` orchestrates the iCloud syncing mechanism.
+/// It polls the designated sync folder for changes, discovers remote devices, 
+/// fetches their clipboard histories, and manages the shared "Cloud Copy" folder state.
 class CloudSyncService {
+    /// Shared singleton instance.
     static let shared = CloudSyncService()
+    
+    /// The delegate responsible for updating the UI with synced cloud data.
     weak var delegate: CloudSyncDelegate?
+    
     private var syncTimer: Timer?
+    
+    /// The hardcoded universal UUID for the shared "Cloud Copy" folder.
     private let cloudFolderId = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
 
+    /// Starts a repeating timer that polls the sync folder for remote device changes and Cloud Copy updates.
     func startPolling() {
         syncTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
             self?.pollSyncFolder()
         }
     }
 
+    /// Stops the sync polling timer.
     func stopPolling() {
         syncTimer?.invalidate()
         syncTimer = nil
     }
 
+    /// Checks the user-defined iCloud sync folder for active devices and updates the "Cloud Copy" folder.
+    /// If changes are detected, it instructs the delegate to update the UI.
     func pollSyncFolder() {
         guard let delegate = delegate else { return }
         guard let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty else {
@@ -41,6 +60,7 @@ class CloudSyncService {
         
         guard let files = try? FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil) else { return }
         
+        // Identify remote devices by finding files ending in _entries.json
         let devices = files
             .filter { $0.lastPathComponent.hasSuffix("_entries.json") && !$0.lastPathComponent.hasPrefix("cloud_copy") }
             .map { $0.lastPathComponent.replacingOccurrences(of: "_entries.json", with: "") }
@@ -66,6 +86,7 @@ class CloudSyncService {
                 self.fetchRemoteHistory(for: delegate.selectedDevice)
             }
             
+            // Synchronize the local representation of the "Cloud Copy" folder
             if let items = cloudItems {
                 let currentCloudItems = delegate.history.filter { $0.folderId == self.cloudFolderId }
                 if currentCloudItems != items {
@@ -77,6 +98,8 @@ class CloudSyncService {
         }
     }
     
+    /// Reads the clipboard history and folders for a specific remote device from the sync directory.
+    /// - Parameter deviceName: The name of the remote device to fetch.
     func fetchRemoteHistory(for deviceName: String) {
         guard let delegate = delegate else { return }
         guard let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty else { return }
@@ -85,6 +108,7 @@ class CloudSyncService {
         guard let data = try? Data(contentsOf: url) else { return }
         
         if let decoded = try? JSONDecoder().decode([ClipboardItem].self, from: data) {
+            // Filter out files and images from remote view due to payload size constraints
             var filtered = decoded.filter { $0.itemType != .file && $0.itemType != .image }
             filtered.removeAll { $0.folderId == self.cloudFolderId }
             
@@ -116,6 +140,8 @@ class CloudSyncService {
         }
     }
     
+    /// Forcibly deletes a remote device's sync files from the iCloud directory.
+    /// - Parameter deviceName: The name of the device to remove.
     func purgeRemoteDevice(_ deviceName: String) {
         guard let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty else { return }
         let url = URL(fileURLWithPath: syncPath)
@@ -131,6 +157,7 @@ class CloudSyncService {
         pollSyncFolder()
     }
     
+    /// Completely disables iCloud sync for this local device, wiping its sync files and stopping the polling timer.
     func disableSync() {
         guard let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty else { return }
         let localDeviceName = UserDefaults.standard.string(forKey: "syncDeviceName") ?? (Host.current().localizedName ?? "My Mac")
@@ -155,6 +182,10 @@ class CloudSyncService {
         }
     }
     
+    /// Renames the local device's sync files in the iCloud directory to reflect a user-initiated device rename.
+    /// - Parameters:
+    ///   - oldName: The previous device name.
+    ///   - newName: The new device name.
     func renameDeviceFiles(from oldName: String, to newName: String) {
         guard let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty else { return }
         let url = URL(fileURLWithPath: syncPath)

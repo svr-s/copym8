@@ -2,10 +2,13 @@ import Foundation
 import AppKit
 
 extension ClipboardManager {
+    /// Disables iCloud sync by delegating to the `CloudSyncService`.
     func disableSync() {
         CloudSyncService.shared.disableSync()
     }
 
+    /// Enables iCloud sync, creating the local "Cloud Copy" folder if it doesn't exist,
+    /// and starts polling the sync directory for remote changes.
     func enableSync() {
         DispatchQueue.main.async {
             if let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty {
@@ -20,18 +23,28 @@ extension ClipboardManager {
         }
     }
 
+    /// Renames the local device's representation in the iCloud sync directory.
+    /// - Parameters:
+    ///   - oldName: The previous device name.
+    ///   - newName: The new device name.
     func renameDeviceFiles(from oldName: String, to newName: String) {
         CloudSyncService.shared.renameDeviceFiles(from: oldName, to: newName)
     }
 
+    /// Purges a specific remote device's data from the iCloud sync directory.
+    /// - Parameter deviceName: The name of the remote device to remove.
     func purgeRemoteDevice(_ deviceName: String) {
         CloudSyncService.shared.purgeRemoteDevice(deviceName)
     }
 
+    /// Fetches the clipboard history for a specific remote device via the `CloudSyncService`.
+    /// - Parameter device: The name of the remote device.
     func fetchRemoteHistory(for device: String) {
         CloudSyncService.shared.fetchRemoteHistory(for: device)
     }
 
+    /// Removes a specific item from the shared "Cloud Copy" sync file.
+    /// - Parameter itemId: The UUID of the item to remove.
     func removeFromCloudCopyFile(itemId: UUID) {
         guard let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty else { return }
         let cloudURL = URL(fileURLWithPath: syncPath).appendingPathComponent("cloud_copy_entries.json")
@@ -44,6 +57,12 @@ extension ClipboardManager {
         }
     }
 
+    /// Moves one or more local items into the shared "Cloud Copy" folder.
+    /// Ensures that neither individual items nor the total folder size exceed configured limits.
+    /// Evicts older unpinned items from the cloud folder if necessary to make space.
+    /// Migrates payloads (images, files, rich text) to the ubiquitous iCloud directory.
+    /// - Parameter itemIds: An array of UUIDs of the items to move.
+    /// - Returns: `true` if the migration was successful, `false` if it failed due to size constraints.
     func moveToCloud(itemIds: [UUID]) -> Bool {
         guard let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty else { return false }
         
@@ -133,5 +152,4 @@ extension ClipboardManager {
         }
         return true
     }
-
 }

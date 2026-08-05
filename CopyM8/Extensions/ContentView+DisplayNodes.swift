@@ -2,6 +2,9 @@ import SwiftUI
 import AppKit
 
 extension ContentView {
+    /// A dynamically computed list of nodes representing the current view state of the clipboard.
+    /// This property translates the raw `history` and `folders` arrays into a flat list of `DisplayNode`s
+    /// suitable for rendering in a `LazyVStack`. It handles filtering, sorting, and injecting divider nodes.
     var displayNodes: [DisplayNode] {
         if viewModel.isReorderMode {
             switch viewModel.reorderTarget {
@@ -155,5 +158,4 @@ extension ContentView {
             return results.map { DisplayNode(id: "item_\($0.id.uuidString)", isFolder: false, folder: nil, item: $0, parentFolderId: nil) }
         }
     }
-
 }

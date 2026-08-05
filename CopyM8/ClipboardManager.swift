@@ -1,6 +1,7 @@
 import Foundation
 import AppKit
 
+/// Represents the basic data type of a copied clipboard item.
 enum ItemType: String, Codable {
     case text
     case link
@@ -8,43 +9,65 @@ enum ItemType: String, Codable {
     case file
 }
 
+/// Defines the formatting type requested during a paste operation.
 enum PasteFormatType {
     case plain
     case rich
     case richNoLinks
 }
 
+/// Represents a user-created folder to organize pinned clipboard items.
 struct ClipboardFolder: Identifiable, Equatable, Codable {
+    /// Unique identifier for the folder.
     var id = UUID()
+    /// The display name of the folder.
     var name: String
+    /// The sort index of the folder in the UI.
     var orderIndex: Int = 0
 }
 
+/// Represents a single entry in the clipboard history.
 struct ClipboardItem: Identifiable, Equatable, Codable {
+    /// Unique identifier for the item. Used as the filename for on-disk payloads.
     var id = UUID()
+    /// The primary text content or display title of the item.
     let text: String
+    /// When the item was copied.
     var timestamp: Date
+    /// The name of the application the item was copied from.
     var sourceApp: String?
+    
+    // Payload flags indicating if rich data exists on disk
     var hasRTF: Bool = false
     var hasHTML: Bool = false
     var hasRTFD: Bool = false
     var hasWebArchive: Bool = false
     var hasPDF: Bool = false
+    
+    /// Whether the user has pinned the item to prevent eviction.
     var isPinned: Bool = false
+    /// The primary classification of the item's content.
     var itemType: ItemType = .text
+    /// Absolute paths for copied files (if applicable).
     var fileURLs: [String]?
+    /// The ID of the folder this item belongs to, or nil if unfiled.
     var folderId: UUID? = nil
+    /// The manual sort order index for pinned items. 0 indicates default sorting by timestamp.
     var orderIndex: Int = 0
+    /// Whether the item is in the Trash.
     var isDeleted: Bool? = false
+    /// When the item was moved to the Trash. Used for eviction.
     var deletedAt: Date? = nil
 }
 
+/// Hardcoded UUID for the "Restored" system folder.
 let restoredFolderId = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
 
-
-
+/// Hardcoded UUID for the shared "Cloud Copy" system folder.
 let cloudFolderId = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
 
+/// The central state manager for the CopyM8 application.
+/// Handles pasteboard polling, item storage, synchronization state, and UI data binding.
 class ClipboardManager: ObservableObject, CloudSyncDelegate {
     @Published var history: [ClipboardItem] = [] {
         didSet {

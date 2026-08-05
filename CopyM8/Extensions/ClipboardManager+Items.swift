@@ -2,6 +2,11 @@ import Foundation
 import AppKit
 
 extension ClipboardManager {
+    /// Deletes a specific clipboard item at the given index.
+    /// - Parameters:
+    ///   - index: The array index of the item to delete.
+    ///   - hardDelete: If `true`, permanently removes the item and its payload from disk. 
+    ///                 If `false`, marks it as deleted (moves it to the Trash).
     func deleteItem(at index: Int, hardDelete: Bool = false) {
         let item = history[index]
         if hardDelete {
@@ -17,6 +22,11 @@ extension ClipboardManager {
         saveHistory()
     }
 
+    /// Deletes all clipboard items matching a specific predicate condition.
+    /// - Parameters:
+    ///   - predicate: A closure that returns `true` for items that should be deleted.
+    ///   - hardDelete: If `true`, permanently removes the matched items and their payloads from disk. 
+    ///                 If `false`, marks them as deleted (moves them to the Trash).
     func deleteItems(where predicate: (ClipboardItem) -> Bool, hardDelete: Bool = false) {
         if hardDelete {
             let itemsToDelete = history.filter(predicate)
@@ -37,14 +47,19 @@ extension ClipboardManager {
         }
     }
 
+    /// Moves all unpinned, unfiled clipboard items to the Trash.
     func clearAll() {
         deleteItems(where: { _ in true })
     }
 
+    /// Restores previously deleted items from the Trash back into the active history.
+    /// Restored items are placed in a special "Restored" folder.
+    /// - Parameter ids: An array of UUIDs of the items to restore.
     func restoreItems(ids: [UUID]) {
         for id in ids {
             if let index = history.firstIndex(where: { $0.id == id }) {
                 let item = history[index]
+                // Deduplication logic for restored items
                 if let activeIndex = history.firstIndex(where: { $0.text == item.text && !($0.isDeleted ?? false) && $0.id != item.id }) {
                     history[activeIndex].timestamp = Date()
                     deleteItem(at: index, hardDelete: true)
@@ -64,6 +79,9 @@ extension ClipboardManager {
         saveHistory()
     }
 
+    /// Toggles the pinned status of a clipboard item.
+    /// Pinning an item prevents it from being evicted during automatic cleanup.
+    /// - Parameter id: The UUID of the item to pin or unpin.
     func togglePin(for id: UUID) {
         if let index = history.firstIndex(where: { $0.id == id }) {
             history[index].isPinned.toggle()
@@ -76,6 +94,8 @@ extension ClipboardManager {
         }
     }
 
+    /// Checks the current storage limits (both retention time and max storage size)
+    /// and triggers eviction via `HistoryEvictionService` if necessary.
     func pruneStorageIfNeeded() {
         let retentionDays = UserDefaults.standard.integer(forKey: "deleteAfterDays")
         let expiredIDs = HistoryEvictionService.shared.getExpiredTrashIDs(from: history, retentionDays: retentionDays)
@@ -89,6 +109,9 @@ extension ClipboardManager {
         }
     }
 
+    /// Ensures the clipboard history does not exceed the maximum allowed number of unpinned items.
+    /// Permanently deletes older unpinned items from disk to enforce the limit.
+    /// - Parameter limit: The maximum number of unpinned, unfiled items to retain.
     func truncateHistory(to limit: Int) {
         let unpinnedCount = history.filter { !$0.isPinned && $0.folderId == nil }.count
         if unpinnedCount > limit {
@@ -109,6 +132,10 @@ extension ClipboardManager {
         }
     }
 
+    /// Verifies whether the payload for a clipboard item is available on disk.
+    /// If the item is in the cloud, it checks if the ubiquitous file has been downloaded.
+    /// - Parameter item: The clipboard item to check.
+    /// - Returns: `true` if the payload is available, `false` otherwise.
     func isItemAvailable(_ item: ClipboardItem) -> Bool {
         if item.folderId != cloudFolderId { return true }
         
@@ -129,6 +156,12 @@ extension ClipboardManager {
         return true
     }
 
+    /// Prepares the system pasteboard for a paste operation based on the requested format.
+    /// Extracts the appropriate payload (e.g., RTF, HTML, plain text) and writes it to the pasteboard.
+    /// Temporarily suspends polling to prevent the app from registering its own paste action as a new copy.
+    /// - Parameters:
+    ///   - item: The clipboard item to paste.
+    ///   - formatType: The requested format (e.g., plain text, rich text, rich text without links).
     func prepareForPaste(_ item: ClipboardItem, formatType: PasteFormatType = .plain) {
         ignoreNextChange = true
 
@@ -256,6 +289,7 @@ extension ClipboardManager {
         lastChangeCount = pasteboard.changeCount
     }
 
+    /// Synthesizes a native `Cmd+V` keystroke using `CGEvent` to perform an automated paste operation.
     func triggerPasteKeystroke() {
         let src = CGEventSource(stateID: .combinedSessionState)
         
@@ -269,6 +303,9 @@ extension ClipboardManager {
         vUp?.post(tap: .cgAnnotatedSessionEventTap)
     }
 
+    /// Imports clipboard items from a remote device into the local device's clipboard history.
+    /// Handles duplicate checking and progressive upgrades (pinning and folder assignment).
+    /// - Parameter items: The array of `ClipboardItem`s to import.
     func importItems(_ items: [ClipboardItem]) {
         let remoteDevice = self.selectedDevice != "Local (This Mac)" ? self.selectedDevice : "Remote"
         var skippedCount = 0
@@ -351,5 +388,4 @@ extension ClipboardManager {
             }
         }
     }
-
 }

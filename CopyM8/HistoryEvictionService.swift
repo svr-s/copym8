@@ -1,9 +1,17 @@
 import Foundation
 
+/// `HistoryEvictionService` manages the business logic for enforcing clipboard retention limits.
+/// It calculates which items need to be deleted based on time limits (Trash expiration) 
+/// or storage space limits (maxTotalStorageMB, Cloud Sync limits).
 class HistoryEvictionService {
+    /// Shared singleton instance.
     static let shared = HistoryEvictionService()
     
-    // Returns the set of UUIDs that represent expired items in the trash.
+    /// Identifies items in the Trash that have exceeded the user's retention time limit.
+    /// - Parameters:
+    ///   - history: The array of all clipboard items.
+    ///   - retentionDays: The maximum number of days an item is allowed to stay in the Trash (defaults to 7 if 0).
+    /// - Returns: A set of UUIDs representing expired items that should be hard-deleted.
     func getExpiredTrashIDs(from history: [ClipboardItem], retentionDays: Int) -> Set<UUID> {
         let limit = retentionDays == 0 ? 7 : retentionDays
         let thresholdDate = Calendar.current.date(byAdding: .day, value: -limit, to: Date()) ?? Date.distantPast
@@ -12,7 +20,12 @@ class HistoryEvictionService {
         return Set(expiredTrash.map { $0.id })
     }
     
-    // Returns the set of UUIDs that need to be hard-deleted to respect maxTotalStorageMB
+    /// Determines which image items should be hard-deleted to keep the total disk usage under the maximum allowed threshold.
+    /// Evicts trash images first, then unpinned loose images (oldest first).
+    /// - Parameters:
+    ///   - history: The array of all clipboard items.
+    ///   - maxTotalStorageMB: The maximum permitted size of the local clipboard storage in megabytes.
+    /// - Returns: A set of UUIDs representing items that must be deleted to free up space.
     func getIDsToPrune(from history: [ClipboardItem], maxTotalStorageMB: Int) -> Set<UUID> {
         var currentSizeMB = LocalImageStore.shared.getTotalSizeMB() + LocalPayloadStore.shared.getTotalSizeMB()
         var idsToRemove = Set<UUID>()
@@ -43,11 +56,19 @@ class HistoryEvictionService {
         return idsToRemove
     }
     
+    /// Represents errors that occur during the cloud eviction evaluation process.
     enum EvictionError: Error {
+        /// Thrown when there is not enough evictable space to accommodate a new item.
         case insufficientSpace(message: String)
     }
     
-    // Evaluates cloud storage limits when a new item is added, returns a list of items to evict if necessary.
+    /// Evaluates cloud storage limits when a new item is added, determining if older unpinned items must be evicted.
+    /// - Parameters:
+    ///   - itemSizeMB: The size of the incoming clipboard item.
+    ///   - cloudItems: The array of items currently stored in the cloud clipboard.
+    ///   - maxSizeMB: The maximum permitted size of the cloud clipboard folder.
+    /// - Throws: `EvictionError.insufficientSpace` if all items are pinned/frozen and space cannot be freed.
+    /// - Returns: An array of clipboard items that should be deleted to make room.
     func getCloudItemsToEvict(
         forNewItemSizeMB itemSizeMB: Double,
         cloudItems: [ClipboardItem],
@@ -66,6 +87,7 @@ class HistoryEvictionService {
             return [] // No eviction needed
         }
         
+        // Only evict unpinned items that aren't manually reordered (orderIndex == 0)
         var evictableItems = cloudItems.filter { $0.orderIndex == 0 && !$0.isPinned }
         evictableItems.sort { $0.timestamp < $1.timestamp }
         

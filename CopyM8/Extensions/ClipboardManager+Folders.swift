@@ -2,6 +2,10 @@ import Foundation
 import AppKit
 
 extension ClipboardManager {
+    /// Filters the currently active folders based on a search query.
+    /// A folder is included if its name matches the query OR if it contains any items matching the query.
+    /// - Parameter searchText: The query string to search for.
+    /// - Returns: An array of `ClipboardFolder` that match the search criteria.
     func getFilteredFolders(searchText: String) -> [ClipboardFolder] {
         if searchText.isEmpty { return activeFolders }
         return activeFolders.filter { folder in
@@ -10,6 +14,12 @@ extension ClipboardManager {
         }
     }
 
+    /// Moves one or more clipboard items into a specified folder.
+    /// If moved to the "Cloud Copy" folder, it delegates to the cloud migration logic.
+    /// If moved out of the "Cloud Copy" folder, it migrates the payloads back to local storage.
+    /// - Parameters:
+    ///   - itemIds: An array of UUIDs representing the items to move.
+    ///   - folderId: The target folder's UUID, or `nil` to un-file the items.
     func setFolderId(for itemIds: [UUID], folderId: UUID?) {
         var cloudMoves: [UUID] = []
         for itemId in itemIds {
@@ -42,6 +52,8 @@ extension ClipboardManager {
         saveHistory()
     }
 
+    /// Persists the current local folders array to disk (`folders.json`).
+    /// Also syncs the local folders list to the user's iCloud sync directory.
     func saveFolders() {
         if isReordering { return }
         let foldersToSave = folders.filter { $0.id != cloudFolderId }
