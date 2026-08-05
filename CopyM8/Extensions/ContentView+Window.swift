@@ -13,7 +13,7 @@ extension ContentView {
         return CGSize(width: finalWidth, height: finalHeight)
     }
 
-    func adjustWindowFrame(expanded: Bool, animate: Bool = true) {
+    func adjustWindowFrame(expanded: Bool, animate: Bool = true, bouncy: Bool = false) {
         guard let window = NSApp.windows.first(where: { $0 is CopyM8Window }) ?? NSApp.windows.first else { return }
         let isTop = dockEdge == .top
         let pillWidth: CGFloat = isTop ? 40 : 28
@@ -52,8 +52,13 @@ extension ContentView {
         }
         if animate {
             NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.3
-                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                if bouncy {
+                    context.duration = 0.5
+                    context.timingFunction = CAMediaTimingFunction(controlPoints: 0.4, 1.2, 0.4, 1.0)
+                } else {
+                    context.duration = 0.3
+                    context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                }
                 window.animator().setFrame(frame, display: true)
             }
         } else {
@@ -78,29 +83,18 @@ extension ContentView {
         let distLeft = center.x - screenRect.minX
         let distRight = screenRect.maxX - center.x
         
-        var targetX = windowRect.origin.x
-        let targetY = windowRect.origin.y // Vertical remains untouched in Phase 1
-        
+        // Phase 1: Only check left vs right edges
         if distLeft < distRight { 
-            dockEdgeRaw = "left"
-            targetX = screenRect.minX 
+            dockEdgeRaw = "left" 
         } else { 
-            dockEdgeRaw = "right"
-            targetX = screenRect.maxX - windowRect.width 
+            dockEdgeRaw = "right" 
         }
         
+        // Delegate the actual physical movement and resizing to adjustWindowFrame,
+        // which reliably sets both origin and size, respecting SwiftUI's layout cycle.
+        // If the pill isn't expanded, we use the bouncy spring animation!
         if !shortcut.isExpanded {
-            let width: CGFloat = 28
-            let height: CGFloat = 40
-            window.setContentSize(NSSize(width: width, height: height))
-            if dockEdgeRaw == "left" { targetX = screenRect.minX }
-            if dockEdgeRaw == "right" { targetX = screenRect.maxX - width }
-        }
-        
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.5
-            context.timingFunction = CAMediaTimingFunction(controlPoints: 0.4, 1.2, 0.4, 1.0) // Bouncy spring curve
-            window.animator().setFrameOrigin(NSPoint(x: targetX, y: targetY))
+            adjustWindowFrame(expanded: false, animate: true, bouncy: true)
         }
     }
 
