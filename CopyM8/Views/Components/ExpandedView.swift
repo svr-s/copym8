@@ -1,5 +1,8 @@
 import SwiftUI
 
+/// `ExpandedView` is the primary interface presented when CopyM8 is fully opened.
+/// It acts as the orchestrator for the `HeaderView`, `SearchBarView`, `TabBarView`, and `ClipboardListView`,
+/// passing down all necessary state bindings and environment objects to support browsing, editing, and managing clipboard items.
 struct ExpandedView: View {
     @EnvironmentObject var clipboard: ClipboardManager
     @Binding var isHoveringClose: Bool

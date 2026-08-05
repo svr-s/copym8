@@ -1,6 +1,8 @@
 import SwiftUI
 import AppKit
 
+/// `NativeDragView` is an `NSViewRepresentable` wrapper that enables seamless, lag-free native window dragging.
+/// It works by intercepting mouse events and moving the `NSWindow` natively, bypassing SwiftUI's gesture system.
 struct NativeDragView: NSViewRepresentable {
     var onDragEnded: () -> Void
     var onTap: () -> Void

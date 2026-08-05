@@ -1,6 +1,9 @@
 import SwiftUI
 import AppKit
 
+/// `HeaderView` acts as the top navigation and window drag handle for the expanded interface.
+/// It contains window controls (close), contextual actions (edit, delete), and app settings.
+/// The entire background of this view intercepts drag gestures to move the app natively, magnetically snapping to edges.
 struct HeaderView: View {
     @EnvironmentObject var clipboard: ClipboardManager
     @EnvironmentObject var shortcut: ShortcutManager

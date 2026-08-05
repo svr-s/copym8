@@ -1,5 +1,7 @@
 import SwiftUI
 
+/// `PillView` is the collapsed, minimalistic state of CopyM8 that docks to the edge of the screen.
+/// It uses a NativeDragView overlay to allow repositioning along the edges and expands the app when clicked.
 struct PillView: View {
     var dockEdge: DockEdge
     var activeColorName: String
