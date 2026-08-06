@@ -25,7 +25,9 @@ extension SettingsView {
                 Divider().padding(.vertical, 4)
                 
                 ForEach(1...customGlobalShortcutCount, id: \.self) { i in
-                    customGlobalRow(index: i)
+                    CustomGlobalRowView(index: i, showMinus: customGlobalShortcutCount > 1) {
+                        removeShortcut(at: i)
+                    }
                 }
                 
                 HStack {
@@ -134,20 +136,6 @@ extension SettingsView {
         }
     }
     
-    private func targetBinding(for index: Int) -> Binding<String> {
-        Binding(
-            get: { UserDefaults.standard.string(forKey: "customGlobalTarget\(index)") ?? "All" },
-            set: { UserDefaults.standard.set($0, forKey: "customGlobalTarget\(index)") }
-        )
-    }
-    
-    private func groupBinding(for index: Int) -> Binding<String> {
-        Binding(
-            get: { UserDefaults.standard.string(forKey: "customGlobalGroup\(index)") ?? "" },
-            set: { UserDefaults.standard.set($0, forKey: "customGlobalGroup\(index)") }
-        )
-    }
-    
     private func removeShortcut(at index: Int) {
         withAnimation {
             if index < customGlobalShortcutCount {
@@ -170,20 +158,41 @@ extension SettingsView {
             customGlobalShortcutCount -= 1
         }
     }
+}
 
-    private func customGlobalRow(index: Int) -> some View {
+struct CustomGlobalRowView: View {
+    let index: Int
+    let showMinus: Bool
+    let removeAction: () -> Void
+    
+    @AppStorage var target: String
+    @AppStorage var group: String
+    
+    @AppStorage("customTab8") var customTab8: String = ""
+    @AppStorage("customTab9") var customTab9: String = ""
+    @AppStorage("customTab0") var customTab0: String = ""
+    
+    @EnvironmentObject var clipboard: ClipboardManager
+    
+    init(index: Int, showMinus: Bool, removeAction: @escaping () -> Void) {
+        self.index = index
+        self.showMinus = showMinus
+        self.removeAction = removeAction
+        self._target = AppStorage(wrappedValue: "All", "customGlobalTarget\(index)")
+        self._group = AppStorage(wrappedValue: "", "customGlobalGroup\(index)")
+    }
+    
+    var body: some View {
         let title = "Custom Launch \(index):"
-        let targetBinding = self.targetBinding(for: index)
-        let groupBinding = self.groupBinding(for: index)
         let shortcut = KeyboardShortcuts.Name("customGlobal\(index)")
         
-        return HStack(alignment: .top) {
+        HStack(alignment: .top) {
             Text(title)
                 .font(.system(size: 12))
                 .padding(.top, 4)
             
             VStack(alignment: .leading, spacing: 4) {
-                Picker("", selection: targetBinding) {
+                Picker("", selection: $target) {
                     Text("All").tag("All")
                     Text("Groups").tag("Groups")
                     Text("Text").tag("Text")
@@ -198,8 +207,8 @@ extension SettingsView {
                 .pickerStyle(MenuPickerStyle())
                 .frame(width: 100)
                 
-                if targetBinding.wrappedValue == "Groups" {
-                    Picker("", selection: groupBinding) {
+                if target == "Groups" {
+                    Picker("", selection: $group) {
                         Text("Select Folder").tag("")
                         let standardFolders = clipboard.activeFolders.filter { $0.id != UUID(uuidString: "00000000-0000-0000-0000-000000000000")! && $0.id != UUID(uuidString: "00000000-0000-0000-0000-000000000001")! }
                         
@@ -229,10 +238,8 @@ extension SettingsView {
             KeyboardShortcuts.Recorder("", name: shortcut)
                 .padding(.top, 2)
             
-            if customGlobalShortcutCount > 1 {
-                Button(action: {
-                    removeShortcut(at: index)
-                }) {
+            if showMinus {
+                Button(action: removeAction) {
                     Image(systemName: "minus.circle.fill")
                         .foregroundColor(.red)
                 }
