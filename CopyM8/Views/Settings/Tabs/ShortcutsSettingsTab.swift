@@ -14,7 +14,11 @@ extension SettingsView {
                 HStack {
                     Text("Open CopyM8:").font(.system(size: 12))
                     Spacer()
-                    KeyboardShortcuts.Recorder("", name: .toggleApp)
+                    KeyboardShortcuts.Recorder("", name: .toggleApp) { shortcut in
+                        if shortcut == nil {
+                            KeyboardShortcuts.Name.toggleApp.shortcut = .init(.space, modifiers: [.command, .shift])
+                        }
+                    }
                 }
                 HStack {
                     Text("Open Pinned Tab:").font(.system(size: 12))
