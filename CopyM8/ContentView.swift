@@ -373,6 +373,11 @@ struct ContentView: View {
                 viewModel.activeTab = newTab
                 if newTab == "Groups", let folderStr = shortcut.requestedFolder, let folderId = UUID(uuidString: folderStr) {
                     viewModel.expandedFolderIds.insert(folderId)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        if let idx = displayNodes.firstIndex(where: { $0.folder?.id == folderId }) {
+                            viewModel.selectedIndex = idx
+                        }
+                    }
                 }
                 shortcut.requestedTab = nil
                 shortcut.requestedFolder = nil

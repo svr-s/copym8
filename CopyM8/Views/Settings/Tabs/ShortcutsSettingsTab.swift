@@ -144,8 +144,10 @@ extension SettingsView {
                     Spacer()
                     Picker("", selection: groupBinding) {
                         Text("Select Folder").tag("")
-                        ForEach(clipboard.folders.filter { $0.id != UUID(uuidString: "00000000-0000-0000-0000-000000000000")! && $0.name != "Restored Items" }) { folder in
-                            Text(folder.name).tag(folder.id.uuidString)
+                        let standardFolders = clipboard.activeFolders.filter { $0.id != UUID(uuidString: "00000000-0000-0000-0000-000000000000")! && $0.name != "Restored Items" }
+                        ForEach(Array(standardFolders.enumerated()), id: \.element.id) { index, folder in
+                            let identifier = String(UnicodeScalar(UInt8(65 + index)))
+                            Text("[\(identifier)] \(folder.name)").tag(folder.id.uuidString)
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
