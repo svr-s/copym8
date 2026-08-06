@@ -5,8 +5,8 @@ CopyM8 is designed to be the ultimate, frictionless clipboard manager for macOS.
 
 ### The Intangibles
 * **Fluid Invisibility:** The application serves as a pop-over overlay rather than a heavy desktop window. It aggressively auto-minimizes when focus is lost, ensuring a distraction-free environment.
-* **Keyboard-First Workflow:** Power users shouldn't have to reach for a mouse. Every core action—from navigating lists, switching tabs, bulk-editing, and assigning groups, to pasting—can be performed entirely via intuitive keyboard shortcuts (`Cmd + E`, `Option + Tab`, Arrow Keys).
-* **Native Aesthetic:** By leveraging SwiftUI's `VisualEffectView` and ultra-thin materials, CopyM8 blends perfectly into the user's workspace, maintaining Apple's standard translucency and depth.
+* **Keyboard-First Workflow:** Power users shouldn't have to reach for a mouse. Every core action—from navigating lists, switching tabs, bulk-editing, and assigning groups, to pasting—can be performed entirely via intuitive keyboard shortcuts (`Cmd + E`, `Option + Tab`, Arrow Keys). Users can also define up to **10 custom global launch shortcuts** mapped directly to specific tabs or folders, which automatically focus the interface for rapid single-keystroke pasting.
+* **Native Aesthetic:** By leveraging SwiftUI's `VisualEffectView` and ultra-thin materials, CopyM8 blends perfectly into the user's workspace, maintaining Apple's standard translucency and depth. The Settings UI is modularly segmented for a deeply native macOS feel.
 * **Privacy by Default:** An explicit application blacklist (e.g., 1Password, Bitwarden) and transient data ignoring ensures sensitive information is never accidentally logged.
 
 ## 2. Core Tangibles & Functional Pillars
@@ -14,6 +14,7 @@ CopyM8 is designed to be the ultimate, frictionless clipboard manager for macOS.
 ### A. Intelligent Categorization
 The clipboard history is automatically parsed and categorized upon entry:
 * **Types:** Text, Links, Images, and Files are distinctly separated.
+* **Smart Deduplication:** When a user copies an identical item, CopyM8 seamlessly extracts the original item, updates its timestamp, and bounces it to the top of the history queue—fully preserving any original pinned states, custom folders, and rich formatting without cluttering the database.
 * **Groups & Folders:** Users can manually assign items to custom folders for long-term project organization.
 * **Pinning:** Critical snippets can be pinned to prevent them from being caught in the eviction cycle.
 
