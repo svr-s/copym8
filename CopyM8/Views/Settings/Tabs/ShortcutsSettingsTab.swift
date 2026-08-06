@@ -115,10 +115,12 @@ extension SettingsView {
     }
     
     private func customGlobalRow(title: String, targetBinding: Binding<String>, groupBinding: Binding<String>, shortcut: KeyboardShortcuts.Name) -> some View {
-        VStack(spacing: 4) {
-            HStack {
-                Text(title).font(.system(size: 12))
-                
+        HStack(alignment: .top) {
+            Text(title)
+                .font(.system(size: 12))
+                .padding(.top, 4)
+            
+            VStack(alignment: .leading, spacing: 4) {
                 Picker("", selection: targetBinding) {
                     Text("All").tag("All")
                     Text("Groups").tag("Groups")
@@ -134,14 +136,7 @@ extension SettingsView {
                 .pickerStyle(MenuPickerStyle())
                 .frame(width: 100)
                 
-                Spacer()
-                KeyboardShortcuts.Recorder("", name: shortcut)
-            }
-            
-            if targetBinding.wrappedValue == "Groups" {
-                HStack {
-                    Text("Folder:").font(.system(size: 11)).foregroundColor(.secondary)
-                    Spacer()
+                if targetBinding.wrappedValue == "Groups" {
                     Picker("", selection: groupBinding) {
                         Text("Select Folder").tag("")
                         let standardFolders = clipboard.activeFolders.filter { $0.id != UUID(uuidString: "00000000-0000-0000-0000-000000000000")! && $0.name != "Restored Items" }
@@ -151,10 +146,14 @@ extension SettingsView {
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
-                    .frame(width: 120)
+                    .frame(width: 100)
                 }
-                .padding(.leading, 12)
             }
+            
+            Spacer()
+            
+            KeyboardShortcuts.Recorder("", name: shortcut)
+                .padding(.top, 2)
         }
     }
 }
