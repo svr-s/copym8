@@ -28,23 +28,44 @@ extension SettingsView {
                     customGlobalRow(index: i)
                 }
                 
-                if customGlobalShortcutCount < 10 {
-                    Button(action: {
-                        withAnimation {
-                            customGlobalShortcutCount += 1
+                HStack(spacing: 24) {
+                    if customGlobalShortcutCount < 10 {
+                        Button(action: {
+                            withAnimation {
+                                customGlobalShortcutCount += 1
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: "plus.circle.fill")
+                                Text("Add Shortcut")
+                                    .font(.system(size: 11))
+                            }
+                            .foregroundColor(.accentColor)
                         }
-                    }) {
-                        HStack {
-                            Image(systemName: "plus.circle.fill")
-                            Text("Add Custom Launch Shortcut")
-                                .font(.system(size: 11))
-                        }
-                        .foregroundColor(.accentColor)
+                        .buttonStyle(PlainButtonStyle())
                     }
-                    .buttonStyle(PlainButtonStyle())
-                    .padding(.top, 4)
-                    .padding(.bottom, 2)
+                    
+                    if customGlobalShortcutCount > 1 {
+                        Button(action: {
+                            withAnimation {
+                                UserDefaults.standard.removeObject(forKey: "customGlobalTarget\(customGlobalShortcutCount)")
+                                UserDefaults.standard.removeObject(forKey: "customGlobalGroup\(customGlobalShortcutCount)")
+                                KeyboardShortcuts.Name("customGlobal\(customGlobalShortcutCount)").shortcut = nil
+                                customGlobalShortcutCount -= 1
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: "minus.circle.fill")
+                                Text("Remove Last")
+                                    .font(.system(size: 11))
+                            }
+                            .foregroundColor(.red)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
                 }
+                .padding(.top, 4)
+                .padding(.bottom, 2)
                 
                 
                 Text("Tip: Use Cmd+Opt+P (Pinned) and Cmd+Opt+G (Groups) for tabs!")
