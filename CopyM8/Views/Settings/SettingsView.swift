@@ -74,13 +74,7 @@ struct SettingsView: View {
     @AppStorage("customTab9") var customTab9: String = ""
     @AppStorage("customTab0") var customTab0: String = ""
     
-    @AppStorage("customGlobalTarget1") var customGlobalTarget1: String = "All"
-    @AppStorage("customGlobalTarget2") var customGlobalTarget2: String = "All"
-    @AppStorage("customGlobalTarget3") var customGlobalTarget3: String = "All"
-    
-    @AppStorage("customGlobalGroup1") var customGlobalGroup1: String = ""
-    @AppStorage("customGlobalGroup2") var customGlobalGroup2: String = ""
-    @AppStorage("customGlobalGroup3") var customGlobalGroup3: String = ""
+    @AppStorage("customGlobalShortcutCount") var customGlobalShortcutCount: Int = 3
     
     @AppStorage("ignorePasswords") var ignorePasswords: Bool = true
     @AppStorage("ignoreTransient") var ignoreTransient: Bool = true

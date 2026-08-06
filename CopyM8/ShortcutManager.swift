@@ -11,6 +11,13 @@ extension KeyboardShortcuts.Name {
     static let customGlobal1 = Self("customGlobal1")
     static let customGlobal2 = Self("customGlobal2")
     static let customGlobal3 = Self("customGlobal3")
+    static let customGlobal4 = Self("customGlobal4")
+    static let customGlobal5 = Self("customGlobal5")
+    static let customGlobal6 = Self("customGlobal6")
+    static let customGlobal7 = Self("customGlobal7")
+    static let customGlobal8 = Self("customGlobal8")
+    static let customGlobal9 = Self("customGlobal9")
+    static let customGlobal10 = Self("customGlobal10")
 }
 
 /// `ShortcutManager` handles all global keyboard shortcuts for CopyM8.
@@ -43,16 +50,11 @@ class ShortcutManager: ObservableObject {
             }
         }
         
-        KeyboardShortcuts.onKeyUp(for: .customGlobal1) { [weak self] in
-            self?.handleCustomGlobal(key: "customGlobalTarget1", groupKey: "customGlobalGroup1")
-        }
-        
-        KeyboardShortcuts.onKeyUp(for: .customGlobal2) { [weak self] in
-            self?.handleCustomGlobal(key: "customGlobalTarget2", groupKey: "customGlobalGroup2")
-        }
-        
-        KeyboardShortcuts.onKeyUp(for: .customGlobal3) { [weak self] in
-            self?.handleCustomGlobal(key: "customGlobalTarget3", groupKey: "customGlobalGroup3")
+        for i in 1...10 {
+            let name = KeyboardShortcuts.Name("customGlobal\(i)")
+            KeyboardShortcuts.onKeyUp(for: name) { [weak self] in
+                self?.handleCustomGlobal(key: "customGlobalTarget\(i)", groupKey: "customGlobalGroup\(i)")
+            }
         }
         
         // Monitor global mouse clicks to dismiss the expanded view

@@ -24,9 +24,27 @@ extension SettingsView {
                 
                 Divider().padding(.vertical, 4)
                 
-                customGlobalRow(title: "Custom Launch 1:", targetBinding: $customGlobalTarget1, groupBinding: $customGlobalGroup1, shortcut: .customGlobal1)
-                customGlobalRow(title: "Custom Launch 2:", targetBinding: $customGlobalTarget2, groupBinding: $customGlobalGroup2, shortcut: .customGlobal2)
-                customGlobalRow(title: "Custom Launch 3:", targetBinding: $customGlobalTarget3, groupBinding: $customGlobalGroup3, shortcut: .customGlobal3)
+                ForEach(1...customGlobalShortcutCount, id: \.self) { i in
+                    customGlobalRow(index: i)
+                }
+                
+                if customGlobalShortcutCount < 10 {
+                    Button(action: {
+                        withAnimation {
+                            customGlobalShortcutCount += 1
+                        }
+                    }) {
+                        HStack {
+                            Image(systemName: "plus.circle.fill")
+                            Text("Add Custom Launch Shortcut")
+                                .font(.system(size: 11))
+                        }
+                        .foregroundColor(.accentColor)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .padding(.top, 4)
+                    .padding(.bottom, 2)
+                }
                 
                 
                 Text("Tip: Use Cmd+Opt+P (Pinned) and Cmd+Opt+G (Groups) for tabs!")
@@ -114,8 +132,27 @@ extension SettingsView {
         }
     }
     
-    private func customGlobalRow(title: String, targetBinding: Binding<String>, groupBinding: Binding<String>, shortcut: KeyboardShortcuts.Name) -> some View {
-        HStack(alignment: .top) {
+    private func targetBinding(for index: Int) -> Binding<String> {
+        Binding(
+            get: { UserDefaults.standard.string(forKey: "customGlobalTarget\(index)") ?? "All" },
+            set: { UserDefaults.standard.set($0, forKey: "customGlobalTarget\(index)") }
+        )
+    }
+    
+    private func groupBinding(for index: Int) -> Binding<String> {
+        Binding(
+            get: { UserDefaults.standard.string(forKey: "customGlobalGroup\(index)") ?? "" },
+            set: { UserDefaults.standard.set($0, forKey: "customGlobalGroup\(index)") }
+        )
+    }
+
+    private func customGlobalRow(index: Int) -> some View {
+        let title = "Custom Launch \(index):"
+        let targetBinding = self.targetBinding(for: index)
+        let groupBinding = self.groupBinding(for: index)
+        let shortcut = KeyboardShortcuts.Name("customGlobal\(index)")
+        
+        return HStack(alignment: .top) {
             Text(title)
                 .font(.system(size: 12))
                 .padding(.top, 4)
@@ -139,10 +176,22 @@ extension SettingsView {
                 if targetBinding.wrappedValue == "Groups" {
                     Picker("", selection: groupBinding) {
                         Text("Select Folder").tag("")
-                        let standardFolders = clipboard.activeFolders.filter { $0.id != UUID(uuidString: "00000000-0000-0000-0000-000000000000")! && $0.name != "Restored Items" }
-                        ForEach(Array(standardFolders.enumerated()), id: \.element.id) { index, folder in
-                            let identifier = String(UnicodeScalar(UInt8(65 + index)))
-                            Text("[\(identifier)] \(folder.name)").tag(folder.id.uuidString)
+                        let standardFolders = clipboard.activeFolders.filter { $0.id != UUID(uuidString: "00000000-0000-0000-0000-000000000000")! && $0.id != UUID(uuidString: "00000000-0000-0000-0000-000000000001")! }
+                        
+                        ForEach(clipboard.activeFolders, id: \.id) { folder in
+                            let identifier: String = {
+                                if folder.id == UUID(uuidString: "00000000-0000-0000-0000-000000000000")! { return "`" }
+                                if folder.id == UUID(uuidString: "00000000-0000-0000-0000-000000000001")! { return "=" }
+                                if let idx = standardFolders.firstIndex(where: { $0.id == folder.id }) {
+                                    return String(UnicodeScalar(UInt8(65 + idx)))
+                                }
+                                return ""
+                            }()
+                            if !identifier.isEmpty {
+                                Text("[\(identifier)] \(folder.name)").tag(folder.id.uuidString)
+                            } else {
+                                Text(folder.name).tag(folder.id.uuidString)
+                            }
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
