@@ -62,13 +62,16 @@ struct ExpandedView: View {
                     maxHistoryCount: $maxHistoryCount,
                     activeTab: $activeTab,
                     previousTab: $previousTab,
+                    isReorderMode: isReorderMode,
                     adjustWindowFrame: adjustWindowFrame
                 )
                 
                 Spacer().frame(height: 4)
                 
                 SearchBarView(searchText: $searchText, isSearchFocused: isSearchFocused)
+                    .disabled(isReorderMode)
                 TabBarView(activeTab: $activeTab, selectedIndex: $selectedIndex, activeColor: activeColor)
+                    .disabled(isReorderMode)
                 
                 if displayNodes.isEmpty {
                     EmptyStateView(searchText: searchText, activeTab: activeTab)

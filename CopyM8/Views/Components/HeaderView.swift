@@ -17,6 +17,7 @@ struct HeaderView: View {
     @Binding var maxHistoryCount: Int
     @Binding var activeTab: String
     @Binding var previousTab: String
+    var isReorderMode: Bool
     
     var adjustWindowFrame: () -> Void
 
@@ -44,6 +45,7 @@ struct HeaderView: View {
                     .foregroundColor(isEditMode ? .primary : .primary.opacity(0.6))
             }
             .buttonStyle(PlainButtonStyle())
+            .disabled(isReorderMode)
             
             if clipboard.selectedDevice == "Local (This Mac)" {
                 Button(action: {
@@ -61,6 +63,7 @@ struct HeaderView: View {
                         .foregroundColor(activeTab == "Trash" ? .primary : .primary.opacity(0.6))
                 }
                 .buttonStyle(PlainButtonStyle())
+                .disabled(isReorderMode)
             }
             
             Spacer()
@@ -92,6 +95,7 @@ struct HeaderView: View {
             }
             .buttonStyle(PlainButtonStyle())
             .keyboardShortcut(",", modifiers: .command)
+            .disabled(isReorderMode)
             .onHover { hover in
                 if hover { NSCursor.arrow.push() } else { NSCursor.pop() }
             }
