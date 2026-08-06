@@ -468,6 +468,7 @@ func checkForChanges() {
                 
                 DispatchQueue.main.async {
                     var item = self.history.remove(at: existingIndex)
+                    item.timestamp = Date()
                     if item.itemType == .text {
                         if itemToSave.hasRTF {
                             item.hasRTF = true
