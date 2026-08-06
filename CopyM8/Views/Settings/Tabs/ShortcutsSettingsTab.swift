@@ -21,20 +21,15 @@ extension SettingsView {
                     Spacer()
                     KeyboardShortcuts.Recorder("", name: .openPinned)
                 }
-                HStack {
-                    Text("Open Groups Tab:").font(.system(size: 12))
-                    Spacer()
-                    KeyboardShortcuts.Recorder("", name: .openGroups)
-                }
                 
                 Divider().padding(.vertical, 4)
                 
-                customGlobalRow(title: "Custom Global 1:", targetBinding: $customGlobalTarget1, groupBinding: $customGlobalGroup1, shortcut: .customGlobal1)
-                customGlobalRow(title: "Custom Global 2:", targetBinding: $customGlobalTarget2, groupBinding: $customGlobalGroup2, shortcut: .customGlobal2)
-                customGlobalRow(title: "Custom Global 3:", targetBinding: $customGlobalTarget3, groupBinding: $customGlobalGroup3, shortcut: .customGlobal3)
+                customGlobalRow(title: "Custom Launch 1:", targetBinding: $customGlobalTarget1, groupBinding: $customGlobalGroup1, shortcut: .customGlobal1)
+                customGlobalRow(title: "Custom Launch 2:", targetBinding: $customGlobalTarget2, groupBinding: $customGlobalGroup2, shortcut: .customGlobal2)
+                customGlobalRow(title: "Custom Launch 3:", targetBinding: $customGlobalTarget3, groupBinding: $customGlobalGroup3, shortcut: .customGlobal3)
                 
                 
-                Text("Tip: Use Cmd+Opt+P and Cmd+Opt+G for tabs!")
+                Text("Tip: Use Cmd+Opt+P (Pinned) and Cmd+Opt+G (Groups) for tabs!")
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
                     .padding(.bottom, 8)
@@ -120,37 +115,44 @@ extension SettingsView {
     }
     
     private func customGlobalRow(title: String, targetBinding: Binding<String>, groupBinding: Binding<String>, shortcut: KeyboardShortcuts.Name) -> some View {
-        HStack {
-            Text(title).font(.system(size: 12))
-            
-            Picker("", selection: targetBinding) {
-                Text("All").tag("All")
-                Text("Groups").tag("Groups")
-                Text("Text").tag("Text")
-                Text("Links").tag("Links")
-                Text("Images").tag("Images")
-                Text("Files").tag("Files")
+        VStack(spacing: 4) {
+            HStack {
+                Text(title).font(.system(size: 12))
                 
-                if !customTab8.isEmpty { Text(customTab8).tag(customTab8) }
-                if !customTab9.isEmpty { Text(customTab9).tag(customTab9) }
-                if !customTab0.isEmpty { Text(customTab0).tag(customTab0) }
-            }
-            .pickerStyle(MenuPickerStyle())
-            .frame(width: 100)
-            
-            if targetBinding.wrappedValue == "Groups" {
-                Picker("", selection: groupBinding) {
-                    Text("Select Folder").tag("")
-                    ForEach(clipboard.folders.filter { $0.id != UUID(uuidString: "00000000-0000-0000-0000-000000000000")! && $0.name != "Restored Items" }) { folder in
-                        Text(folder.name).tag(folder.id.uuidString)
-                    }
+                Picker("", selection: targetBinding) {
+                    Text("All").tag("All")
+                    Text("Groups").tag("Groups")
+                    Text("Text").tag("Text")
+                    Text("Links").tag("Links")
+                    Text("Images").tag("Images")
+                    Text("Files").tag("Files")
+                    
+                    if !customTab8.isEmpty { Text(customTab8).tag(customTab8) }
+                    if !customTab9.isEmpty { Text(customTab9).tag(customTab9) }
+                    if !customTab0.isEmpty { Text(customTab0).tag(customTab0) }
                 }
                 .pickerStyle(MenuPickerStyle())
-                .frame(width: 120)
+                .frame(width: 100)
+                
+                Spacer()
+                KeyboardShortcuts.Recorder("", name: shortcut)
             }
             
-            Spacer()
-            KeyboardShortcuts.Recorder("", name: shortcut)
+            if targetBinding.wrappedValue == "Groups" {
+                HStack {
+                    Text("Folder:").font(.system(size: 11)).foregroundColor(.secondary)
+                    Spacer()
+                    Picker("", selection: groupBinding) {
+                        Text("Select Folder").tag("")
+                        ForEach(clipboard.folders.filter { $0.id != UUID(uuidString: "00000000-0000-0000-0000-000000000000")! && $0.name != "Restored Items" }) { folder in
+                            Text(folder.name).tag(folder.id.uuidString)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    .frame(width: 120)
+                }
+                .padding(.leading, 12)
+            }
         }
     }
 }
