@@ -57,8 +57,8 @@ extension ContentView {
             if event.modifierFlags.contains(.command) {
                 switch event.keyCode {
                 case 3: // F
-                    if viewModel.isReorderMode && (viewModel.reorderTarget == .pinned || (viewModel.activeTab == "Groups" && viewModel.reorderTarget != .folders)) {
-                        isFreezeFieldFocused = true
+                    if viewModel.isReorderMode {
+                        return nil // Disable Search in Reorder mode
                     } else {
                         isSearchFocused = true
                     }
@@ -235,17 +235,15 @@ extension ContentView {
                 }
             }
             
+            if viewModel.isReorderMode && event.keyCode == 3 && event.modifierFlags.contains(.control) {
+                if viewModel.reorderTarget == .pinned || (viewModel.activeTab == "Groups" && viewModel.reorderTarget != .folders) {
+                    isFreezeFieldFocused.toggle()
+                    return nil
+                }
+            }
+            
             if let chars = event.charactersIgnoringModifiers, chars.count == 1 {
                 let char = chars.uppercased()
-                if viewModel.isReorderMode && char == "F" {
-                    if event.modifierFlags.contains(.control) {
-                        isFreezeFieldFocused.toggle()
-                        return nil
-                    }
-                    if event.modifierFlags.contains(.command) {
-                        return nil // Disable Search in Reorder mode
-                    }
-                }
                 
                 if viewModel.activeTab == "Groups" && chars == "`" && !event.modifierFlags.contains(.command) && !event.modifierFlags.contains(.control) && !event.modifierFlags.contains(.option) {
                     if let nodeIndex = displayNodesLocal.firstIndex(where: { $0.isFolder && $0.folder?.id == UUID(uuidString: "00000000-0000-0000-0000-000000000000")! }) {

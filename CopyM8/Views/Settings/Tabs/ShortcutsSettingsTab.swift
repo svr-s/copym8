@@ -113,13 +113,15 @@ extension SettingsView {
             }
             
             Group {
-                shortcutCategory("Edit Mode (Bulk Actions)")
+                shortcutCategory("Edit & Reorder Modes")
                 shortcutRow(action: "Toggle Edit Mode", key: "Cmd + E")
                 shortcutRow(action: "Reorder Item/Group", key: "Cmd + Up/Down")
                 shortcutRow(action: "Multi-Select Range", key: "Shift + Up/Down")
                 shortcutRow(action: "Toggle Selection", key: "Space")
                 shortcutRow(action: "Select All in Tab", key: "Cmd + A")
                 shortcutRow(action: "Unpin / Ungroup", key: "Cmd + U")
+                shortcutRow(action: "Focus Freeze Limit", key: "Control + F")
+                shortcutRow(action: "Change Freeze Limit", key: "Up / Down")
             }
             
             Group {
