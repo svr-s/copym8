@@ -28,7 +28,7 @@ extension SettingsView {
                     customGlobalRow(index: i)
                 }
                 
-                HStack(spacing: 24) {
+                HStack {
                     if customGlobalShortcutCount < 10 {
                         Button(action: {
                             withAnimation {
@@ -41,25 +41,6 @@ extension SettingsView {
                                     .font(.system(size: 11))
                             }
                             .foregroundColor(.accentColor)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    }
-                    
-                    if customGlobalShortcutCount > 1 {
-                        Button(action: {
-                            withAnimation {
-                                UserDefaults.standard.removeObject(forKey: "customGlobalTarget\(customGlobalShortcutCount)")
-                                UserDefaults.standard.removeObject(forKey: "customGlobalGroup\(customGlobalShortcutCount)")
-                                KeyboardShortcuts.Name("customGlobal\(customGlobalShortcutCount)").shortcut = nil
-                                customGlobalShortcutCount -= 1
-                            }
-                        }) {
-                            HStack {
-                                Image(systemName: "minus.circle.fill")
-                                Text("Remove Last")
-                                    .font(.system(size: 11))
-                            }
-                            .foregroundColor(.red)
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
@@ -166,6 +147,29 @@ extension SettingsView {
             set: { UserDefaults.standard.set($0, forKey: "customGlobalGroup\(index)") }
         )
     }
+    
+    private func removeShortcut(at index: Int) {
+        withAnimation {
+            if index < customGlobalShortcutCount {
+                for i in index..<customGlobalShortcutCount {
+                    let nextTarget = UserDefaults.standard.string(forKey: "customGlobalTarget\(i + 1)") ?? "All"
+                    let nextGroup = UserDefaults.standard.string(forKey: "customGlobalGroup\(i + 1)") ?? ""
+                    let nextShortcut = KeyboardShortcuts.Name("customGlobal\(i + 1)").shortcut
+                    
+                    UserDefaults.standard.set(nextTarget, forKey: "customGlobalTarget\(i)")
+                    UserDefaults.standard.set(nextGroup, forKey: "customGlobalGroup\(i)")
+                    KeyboardShortcuts.Name("customGlobal\(i)").shortcut = nextShortcut
+                }
+            }
+            
+            // Clear the last one
+            UserDefaults.standard.removeObject(forKey: "customGlobalTarget\(customGlobalShortcutCount)")
+            UserDefaults.standard.removeObject(forKey: "customGlobalGroup\(customGlobalShortcutCount)")
+            KeyboardShortcuts.Name("customGlobal\(customGlobalShortcutCount)").shortcut = nil
+            
+            customGlobalShortcutCount -= 1
+        }
+    }
 
     private func customGlobalRow(index: Int) -> some View {
         let title = "Custom Launch \(index):"
@@ -224,6 +228,17 @@ extension SettingsView {
             
             KeyboardShortcuts.Recorder("", name: shortcut)
                 .padding(.top, 2)
+            
+            if customGlobalShortcutCount > 1 {
+                Button(action: {
+                    removeShortcut(at: index)
+                }) {
+                    Image(systemName: "minus.circle.fill")
+                        .foregroundColor(.red)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .padding(.top, 5)
+            }
         }
     }
 }
