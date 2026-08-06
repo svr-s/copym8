@@ -48,15 +48,17 @@ Here is a comprehensive list of all keyboard shortcuts available in CopyM8, grou
 | **Quick Assign Group** | `A - Z` | When the Assign Group modal is open, press the folder's shortcut alphabet to instantly assign it. |
 | **Create New Group** | `Cmd + N` | Creates a new group when the Assign Group modal is open. |
 
-### ✏️ Edit Mode (Bulk Actions & Selection)
+### ✏️ Edit & Reorder Modes
 | Action | Shortcut | Description |
 | :--- | :--- | :--- |
 | **Toggle Edit Mode** | `Cmd + E` | Toggles Edit Mode to show checkboxes for bulk actions. |
-| **Reorder Item/Group** | `Cmd + Up/Down Arrow` | Moves the selected item (or group) up or down in the list. |
 | **Multi-Select Range** | `Shift + Up/Down` | Highlights a continuous range of items in Edit Mode. |
 | **Toggle Selection** | `Space` | Selects/deselects the highlighted item. If a range is highlighted with Shift, toggles the entire range! |
 | **Select All in Tab** | `Cmd + A` | Selects or deselects all visible items in the current tab. |
 | **Unpin / Ungroup** | `Cmd + U` | Unpins items (Pinned tab) or triggers the Ungroup modal (Groups tab) for selected items. |
+| **Reorder Item/Group** | `Cmd + Up/Down Arrow` | Dedicated Reorder Mode shortcut: Moves the selected item (or group) up or down in the list. |
+| **Focus Freeze Limit** | `Control + F` | While in Reorder Mode, focuses the "Freeze Top Rows" field. |
+| **Change Freeze Limit** | `Up/Down Arrow` | While the Freeze Limit field is focused, instantly increments or decrements the freeze row limit. |
 
 ### 🗑 Trash & Deletion
 | Action | Shortcut | Description |

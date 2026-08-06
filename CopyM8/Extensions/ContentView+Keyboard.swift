@@ -237,9 +237,14 @@ extension ContentView {
             
             if let chars = event.charactersIgnoringModifiers, chars.count == 1 {
                 let char = chars.uppercased()
-                if viewModel.isReorderMode && char == "F" && event.modifierFlags.contains(.command) && event.modifierFlags.contains(.shift) {
-                    isFreezeFieldFocused.toggle()
-                    return nil
+                if viewModel.isReorderMode && char == "F" {
+                    if event.modifierFlags.contains(.control) {
+                        isFreezeFieldFocused.toggle()
+                        return nil
+                    }
+                    if event.modifierFlags.contains(.command) {
+                        return nil // Disable Search in Reorder mode
+                    }
                 }
                 
                 if viewModel.activeTab == "Groups" && chars == "`" && !event.modifierFlags.contains(.command) && !event.modifierFlags.contains(.control) && !event.modifierFlags.contains(.option) {
