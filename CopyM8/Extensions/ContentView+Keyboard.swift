@@ -86,6 +86,7 @@ extension ContentView {
                     return nil
                 case 2: // D
                     if event.modifierFlags.contains(.shift) {
+                        if viewModel.isReorderMode { return nil }
                         if !clipboard.availableDevices.isEmpty {
                             viewModel.showingDeviceSwitcher = true
                         }
@@ -134,6 +135,7 @@ extension ContentView {
                     let isCmd = event.modifierFlags.contains(.command)
                     let isShift = event.modifierFlags.contains(.shift)
                     if isCmd && isShift {
+                        if viewModel.isReorderMode { return nil }
                         if clipboard.selectedDevice == "Local (This Mac)" {
                             if viewModel.activeTab == "Trash" {
                                 viewModel.activeTab = viewModel.previousTab
