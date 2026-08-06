@@ -376,6 +376,9 @@ struct ContentView: View {
                 }
                 shortcut.requestedTab = nil
                 shortcut.requestedFolder = nil
+                
+                NSApp.activate(ignoringOtherApps: true)
+                NSApp.windows.first(where: { $0 is CopyM8Window })?.makeKeyAndOrderFront(nil)
             }
         }
         .onAppear { applyTheme(themePreference) }
