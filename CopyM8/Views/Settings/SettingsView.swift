@@ -70,6 +70,14 @@ struct SettingsView: View {
     
     @State var blacklistedApps: [String] = []
     
+    @AppStorage("customTab8") var customTab8: String = ""
+    @AppStorage("customTab9") var customTab9: String = ""
+    @AppStorage("customTab0") var customTab0: String = ""
+    
+    @AppStorage("customGlobalTarget1") var customGlobalTarget1: String = "All"
+    @AppStorage("customGlobalTarget2") var customGlobalTarget2: String = "All"
+    @AppStorage("customGlobalTarget3") var customGlobalTarget3: String = "All"
+    
     @AppStorage("ignorePasswords") var ignorePasswords: Bool = true
     @AppStorage("ignoreTransient") var ignoreTransient: Bool = true
     @AppStorage("ignoreUniversalClipboard") var ignoreUniversalClipboard: Bool = false
@@ -352,6 +360,33 @@ struct SettingsView: View {
                     blacklistedApps.append(appName)
                     UserDefaults.standard.set(blacklistedApps, forKey: "blacklistedApps")
                 }
+            }
+            shortcut.isPresentingModal = false
+        }
+    }
+    
+    func selectAppForCustomTab(completion: @escaping (String) -> Void) {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.application]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        panel.prompt = "Select App"
+        
+        shortcut.isPresentingModal = true
+        if let window = NSApp.windows.first(where: { $0.isVisible && $0.isKeyWindow }) {
+            panel.beginSheetModal(for: window) { response in
+                shortcut.isPresentingModal = false
+                if response == .OK, let url = panel.url {
+                    let appName = url.deletingPathExtension().lastPathComponent
+                    completion(appName)
+                }
+            }
+        } else {
+            if panel.runModal() == .OK, let url = panel.url {
+                let appName = url.deletingPathExtension().lastPathComponent
+                completion(appName)
             }
             shortcut.isPresentingModal = false
         }

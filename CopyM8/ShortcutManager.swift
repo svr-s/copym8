@@ -8,8 +8,13 @@ extension KeyboardShortcuts.Name {
     static let toggleApp = Self("toggleApp", default: .init(.space, modifiers: [.command, .shift]))
     static let openPinned = Self("openPinned")
     static let openGroups = Self("openGroups")
+    static let customGlobal1 = Self("customGlobal1")
+    static let customGlobal2 = Self("customGlobal2")
+    static let customGlobal3 = Self("customGlobal3")
 }
 
+/// `ShortcutManager` handles all global keyboard shortcuts for CopyM8.
+/// It registers listeners for `KeyboardShortcuts` and triggers state updates such as expanding the app or switching to specific tabs.
 class ShortcutManager: ObservableObject {
     @Published var isExpanded: Bool = false
     @Published var requestedTab: String? = nil
@@ -37,6 +42,18 @@ class ShortcutManager: ObservableObject {
             }
         }
         
+        KeyboardShortcuts.onKeyUp(for: .customGlobal1) { [weak self] in
+            self?.handleCustomGlobal(key: "customGlobalTarget1")
+        }
+        
+        KeyboardShortcuts.onKeyUp(for: .customGlobal2) { [weak self] in
+            self?.handleCustomGlobal(key: "customGlobalTarget2")
+        }
+        
+        KeyboardShortcuts.onKeyUp(for: .customGlobal3) { [weak self] in
+            self?.handleCustomGlobal(key: "customGlobalTarget3")
+        }
+        
         // Monitor global mouse clicks to dismiss the expanded view
         eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
             DispatchQueue.main.async {
@@ -60,6 +77,16 @@ class ShortcutManager: ObservableObject {
     deinit {
         if let monitor = eventMonitor {
             NSEvent.removeMonitor(monitor)
+        }
+    }
+    
+    private func handleCustomGlobal(key: String) {
+        let target = UserDefaults.standard.string(forKey: key) ?? ""
+        if !target.isEmpty {
+            DispatchQueue.main.async {
+                self.requestedTab = target
+                self.isExpanded = true
+            }
         }
     }
 }

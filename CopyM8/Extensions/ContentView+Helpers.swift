@@ -29,7 +29,7 @@ extension ContentView {
     /// - Returns: An array of strings representing the visible tab names.
     func getVisibleTabs() -> [String] {
         let tabs = ["All", "Pinned", "Groups", "Text", "Links", "Images", "Files"]
-        return tabs.filter { t in
+        var visible = tabs.filter { t in
             switch t {
             case "All", "Pinned", "Groups": return true
             case "Text": return UserDefaults.standard.object(forKey: "saveText") as? Bool ?? true
@@ -39,5 +39,17 @@ extension ContentView {
             default: return false
             }
         }
+        
+        if clipboard.selectedDevice == "Local (This Mac)" {
+            let t8 = UserDefaults.standard.string(forKey: "customTab8") ?? ""
+            let t9 = UserDefaults.standard.string(forKey: "customTab9") ?? ""
+            let t0 = UserDefaults.standard.string(forKey: "customTab0") ?? ""
+            
+            if !t8.isEmpty { visible.append(t8) }
+            if !t9.isEmpty { visible.append(t9) }
+            if !t0.isEmpty { visible.append(t0) }
+        }
+        
+        return visible
     }
 }

@@ -207,6 +207,21 @@ extension ContentView {
                 case 34, 22: newTab = "Images" // I or 6
                 case 3, 26: newTab = "Files" // F or 7
                 case 0, 18: newTab = "All" // A or 1
+                case 28: // 8
+                    if clipboard.selectedDevice == "Local (This Mac)" {
+                        let t = UserDefaults.standard.string(forKey: "customTab8") ?? ""
+                        if !t.isEmpty { newTab = t }
+                    }
+                case 25: // 9
+                    if clipboard.selectedDevice == "Local (This Mac)" {
+                        let t = UserDefaults.standard.string(forKey: "customTab9") ?? ""
+                        if !t.isEmpty { newTab = t }
+                    }
+                case 29: // 0
+                    if clipboard.selectedDevice == "Local (This Mac)" {
+                        let t = UserDefaults.standard.string(forKey: "customTab0") ?? ""
+                        if !t.isEmpty { newTab = t }
+                    }
                 default: break
                 }
                 

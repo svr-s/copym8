@@ -27,6 +27,13 @@ extension SettingsView {
                     KeyboardShortcuts.Recorder("", name: .openGroups)
                 }
                 
+                Divider().padding(.vertical, 4)
+                
+                customGlobalRow(title: "Custom Global 1:", targetBinding: $customGlobalTarget1, shortcut: .customGlobal1)
+                customGlobalRow(title: "Custom Global 2:", targetBinding: $customGlobalTarget2, shortcut: .customGlobal2)
+                customGlobalRow(title: "Custom Global 3:", targetBinding: $customGlobalTarget3, shortcut: .customGlobal3)
+                
+                
                 Text("Tip: Use Cmd+Opt+P and Cmd+Opt+G for tabs!")
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
@@ -109,6 +116,31 @@ extension SettingsView {
                 shortcutRow(action: "Paste Rich Text", key: "Cmd + Click")
                 shortcutRow(action: "Paste Rich (No Links)", key: "Opt + Click")
             }
+        }
+    }
+    
+    private func customGlobalRow(title: String, targetBinding: Binding<String>, shortcut: KeyboardShortcuts.Name) -> some View {
+        HStack {
+            Text(title).font(.system(size: 12))
+            
+            Picker("", selection: targetBinding) {
+                Text("All").tag("All")
+                Text("Pinned").tag("Pinned")
+                Text("Groups").tag("Groups")
+                Text("Text").tag("Text")
+                Text("Links").tag("Links")
+                Text("Images").tag("Images")
+                Text("Files").tag("Files")
+                
+                if !customTab8.isEmpty { Text(customTab8).tag(customTab8) }
+                if !customTab9.isEmpty { Text(customTab9).tag(customTab9) }
+                if !customTab0.isEmpty { Text(customTab0).tag(customTab0) }
+            }
+            .pickerStyle(MenuPickerStyle())
+            .frame(width: 100)
+            
+            Spacer()
+            KeyboardShortcuts.Recorder("", name: shortcut)
         }
     }
 }

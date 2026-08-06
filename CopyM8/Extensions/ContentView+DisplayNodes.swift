@@ -119,7 +119,18 @@ extension ContentView {
             case "Links": results = results.filter { $0.itemType == .link }
             case "Images": results = results.filter { $0.itemType == .image }
             case "Files": results = results.filter { $0.itemType == .file }
-            default: break
+            default:
+                let customTab8 = UserDefaults.standard.string(forKey: "customTab8") ?? ""
+                let customTab9 = UserDefaults.standard.string(forKey: "customTab9") ?? ""
+                let customTab0 = UserDefaults.standard.string(forKey: "customTab0") ?? ""
+                
+                if viewModel.activeTab == customTab8 && !customTab8.isEmpty {
+                    results = results.filter { $0.sourceApp == customTab8 }
+                } else if viewModel.activeTab == customTab9 && !customTab9.isEmpty {
+                    results = results.filter { $0.sourceApp == customTab9 }
+                } else if viewModel.activeTab == customTab0 && !customTab0.isEmpty {
+                    results = results.filter { $0.sourceApp == customTab0 }
+                }
             }
             
             if !viewModel.searchText.isEmpty {

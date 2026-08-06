@@ -12,8 +12,17 @@ struct TabBarView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             ScrollViewReader { proxy in
                 HStack(spacing: 6) {
-                    ForEach(["All", "Pinned", "Groups", "Text", "Links", "Images", "Files"], id: \.self) { tab in
-                        if shouldShowTab(tab) {
+                    let baseTabs = ["All", "Pinned", "Groups", "Text", "Links", "Images", "Files"]
+                    let customTabs = clipboard.selectedDevice == "Local (This Mac)" ? [
+                        UserDefaults.standard.string(forKey: "customTab8") ?? "",
+                        UserDefaults.standard.string(forKey: "customTab9") ?? "",
+                        UserDefaults.standard.string(forKey: "customTab0") ?? ""
+                    ].filter { !$0.isEmpty } : []
+                    
+                    let allTabs = baseTabs + customTabs
+                    
+                    ForEach(allTabs, id: \.self) { tab in
+                        if shouldShowTab(tab) || customTabs.contains(tab) {
                             Button(action: {
                                 withAnimation {
                                     activeTab = tab
