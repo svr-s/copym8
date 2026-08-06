@@ -371,7 +371,11 @@ struct ContentView: View {
         .onChange(of: shortcut.requestedTab) { _, newTab in
             if let newTab = newTab {
                 viewModel.activeTab = newTab
+                if newTab == "Groups", let folderStr = shortcut.requestedFolder, let folderId = UUID(uuidString: folderStr) {
+                    viewModel.expandedFolderIds.insert(folderId)
+                }
                 shortcut.requestedTab = nil
+                shortcut.requestedFolder = nil
             }
         }
         .onAppear { applyTheme(themePreference) }

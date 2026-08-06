@@ -18,6 +18,7 @@ extension KeyboardShortcuts.Name {
 class ShortcutManager: ObservableObject {
     @Published var isExpanded: Bool = false
     @Published var requestedTab: String? = nil
+    @Published var requestedFolder: String? = nil
     @Published var isPresentingModal: Bool = false
     private var eventMonitor: Any?
     
@@ -43,15 +44,15 @@ class ShortcutManager: ObservableObject {
         }
         
         KeyboardShortcuts.onKeyUp(for: .customGlobal1) { [weak self] in
-            self?.handleCustomGlobal(key: "customGlobalTarget1")
+            self?.handleCustomGlobal(key: "customGlobalTarget1", groupKey: "customGlobalGroup1")
         }
         
         KeyboardShortcuts.onKeyUp(for: .customGlobal2) { [weak self] in
-            self?.handleCustomGlobal(key: "customGlobalTarget2")
+            self?.handleCustomGlobal(key: "customGlobalTarget2", groupKey: "customGlobalGroup2")
         }
         
         KeyboardShortcuts.onKeyUp(for: .customGlobal3) { [weak self] in
-            self?.handleCustomGlobal(key: "customGlobalTarget3")
+            self?.handleCustomGlobal(key: "customGlobalTarget3", groupKey: "customGlobalGroup3")
         }
         
         // Monitor global mouse clicks to dismiss the expanded view
@@ -80,11 +81,17 @@ class ShortcutManager: ObservableObject {
         }
     }
     
-    private func handleCustomGlobal(key: String) {
+    private func handleCustomGlobal(key: String, groupKey: String) {
         let target = UserDefaults.standard.string(forKey: key) ?? ""
+        let group = UserDefaults.standard.string(forKey: groupKey) ?? ""
         if !target.isEmpty {
             DispatchQueue.main.async {
                 self.requestedTab = target
+                if target == "Groups" && !group.isEmpty {
+                    self.requestedFolder = group
+                } else {
+                    self.requestedFolder = nil
+                }
                 self.isExpanded = true
             }
         }

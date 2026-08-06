@@ -78,6 +78,10 @@ struct SettingsView: View {
     @AppStorage("customGlobalTarget2") var customGlobalTarget2: String = "All"
     @AppStorage("customGlobalTarget3") var customGlobalTarget3: String = "All"
     
+    @AppStorage("customGlobalGroup1") var customGlobalGroup1: String = ""
+    @AppStorage("customGlobalGroup2") var customGlobalGroup2: String = ""
+    @AppStorage("customGlobalGroup3") var customGlobalGroup3: String = ""
+    
     @AppStorage("ignorePasswords") var ignorePasswords: Bool = true
     @AppStorage("ignoreTransient") var ignoreTransient: Bool = true
     @AppStorage("ignoreUniversalClipboard") var ignoreUniversalClipboard: Bool = false

@@ -29,9 +29,9 @@ extension SettingsView {
                 
                 Divider().padding(.vertical, 4)
                 
-                customGlobalRow(title: "Custom Global 1:", targetBinding: $customGlobalTarget1, shortcut: .customGlobal1)
-                customGlobalRow(title: "Custom Global 2:", targetBinding: $customGlobalTarget2, shortcut: .customGlobal2)
-                customGlobalRow(title: "Custom Global 3:", targetBinding: $customGlobalTarget3, shortcut: .customGlobal3)
+                customGlobalRow(title: "Custom Global 1:", targetBinding: $customGlobalTarget1, groupBinding: $customGlobalGroup1, shortcut: .customGlobal1)
+                customGlobalRow(title: "Custom Global 2:", targetBinding: $customGlobalTarget2, groupBinding: $customGlobalGroup2, shortcut: .customGlobal2)
+                customGlobalRow(title: "Custom Global 3:", targetBinding: $customGlobalTarget3, groupBinding: $customGlobalGroup3, shortcut: .customGlobal3)
                 
                 
                 Text("Tip: Use Cmd+Opt+P and Cmd+Opt+G for tabs!")
@@ -119,13 +119,12 @@ extension SettingsView {
         }
     }
     
-    private func customGlobalRow(title: String, targetBinding: Binding<String>, shortcut: KeyboardShortcuts.Name) -> some View {
+    private func customGlobalRow(title: String, targetBinding: Binding<String>, groupBinding: Binding<String>, shortcut: KeyboardShortcuts.Name) -> some View {
         HStack {
             Text(title).font(.system(size: 12))
             
             Picker("", selection: targetBinding) {
                 Text("All").tag("All")
-                Text("Pinned").tag("Pinned")
                 Text("Groups").tag("Groups")
                 Text("Text").tag("Text")
                 Text("Links").tag("Links")
@@ -138,6 +137,17 @@ extension SettingsView {
             }
             .pickerStyle(MenuPickerStyle())
             .frame(width: 100)
+            
+            if targetBinding.wrappedValue == "Groups" {
+                Picker("", selection: groupBinding) {
+                    Text("Select Folder").tag("")
+                    ForEach(clipboard.folders.filter { $0.id != UUID(uuidString: "00000000-0000-0000-0000-000000000000")! && $0.name != "Restored Items" }) { folder in
+                        Text(folder.name).tag(folder.id.uuidString)
+                    }
+                }
+                .pickerStyle(MenuPickerStyle())
+                .frame(width: 120)
+            }
             
             Spacer()
             KeyboardShortcuts.Recorder("", name: shortcut)
