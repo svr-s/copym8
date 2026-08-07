@@ -204,7 +204,13 @@ struct TrashFooterView: View {
             }
             
             HStack(spacing: 8) {
-                Button(action: {
+                GhostHoverButton(
+                    icon: "arrow.uturn.backward",
+                    text: "Restore",
+                    shortcut: "⌘Z",
+                    color: .blue,
+                    isDisabled: !hasSelection
+                ) {
                     if isEditMode {
                         if !selectedItemsForDeletion.isEmpty {
                             clipboard.restoreItems(ids: Array(selectedItemsForDeletion))
@@ -217,20 +223,15 @@ struct TrashFooterView: View {
                             clipboard.restoreItems(ids: ids)
                         }
                     }
-                }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "arrow.uturn.backward")
-                        Text("Restore")
-                    }
-                    .font(.system(size: 11, weight: .bold)).foregroundColor(hasSelection ? .primary : .primary.opacity(0.4))
-                    .padding(.vertical, 6)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.primary.opacity(0.1)).cornerRadius(6)
                 }
-                .buttonStyle(PlainButtonStyle())
-                .disabled(!hasSelection)
                 
-                Button(action: {
+                GhostHoverButton(
+                    icon: "trash.fill",
+                    text: "Delete",
+                    shortcut: "⌘⌫",
+                    color: .red,
+                    isDisabled: !hasSelection
+                ) {
                     if isEditMode {
                         if !selectedItemsForDeletion.isEmpty {
                             showingDeleteSelectedAlert = true
@@ -242,34 +243,17 @@ struct TrashFooterView: View {
                             showingDeleteSelectedAlert = true
                         }
                     }
-                }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "trash.fill")
-                        Text("Delete")
-                    }
-                    .font(.system(size: 11, weight: .bold)).foregroundColor(hasSelection ? .primary : .primary.opacity(0.4))
-                    .padding(.vertical, 6)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.primary.opacity(0.1)).cornerRadius(6)
                 }
-                .buttonStyle(PlainButtonStyle())
-                .disabled(!hasSelection)
                 
-                Button(action: {
+                GhostHoverButton(
+                    icon: "trash.fill",
+                    text: "Empty Trash",
+                    shortcut: "⇧⌘⌫",
+                    color: .red,
+                    isDisabled: false
+                ) {
                     showingEmptyTrashAlert = true
-                }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "trash.fill")
-                        Text("Empty Trash")
-                    }
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(.white)
-                    .padding(.vertical, 6)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.red.opacity(0.8))
-                    .cornerRadius(6)
                 }
-                .buttonStyle(PlainButtonStyle())
             }
         }
         .padding(.horizontal, 12)

@@ -12,15 +12,6 @@ struct ReorderFooterView: View {
     
     var body: some View {
         HStack {
-            GhostHoverButton(
-                icon: "xmark.circle.fill",
-                text: "Cancel",
-                shortcut: "Esc",
-                color: .gray,
-                isDisabled: false,
-                action: cancelReorder
-            )
-            
             Spacer()
             
             if reorderTarget != .folders {
