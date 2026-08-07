@@ -12,22 +12,20 @@ struct ReorderFooterView: View {
     
     var body: some View {
         HStack {
-            Button(action: cancelReorder) {
-                Text("Cancel")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.primary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Color.primary.opacity(0.1))
-                    .cornerRadius(6)
-            }
-            .buttonStyle(PlainButtonStyle())
+            GhostHoverButton(
+                icon: "xmark.circle.fill",
+                text: "Cancel",
+                shortcut: "Esc",
+                color: .gray,
+                isDisabled: false,
+                action: cancelReorder
+            )
             
             Spacer()
             
             if reorderTarget != .folders {
                 HStack(spacing: 6) {
-                    Text("Freeze Top")
+                    Text("Freeze Top ⌃F")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(.primary.opacity(0.8))
                     
@@ -65,16 +63,14 @@ struct ReorderFooterView: View {
             
             Spacer()
             
-            Button(action: saveReorder) {
-                Text("Save")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(.primary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Color.primary.opacity(0.1))
-                    .cornerRadius(6)
-            }
-            .buttonStyle(PlainButtonStyle())
+            GhostHoverButton(
+                icon: "checkmark.circle.fill",
+                text: "Save",
+                shortcut: "↵",
+                color: .blue,
+                isDisabled: false,
+                action: saveReorder
+            )
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 12)

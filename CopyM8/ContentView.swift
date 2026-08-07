@@ -342,11 +342,17 @@ struct ContentView: View {
             }
         }
         .onCustomKeyPress(handleKeyPress)
-        .onChange(of: viewModel.activeTab) { _, _ in 
+        .onChange(of: viewModel.activeTab) { _, newValue in 
             viewModel.selectedItemsForDeletion.removeAll()
             viewModel.selectionAnchorIndex = nil
             viewModel.selectedIndex = 0
             viewModel.expandedItemIndex = nil
+            
+            if viewModel.isEditMode && newValue == "Groups" {
+                viewModel.expandedFolderIds = Set(clipboard.folders.map { $0.id })
+                viewModel.expandedFolderIds.insert(cloudFolderId)
+                viewModel.expandedFolderIds.insert(restoredFolderId)
+            }
         }
         .onChange(of: viewModel.searchText) { _, _ in
             viewModel.selectedIndex = 0

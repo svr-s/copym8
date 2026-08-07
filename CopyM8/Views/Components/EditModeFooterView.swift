@@ -37,48 +37,44 @@ struct EditModeFooterView: View {
             VStack(spacing: 8) {
                 if clipboard.selectedDevice != "Local (This Mac)" {
                     HStack {
-                        Button(action: {
-                            let itemsToImport = clipboard.history.filter { selectedItemsForDeletion.contains($0.id) }
+                        GhostHoverButton(
+                            icon: "square.and.arrow.down",
+                            text: "Import",
+                            shortcut: "⌘I",
+                            color: .blue,
+                            isDisabled: selectedItemsForDeletion.isEmpty
+                        ) {
+                            let itemsToImport = clipboard.activeHistory.filter { selectedItemsForDeletion.contains($0.id) }
                             if !itemsToImport.isEmpty {
                                 clipboard.importItems(itemsToImport)
                             }
                             selectedItemsForDeletion.removeAll()
                             isEditMode = false
-                        }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "square.and.arrow.down")
-                                Text("Import")
-                            }
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(selectedItemsForDeletion.isEmpty ? .primary.opacity(0.4) : .white)
-                            .padding(.vertical, 6)
-                            .frame(maxWidth: .infinity)
-                            .background(selectedItemsForDeletion.isEmpty ? Color.primary.opacity(0.1) : Color.blue)
-                            .cornerRadius(6)
-                        }.buttonStyle(PlainButtonStyle())
-                        .disabled(selectedItemsForDeletion.isEmpty)
+                        }
                     }
                 } else {
                     HStack(spacing: 8) {
-                        Button(action: {
+                        GhostHoverButton(
+                            icon: "folder.fill.badge.plus",
+                            text: "Group",
+                            shortcut: "⌘G",
+                            color: .blue,
+                            isDisabled: selectedItemsForDeletion.isEmpty || hasFolderSelected
+                        ) {
                             itemToAssignGroup = GroupAssignmentPayload(itemIds: selectedItemsForDeletion) {
                                 selectedItemsForDeletion.removeAll()
                                 isEditMode = false
                             }
-                        }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "folder.fill.badge.plus")
-                                Text("Group")
-                            }
-                            .font(.system(size: 11, weight: .bold)).foregroundColor(.primary)
-                            .padding(.vertical, 6)
-                            .frame(maxWidth: .infinity)
-                            .background(Color.primary.opacity(0.1)).cornerRadius(6)
-                        }.buttonStyle(PlainButtonStyle())
-                        .disabled(selectedItemsForDeletion.isEmpty || hasFolderSelected)
+                        }
                         
                         if activeTab == "Pinned" {
-                            Button(action: {
+                            GhostHoverButton(
+                                icon: "pin.slash.fill",
+                                text: "Unpin",
+                                shortcut: "⌘U",
+                                color: .blue,
+                                isDisabled: selectedItemsForDeletion.isEmpty || hasFolderSelected
+                            ) {
                                 for id in selectedItemsForDeletion {
                                     if let idx = clipboard.history.firstIndex(where: { $0.id == id }) {
                                         clipboard.history[idx].isPinned = false
@@ -86,19 +82,15 @@ struct EditModeFooterView: View {
                                 }
                                 selectedItemsForDeletion.removeAll()
                                 isEditMode = false
-                            }) {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "pin.slash.fill")
-                                    Text("Unpin")
-                                }
-                                .font(.system(size: 11, weight: .bold)).foregroundColor(.primary)
-                                .padding(.vertical, 6)
-                                .frame(maxWidth: .infinity)
-                                .background(Color.primary.opacity(0.1)).cornerRadius(6)
-                            }.buttonStyle(PlainButtonStyle())
-                            .disabled(selectedItemsForDeletion.isEmpty || hasFolderSelected)
+                            }
                         } else {
-                            Button(action: {
+                            GhostHoverButton(
+                                icon: "pin.fill",
+                                text: "Pin",
+                                shortcut: "⌘P",
+                                color: .blue,
+                                isDisabled: selectedItemsForDeletion.isEmpty || hasFolderSelected
+                            ) {
                                 for id in selectedItemsForDeletion {
                                     if let idx = clipboard.history.firstIndex(where: { $0.id == id }) {
                                         clipboard.history[idx].isPinned = true
@@ -107,39 +99,31 @@ struct EditModeFooterView: View {
                                 }
                                 selectedItemsForDeletion.removeAll()
                                 isEditMode = false
-                            }) {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "pin.fill")
-                                    Text("Pin")
-                                }
-                                .font(.system(size: 11, weight: .bold)).foregroundColor(.primary)
-                                .padding(.vertical, 6)
-                                .frame(maxWidth: .infinity)
-                                .background(Color.primary.opacity(0.1)).cornerRadius(6)
-                            }.buttonStyle(PlainButtonStyle())
-                            .disabled(selectedItemsForDeletion.isEmpty || hasFolderSelected)
+                            }
                         }
                     }
                     
                     HStack(spacing: 8) {
                         let hasGroupedItem = clipboard.history.contains { item in selectedItemsForDeletion.contains(item.id) && item.folderId != nil }
                         if activeTab == "Groups" && hasGroupedItem {
-                            Button(action: {
+                            GhostHoverButton(
+                                icon: "folder.badge.minus",
+                                text: "Ungroup",
+                                shortcut: "⌘U",
+                                color: .blue,
+                                isDisabled: selectedItemsForDeletion.isEmpty || hasFolderSelected
+                            ) {
                                 showingUngroupAlert = true
-                            }) {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "folder.badge.minus")
-                                    Text("Ungroup")
-                                }
-                                .font(.system(size: 11, weight: .bold)).foregroundColor(.primary)
-                                .padding(.vertical, 6)
-                                .frame(maxWidth: .infinity)
-                                .background(Color.primary.opacity(0.1)).cornerRadius(6)
-                            }.buttonStyle(PlainButtonStyle())
-                            .disabled(selectedItemsForDeletion.isEmpty || hasFolderSelected)
+                            }
                         }
                         
-                        Button(action: {
+                        GhostHoverButton(
+                            icon: "trash.fill",
+                            text: "Delete",
+                            shortcut: "⌫",
+                            color: .red,
+                            isDisabled: selectedItemsForDeletion.isEmpty
+                        ) {
                             if !selectedItemsForDeletion.isEmpty {
                                 let hasFolder = clipboard.folders.contains(where: { selectedItemsForDeletion.contains($0.id) })
                                 if hasFolder {
@@ -148,23 +132,47 @@ struct EditModeFooterView: View {
                                     showingDeleteSelectedAlert = true
                                 }
                             }
-                        }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "trash.fill")
-                                Text("Delete")
-                            }
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(selectedItemsForDeletion.isEmpty ? .primary.opacity(0.4) : .white)
-                            .padding(.vertical, 6)
-                            .frame(maxWidth: .infinity)
-                            .background(selectedItemsForDeletion.isEmpty ? Color.primary.opacity(0.1) : Color.red.opacity(0.8))
-                            .cornerRadius(6)
-                        }.buttonStyle(PlainButtonStyle())
-                        .disabled(selectedItemsForDeletion.isEmpty)
+                        }
                     }
                 }
             }
         }
         .padding(.horizontal, 12).padding(.vertical, 12).background(Color.primary.opacity(0.05))
+    }
+}
+import SwiftUI
+
+struct GhostHoverButton: View {
+    let icon: String
+    let text: String
+    let shortcut: String
+    let color: Color
+    let isDisabled: Bool
+    let action: () -> Void
+    
+    @State private var isHovering = false
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                Text(shortcut.isEmpty ? text : "\(text) \(shortcut)")
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .font(.system(size: 11, weight: .bold))
+            .foregroundColor(isDisabled ? .primary.opacity(0.4) : (isHovering ? .white : color))
+            .padding(.horizontal, 4)
+            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity)
+            .background(isDisabled ? Color.primary.opacity(0.1) : (isHovering ? color : color.opacity(0.15)))
+            .cornerRadius(6)
+            .animation(.easeInOut(duration: 0.1), value: isHovering)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .disabled(isDisabled)
+        .onHover { hover in
+            isHovering = hover && !isDisabled
+        }
     }
 }
