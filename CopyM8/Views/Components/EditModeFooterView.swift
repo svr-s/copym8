@@ -14,6 +14,7 @@ struct EditModeFooterView: View {
     var body: some View {
         VStack(spacing: 8) {
             let hasFolderSelected = clipboard.folders.contains(where: { selectedItemsForDeletion.contains($0.id) })
+            let hasEntrySelected = selectedItemsForDeletion.contains(where: { id in !clipboard.folders.contains(where: { $0.id == id }) })
             HStack {
                 Button(action: {
                     let allIds = Set(displayNodes.compactMap { $0.item?.id ?? $0.folder?.id })
@@ -59,7 +60,7 @@ struct EditModeFooterView: View {
                             text: "Group",
                             shortcut: "⌘G",
                             color: .blue,
-                            isDisabled: selectedItemsForDeletion.isEmpty || hasFolderSelected
+                            isDisabled: !hasEntrySelected
                         ) {
                             itemToAssignGroup = GroupAssignmentPayload(itemIds: selectedItemsForDeletion) {
                                 selectedItemsForDeletion.removeAll()
@@ -73,7 +74,7 @@ struct EditModeFooterView: View {
                                 text: "Unpin",
                                 shortcut: "⌘U",
                                 color: .blue,
-                                isDisabled: selectedItemsForDeletion.isEmpty || hasFolderSelected
+                                isDisabled: !hasEntrySelected
                             ) {
                                 for id in selectedItemsForDeletion {
                                     if let idx = clipboard.history.firstIndex(where: { $0.id == id }) {
@@ -89,7 +90,7 @@ struct EditModeFooterView: View {
                                 text: "Pin",
                                 shortcut: "⌘P",
                                 color: .blue,
-                                isDisabled: selectedItemsForDeletion.isEmpty || hasFolderSelected
+                                isDisabled: !hasEntrySelected
                             ) {
                                 for id in selectedItemsForDeletion {
                                     if let idx = clipboard.history.firstIndex(where: { $0.id == id }) {
@@ -111,7 +112,7 @@ struct EditModeFooterView: View {
                                 text: "Ungroup",
                                 shortcut: "⌘U",
                                 color: .blue,
-                                isDisabled: selectedItemsForDeletion.isEmpty || hasFolderSelected
+                                isDisabled: !hasEntrySelected
                             ) {
                                 showingUngroupAlert = true
                             }
