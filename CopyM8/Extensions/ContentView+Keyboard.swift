@@ -601,17 +601,7 @@ extension ContentView {
                         }
                     } else {
                         if clipboard.selectedDevice != "Local (This Mac)" {
-                            var itemsToImport: [ClipboardItem] = []
-                            if viewModel.isEditMode {
-                                itemsToImport = clipboard.activeHistory.filter { viewModel.selectedItemsForDeletion.contains($0.id) }
-                                viewModel.selectedItemsForDeletion.removeAll()
-                                viewModel.isEditMode = false
-                            } else if let item = node.item {
-                                itemsToImport.append(item)
-                            }
-                            if !itemsToImport.isEmpty {
-                                clipboard.importItems(itemsToImport)
-                            }
+                            // Do nothing on Enter for remote devices, restrict import to Cmd+I
                         } else {
                             let hasCmd = event.modifierFlags.contains(.command)
                             let hasCtrl = event.modifierFlags.contains(.control)
