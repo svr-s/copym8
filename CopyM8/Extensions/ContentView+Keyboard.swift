@@ -603,6 +603,7 @@ extension ContentView {
                         if clipboard.selectedDevice != "Local (This Mac)" {
                             // Do nothing on Enter for remote devices, restrict import to Cmd+I
                         } else {
+                            if viewModel.isEditMode { return nil }
                             let hasCmd = event.modifierFlags.contains(.command)
                             let hasCtrl = event.modifierFlags.contains(.control)
                             let format: PasteFormatType = (hasCmd && hasCtrl) ? .richNoLinks : (hasCmd ? .rich : .plain)
