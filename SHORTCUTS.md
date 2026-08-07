@@ -12,7 +12,7 @@ Here is a comprehensive list of all keyboard shortcuts available in CopyM8, grou
 | **Open Settings** | `Cmd + ,` | Toggles the Settings pane. Features organized tabs (General, Types, Sync, Privacy, Shortcuts) and dynamic custom launch shortcut controls. |
 | **Toggle CopyM8** | `Cmd + Shift + Space` (Default) | Instantly toggles the CopyM8 window. Deleting this shortcut resets it to the default. |
 | **Custom Global Launches** | Custom (up to 10) | Assign custom global shortcuts in Settings to instantly launch CopyM8 directly into specific tabs or even directly focused into specific folders. |
-| **Close Window** | `Esc` | Instantly dismisses the CopyM8 window. |
+| **Close Window / Cancel Modals** | `Esc` | Instantly dismisses the CopyM8 window or cancels out of modals/reorder modes. |
 | **Navigate Pop-Up Modals** | `Up/Down & Enter` | Use arrow keys to select options in custom alerts, and `Enter` to confirm. |
 
 ### 📁 Tabs & Views
@@ -67,7 +67,7 @@ Here is a comprehensive list of all keyboard shortcuts available in CopyM8, grou
 | **Hard Delete** | `Cmd + Backspace` | Permanently deletes the highlighted item (or selected items in Edit Mode). Triggers a confirmation popup. |
 | **Toggle Trash Bin** | `Cmd + Shift + T` | Instantly switches to (or exits from) the Trash Bin tab. |
 | **Restore Item** | `Cmd + Z` | Restores the currently highlighted item (or selected items in Edit Mode) from the Trash Bin back to active history. |
-| **Empty Trash** | `Cmd + Shift + Backspace` | Permanently deletes all items inside the Trash Bin. Triggers a confirmation popup. (Only works while in the Trash tab). |
+| **Empty (Trash)** | `Cmd + Shift + Backspace` | Permanently deletes all items inside the Trash Bin. Triggers a confirmation popup. (Only works while in the Trash tab). |
 
 ### 🖱 Mouse Interactions
 | Action | Shortcut | Description |

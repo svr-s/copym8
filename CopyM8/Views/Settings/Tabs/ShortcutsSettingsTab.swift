@@ -77,7 +77,7 @@ extension SettingsView {
                 shortcutRow(action: "Device Switcher", key: "Cmd + Shift + D")
                 shortcutRow(action: "Import from Device", key: "Cmd + I")
                 shortcutRow(action: "Settings", key: "Cmd + ,")
-                shortcutRow(action: "Close Window", key: "Esc")
+                shortcutRow(action: "Close Window / Cancel Modals", key: "Esc")
             }
             
             Group {
@@ -130,7 +130,7 @@ extension SettingsView {
                 shortcutRow(action: "Hard Delete Item", key: "Cmd + ⌫ Delete")
                 shortcutRow(action: "Toggle Trash Bin", key: "Cmd + Shift + T")
                 shortcutRow(action: "Restore Item (in Trash)", key: "Cmd + Z")
-                shortcutRow(action: "Empty Trash (in Trash)", key: "Cmd + Shift + ⌫ Delete")
+                shortcutRow(action: "Empty (in Trash)", key: "Cmd + Shift + ⌫ Delete")
             }
             
             Group {
