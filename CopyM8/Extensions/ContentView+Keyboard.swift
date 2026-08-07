@@ -67,7 +67,7 @@ extension ContentView {
                     if clipboard.selectedDevice != "Local (This Mac)" {
                         var itemsToImport: [ClipboardItem] = []
                         if viewModel.isEditMode {
-                            itemsToImport = clipboard.history.filter { viewModel.selectedItemsForDeletion.contains($0.id) }
+                            itemsToImport = clipboard.activeHistory.filter { viewModel.selectedItemsForDeletion.contains($0.id) }
                             viewModel.selectedItemsForDeletion.removeAll()
                             viewModel.isEditMode = false
                         } else if viewModel.selectedIndex >= 0 && viewModel.selectedIndex < displayNodesLocal.count {
@@ -600,10 +600,24 @@ extension ContentView {
                             else { viewModel.expandedFolderIds.insert(folder.id) }
                         }
                     } else {
-                        let hasCmd = event.modifierFlags.contains(.command)
-                        let hasCtrl = event.modifierFlags.contains(.control)
-                        let format: PasteFormatType = (hasCmd && hasCtrl) ? .richNoLinks : (hasCmd ? .rich : .plain)
-                        pasteItem(index: viewModel.selectedIndex, format: format)
+                        if clipboard.selectedDevice != "Local (This Mac)" {
+                            var itemsToImport: [ClipboardItem] = []
+                            if viewModel.isEditMode {
+                                itemsToImport = clipboard.activeHistory.filter { viewModel.selectedItemsForDeletion.contains($0.id) }
+                                viewModel.selectedItemsForDeletion.removeAll()
+                                viewModel.isEditMode = false
+                            } else if let item = node.item {
+                                itemsToImport.append(item)
+                            }
+                            if !itemsToImport.isEmpty {
+                                clipboard.importItems(itemsToImport)
+                            }
+                        } else {
+                            let hasCmd = event.modifierFlags.contains(.command)
+                            let hasCtrl = event.modifierFlags.contains(.control)
+                            let format: PasteFormatType = (hasCmd && hasCtrl) ? .richNoLinks : (hasCmd ? .rich : .plain)
+                            pasteItem(index: viewModel.selectedIndex, format: format)
+                        }
                     }
                 }
                 return nil
