@@ -10,6 +10,8 @@ struct ReorderFooterView: View {
     @Binding var reorderBackupFolders: [ClipboardFolder]
     @Binding var selectedItemsForDeletion: Set<UUID>
     
+    @State private var footerWidth: CGFloat = 300
+    
     var body: some View {
         HStack {
             Spacer()
@@ -60,12 +62,20 @@ struct ReorderFooterView: View {
                 shortcut: "↵",
                 color: .blue,
                 isDisabled: false,
+                maxWidth: footerWidth / 3,
                 action: saveReorder
             )
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 12)
         .background(Color.primary.opacity(0.05))
+        .background(
+            GeometryReader { proxy in
+                Color.clear
+                    .onAppear { footerWidth = proxy.size.width }
+                    .onChange(of: proxy.size.width) { newValue in footerWidth = newValue }
+            }
+        )
     }
     
     private func cancelReorder() {

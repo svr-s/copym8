@@ -148,6 +148,7 @@ struct GhostHoverButton: View {
     let shortcut: String
     let color: Color
     let isDisabled: Bool
+    var maxWidth: CGFloat? = .infinity
     let action: () -> Void
     
     @State private var isHovering = false
@@ -164,7 +165,7 @@ struct GhostHoverButton: View {
             .foregroundColor(isDisabled ? .primary.opacity(0.4) : (isHovering ? .white : color))
             .padding(.horizontal, 4)
             .padding(.vertical, 6)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: maxWidth)
             .background(isDisabled ? Color.primary.opacity(0.1) : (isHovering ? color : color.opacity(0.15)))
             .cornerRadius(6)
             .animation(.easeInOut(duration: 0.1), value: isHovering)

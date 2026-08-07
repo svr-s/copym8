@@ -247,7 +247,7 @@ struct TrashFooterView: View {
                 
                 GhostHoverButton(
                     icon: "trash.fill",
-                    text: "Empty Trash",
+                    text: "Empty",
                     shortcut: "⇧⌘⌫",
                     color: .red,
                     isDisabled: false
