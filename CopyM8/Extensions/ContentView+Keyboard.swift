@@ -478,13 +478,6 @@ extension ContentView {
                     if current < 10 { viewModel.reorderFreezeLimit = "\(current + 1)" }
                     return nil
                 }
-                if event.modifierFlags.contains(.command) && event.modifierFlags.contains(.option) && !clipboard.queueIDs.isEmpty {
-                    if clipboard.queuePlayheadIndex > 0 {
-                        clipboard.queuePlayheadIndex -= 1
-                        clipboard.saveQueueState()
-                    }
-                    return nil
-                }
                 if event.modifierFlags.contains(.command) && event.modifierFlags.contains(.shift) && viewModel.activeTab == "Groups" {
                     viewModel.expandedFolderIds.removeAll()
                     return nil
@@ -532,13 +525,6 @@ extension ContentView {
                 if isFreezeFieldFocused {
                     let current = Int(viewModel.reorderFreezeLimit) ?? 0
                     if current > 0 { viewModel.reorderFreezeLimit = "\(current - 1)" }
-                    return nil
-                }
-                if event.modifierFlags.contains(.command) && event.modifierFlags.contains(.option) && !clipboard.queueIDs.isEmpty {
-                    if clipboard.queuePlayheadIndex < clipboard.queueIDs.count - 1 {
-                        clipboard.queuePlayheadIndex += 1
-                        clipboard.saveQueueState()
-                    }
                     return nil
                 }
                 if event.modifierFlags.contains(.command) && event.modifierFlags.contains(.shift) && viewModel.activeTab == "Groups" {

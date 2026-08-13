@@ -91,7 +91,7 @@ extension ContentView {
     ///   - index: The index of the item within the `displayNodes` array.
     ///   - format: The requested paste format (plain text, rich text, etc.).
     func pasteItem(index: Int, format: PasteFormatType = .plain) {
-        if viewModel.activeTab == "Queue" {
+        if viewModel.activeTab == "Queue" && format == .rich {
             if index >= 0 && index < clipboard.queueIDs.count {
                 clipboard.queuePlayheadIndex = index
             }
