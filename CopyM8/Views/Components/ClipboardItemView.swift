@@ -89,42 +89,18 @@ struct ClipboardItemView: View {
     var body: some View {
         Button(action: onPaste) {
             HStack(spacing: 12) {
-                if let status = queueStatus {
-                    // Render queue status vertical line
-                    let color: Color = {
-                        switch status {
-                        case .next: return .green
-                        case .upcoming: return .yellow
-                        case .pasted: return .red
-                        }
-                    }()
-                    Rectangle()
-                        .fill(color)
-                        .frame(width: 3)
-                        .cornerRadius(1.5)
-                        .padding(.vertical, 4)
-                        
-                    // Render play/pause icon instead of index for Queue items
-                    if status == .next {
-                        Image(systemName: "play.fill")
-                            .font(.system(size: 11))
-                            .foregroundColor(.green)
-                            .frame(width: 16, alignment: .leading)
-                    } else if status == .upcoming {
-                        Image(systemName: "pause.fill")
-                            .font(.system(size: 11))
-                            .foregroundColor(.yellow.opacity(0.8))
-                            .frame(width: 16, alignment: .leading)
-                    } else {
-                        Spacer().frame(width: 16)
-                    }
-                } else if isEditMode {
+                if isEditMode {
                     Image(systemName: isChecked ? "checkmark.circle.fill" : "circle")
                         .foregroundColor(isChecked ? .primary : .primary.opacity(0.3))
                         .font(.system(size: 14))
                         .frame(width: 16, alignment: .leading)
                 } else {
-                    if let sIndex = shortcutIndex {
+                    if let status = queueStatus, status == .next {
+                        Image(systemName: "play.fill")
+                            .font(.system(size: 11))
+                            .foregroundColor(.green)
+                            .frame(width: 16, alignment: .leading)
+                    } else if let sIndex = shortcutIndex {
                         let shortcutText = sIndex == 9 ? "0" : "\(sIndex + 1)"
                         Text(shortcutText)
                             .font(.system(size: 11, weight: .bold, design: .monospaced))
@@ -214,6 +190,24 @@ struct ClipboardItemView: View {
                 : (hover ? Color.primary.opacity(0.05) : Color.clear)
             )
             .cornerRadius(6)
+            .overlay(
+                Group {
+                    if let status = queueStatus {
+                        let color: Color = {
+                            switch status {
+                            case .next: return .green
+                            case .upcoming: return .yellow
+                            case .pasted: return .red
+                            }
+                        }()
+                        Rectangle()
+                            .fill(color)
+                            .frame(width: 3)
+                    }
+                },
+                alignment: .leading
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
         .buttonStyle(PlainButtonStyle())
         .onHover { hovering in

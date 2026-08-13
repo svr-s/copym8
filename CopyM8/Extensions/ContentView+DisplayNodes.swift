@@ -24,7 +24,7 @@ extension ContentView {
                     if i == freezeLimit && freezeLimit > 0 {
                         nodes.append(DisplayNode(id: "divider_reorder", isFolder: false, folder: nil, item: nil, parentFolderId: folderId, isDivider: true))
                     }
-                    nodes.append(DisplayNode(id: "item_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: folderId))
+                    nodes.append(DisplayNode(id: "item_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: folderId, queueStatus: getQueueStatus(for: item.id)))
                 }
                 return nodes
             case .pinned:
@@ -41,7 +41,7 @@ extension ContentView {
                     if i == freezeLimit && freezeLimit > 0 {
                         nodes.append(DisplayNode(id: "divider_reorder", isFolder: false, folder: nil, item: nil, parentFolderId: nil, isDivider: true))
                     }
-                    nodes.append(DisplayNode(id: "item_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: nil))
+                    nodes.append(DisplayNode(id: "item_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: nil, queueStatus: getQueueStatus(for: item.id)))
                 }
                 return nodes
             case .none:
@@ -83,7 +83,7 @@ extension ContentView {
             
             var nodes: [DisplayNode] = []
             for item in items {
-                nodes.append(DisplayNode(id: "item_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: nil))
+                nodes.append(DisplayNode(id: "item_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: nil, queueStatus: getQueueStatus(for: item.id)))
             }
             return nodes
         }
@@ -122,7 +122,7 @@ extension ContentView {
                             nodes.append(DisplayNode(id: "divider_\(folder.id.uuidString)", isFolder: false, folder: nil, item: nil, parentFolderId: folder.id, isDivider: true))
                             addedDivider = true
                         }
-                        nodes.append(DisplayNode(id: "item_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: folder.id))
+                        nodes.append(DisplayNode(id: "item_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: folder.id, queueStatus: getQueueStatus(for: item.id)))
                     }
                 }
             }
@@ -179,12 +179,23 @@ extension ContentView {
                         nodes.append(DisplayNode(id: "divider_pinned", isFolder: false, folder: nil, item: nil, parentFolderId: nil, isDivider: true))
                         addedDivider = true
                     }
-                    nodes.append(DisplayNode(id: "item_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: nil))
+                    nodes.append(DisplayNode(id: "item_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: nil, queueStatus: getQueueStatus(for: item.id)))
                 }
                 return nodes
             }
             
-            return results.map { DisplayNode(id: "item_\($0.id.uuidString)", isFolder: false, folder: nil, item: $0, parentFolderId: nil) }
+            return results.map { DisplayNode(id: "item_\($0.id.uuidString)", isFolder: false, folder: nil, item: $0, parentFolderId: nil, queueStatus: getQueueStatus(for: $0.id)) }
+        }
+    }
+    
+    private func getQueueStatus(for itemId: UUID) -> QueueStatus? {
+        guard let index = clipboard.queueIDs.firstIndex(of: itemId) else { return nil }
+        if index < clipboard.queuePlayheadIndex {
+            return .pasted
+        } else if index == clipboard.queuePlayheadIndex {
+            return .next
+        } else {
+            return .upcoming
         }
     }
 }

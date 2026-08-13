@@ -28,10 +28,10 @@ extension ContentView {
     /// Core tabs (All, Pinned, Groups) are always visible. Content-specific tabs are toggled based on Settings.
     /// - Returns: An array of strings representing the visible tab names.
     func getVisibleTabs() -> [String] {
-        let tabs = ["All", "Pinned", "Groups", "Text", "Links", "Images", "Files"]
+        let tabs = ["Queue", "All", "Pinned", "Groups", "Text", "Links", "Images", "Files"]
         var visible = tabs.filter { t in
             switch t {
-            case "All", "Pinned", "Groups": return true
+            case "Queue", "All", "Pinned", "Groups": return true
             case "Text": return UserDefaults.standard.object(forKey: "saveText") as? Bool ?? true
             case "Links": return UserDefaults.standard.object(forKey: "saveLinks") as? Bool ?? true
             case "Images": return UserDefaults.standard.object(forKey: "saveImages") as? Bool ?? true
