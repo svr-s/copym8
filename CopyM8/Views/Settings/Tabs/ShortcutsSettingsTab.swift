@@ -25,6 +25,13 @@ extension SettingsView {
                     Spacer()
                     KeyboardShortcuts.Recorder("", name: .openPinned)
                 }
+                
+                Divider().padding(.vertical, 4)
+                
+                Text("Global Queue Shortcuts")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.secondary)
+                    
                 HStack {
                     Text("Toggle Queue Recording:").font(.system(size: 12))
                     Spacer()

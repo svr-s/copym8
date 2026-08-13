@@ -74,10 +74,10 @@ extension SettingsView {
                     .frame(width: 50)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .onChange(of: maxQueueSize) { _, newValue in
-                        if newValue > 20 { maxQueueSize = 20 }
+                        if newValue > 10 { maxQueueSize = 10 }
                         else if newValue < 1 { maxQueueSize = 1 }
                     }
-                Stepper("", value: $maxQueueSize, in: 1...20)
+                Stepper("", value: $maxQueueSize, in: 1...10)
                     .labelsHidden()
             }
             Text("Maximum number of items you can enqueue for sequential pasting.")
