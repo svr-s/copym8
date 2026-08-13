@@ -97,6 +97,7 @@ struct ClipboardListView: View {
                                     isEditMode: isEditMode,
                                     isChecked: selectedItemsForDeletion.contains(item.id),
                                     folderIdentifier: getFolderIdentifier(for: item),
+                                    queueStatus: node.queueStatus,
                                     onPaste: {
                                         if isEditMode {
                                             if NSEvent.modifierFlags.contains(.shift), let anchor = selectionAnchorIndex {

@@ -22,6 +22,12 @@ let colors: [(name: String, color: Color)] = [
 
 
 
+enum QueueStatus: Equatable {
+    case next
+    case upcoming
+    case pasted
+}
+
 struct DisplayNode: Identifiable {
     let id: String
     let isFolder: Bool
@@ -29,6 +35,7 @@ struct DisplayNode: Identifiable {
     let item: ClipboardItem?
     let parentFolderId: UUID?
     var isDivider: Bool = false
+    var queueStatus: QueueStatus? = nil
 }
 
 enum ReorderTarget: Equatable {

@@ -202,6 +202,7 @@ extension ContentView {
                 if viewModel.isReorderMode { return nil }
                 var newTab: String? = nil
                 switch event.keyCode {
+                case 12, 50: newTab = "Queue" // Q or `
                 case 35, 19: newTab = "Pinned" // P or 2
                 case 5, 20: newTab = "Groups" // G or 3
                 case 17, 21: newTab = "Text" // T or 4
@@ -477,6 +478,12 @@ extension ContentView {
                     if current < 10 { viewModel.reorderFreezeLimit = "\(current + 1)" }
                     return nil
                 }
+                if event.modifierFlags.contains(.command) && event.modifierFlags.contains(.option) && !clipboard.queueIDs.isEmpty {
+                    if clipboard.queuePlayheadIndex > 0 {
+                        clipboard.queuePlayheadIndex -= 1
+                    }
+                    return nil
+                }
                 if event.modifierFlags.contains(.command) && event.modifierFlags.contains(.shift) && viewModel.activeTab == "Groups" {
                     viewModel.expandedFolderIds.removeAll()
                     return nil
@@ -524,6 +531,12 @@ extension ContentView {
                 if isFreezeFieldFocused {
                     let current = Int(viewModel.reorderFreezeLimit) ?? 0
                     if current > 0 { viewModel.reorderFreezeLimit = "\(current - 1)" }
+                    return nil
+                }
+                if event.modifierFlags.contains(.command) && event.modifierFlags.contains(.option) && !clipboard.queueIDs.isEmpty {
+                    if clipboard.queuePlayheadIndex < clipboard.queueIDs.count - 1 {
+                        clipboard.queuePlayheadIndex += 1
+                    }
                     return nil
                 }
                 if event.modifierFlags.contains(.command) && event.modifierFlags.contains(.shift) && viewModel.activeTab == "Groups" {

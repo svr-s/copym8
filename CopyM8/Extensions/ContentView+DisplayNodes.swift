@@ -49,6 +49,24 @@ extension ContentView {
             }
         }
         
+        if viewModel.activeTab == "Queue" {
+            var nodes: [DisplayNode] = []
+            for (index, id) in clipboard.queueIDs.enumerated() {
+                if let item = clipboard.history.first(where: { $0.id == id }) {
+                    let status: QueueStatus
+                    if index < clipboard.queuePlayheadIndex {
+                        status = .pasted
+                    } else if index == clipboard.queuePlayheadIndex {
+                        status = .next
+                    } else {
+                        status = .upcoming
+                    }
+                    nodes.append(DisplayNode(id: "item_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: nil, queueStatus: status))
+                }
+            }
+            return nodes
+        }
+        
         if viewModel.activeTab == "Trash" {
             var items = clipboard.history.filter { ($0.isDeleted ?? false) }
             

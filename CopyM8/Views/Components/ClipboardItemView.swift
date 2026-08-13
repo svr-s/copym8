@@ -12,6 +12,7 @@ struct ClipboardItemView: View {
     let isEditMode: Bool
     let isChecked: Bool
     let folderIdentifier: String?
+    var queueStatus: QueueStatus? = nil
     let onPaste: () -> Void
     let onExpandToggle: () -> Void
     
@@ -88,7 +89,36 @@ struct ClipboardItemView: View {
     var body: some View {
         Button(action: onPaste) {
             HStack(spacing: 12) {
-                if isEditMode {
+                if let status = queueStatus {
+                    // Render queue status vertical line
+                    let color: Color = {
+                        switch status {
+                        case .next: return .green
+                        case .upcoming: return .yellow
+                        case .pasted: return .red
+                        }
+                    }()
+                    Rectangle()
+                        .fill(color)
+                        .frame(width: 3)
+                        .cornerRadius(1.5)
+                        .padding(.vertical, 4)
+                        
+                    // Render play/pause icon instead of index for Queue items
+                    if status == .next {
+                        Image(systemName: "play.fill")
+                            .font(.system(size: 11))
+                            .foregroundColor(.green)
+                            .frame(width: 16, alignment: .leading)
+                    } else if status == .upcoming {
+                        Image(systemName: "pause.fill")
+                            .font(.system(size: 11))
+                            .foregroundColor(.yellow.opacity(0.8))
+                            .frame(width: 16, alignment: .leading)
+                    } else {
+                        Spacer().frame(width: 16)
+                    }
+                } else if isEditMode {
                     Image(systemName: isChecked ? "checkmark.circle.fill" : "circle")
                         .foregroundColor(isChecked ? .primary : .primary.opacity(0.3))
                         .font(.system(size: 14))
