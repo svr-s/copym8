@@ -12,7 +12,7 @@ struct TabBarView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             ScrollViewReader { proxy in
                 HStack(spacing: 6) {
-                    let baseTabs = ["Queue", "All", "Pinned", "Groups", "Text", "Links", "Images", "Files"]
+                    let baseTabs = clipboard.selectedDevice == "Local (This Mac)" ? ["Queue", "All", "Pinned", "Groups", "Text", "Links", "Images", "Files"] : ["All", "Pinned", "Groups", "Text", "Links", "Images", "Files"]
                     let customTabs = clipboard.selectedDevice == "Local (This Mac)" ? [
                         UserDefaults.standard.string(forKey: "customTab8") ?? "",
                         UserDefaults.standard.string(forKey: "customTab9") ?? "",
