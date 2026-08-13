@@ -115,6 +115,11 @@ class ClipboardManager: ObservableObject, CloudSyncDelegate {
     
     var isReordering: Bool = false
     
+    // MARK: - Queue State
+    @Published var queueIDs: [UUID] = []
+    @Published var queuePlayheadIndex: Int = 0
+    @Published var isQueueRecording: Bool = false
+    
     init() {
         CloudSyncService.shared.delegate = self
         loadHistory()

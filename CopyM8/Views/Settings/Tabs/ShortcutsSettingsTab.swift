@@ -25,6 +25,16 @@ extension SettingsView {
                     Spacer()
                     KeyboardShortcuts.Recorder("", name: .openPinned)
                 }
+                HStack {
+                    Text("Toggle Queue Recording:").font(.system(size: 12))
+                    Spacer()
+                    KeyboardShortcuts.Recorder("", name: .toggleQueueRecord)
+                }
+                HStack {
+                    Text("Paste Next in Queue:").font(.system(size: 12))
+                    Spacer()
+                    KeyboardShortcuts.Recorder("", name: .pasteNextInQueue)
+                }
                 
                 Divider().padding(.vertical, 4)
                 

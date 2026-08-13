@@ -60,6 +60,8 @@ struct SettingsView: View {
     @AppStorage("cloudCopyMaxItemSizeMB") var cloudCopyMaxItemSizeMB: Int = 10
     @AppStorage("cloudCopyMaxTotalStorageMB") var cloudCopyMaxTotalStorageMB: Int = 50
     
+    @AppStorage("maxQueueSize") var maxQueueSize: Int = 10
+    
     @AppStorage("saveText") var saveText: Bool = true
     @AppStorage("saveLinks") var saveLinks: Bool = true
     @AppStorage("saveImages") var saveImages: Bool = true

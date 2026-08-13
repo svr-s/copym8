@@ -66,6 +66,24 @@ extension SettingsView {
                 .font(.system(size: 11))
                 .foregroundColor(.primary.opacity(0.5))
             
+            HStack {
+                Text("Max Queue Size:")
+                    .font(.system(size: 13))
+                Spacer()
+                TextField("", value: $maxQueueSize, format: .number)
+                    .frame(width: 50)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .onChange(of: maxQueueSize) { _, newValue in
+                        if newValue > 20 { maxQueueSize = 20 }
+                        else if newValue < 1 { maxQueueSize = 1 }
+                    }
+                Stepper("", value: $maxQueueSize, in: 1...20)
+                    .labelsHidden()
+            }
+            Text("Maximum number of items you can enqueue for sequential pasting.")
+                .font(.system(size: 11))
+                .foregroundColor(.primary.opacity(0.5))
+            
             Divider().padding(.vertical, 4)
             
             VStack(alignment: .leading, spacing: 12) {

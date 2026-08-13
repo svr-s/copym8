@@ -8,6 +8,8 @@ extension KeyboardShortcuts.Name {
     static let toggleApp = Self("toggleApp", default: .init(.space, modifiers: [.command, .shift]))
     static let openPinned = Self("openPinned")
     static let openGroups = Self("openGroups")
+    static let toggleQueueRecord = Self("toggleQueueRecord")
+    static let pasteNextInQueue = Self("pasteNextInQueue")
     static let customGlobal1 = Self("customGlobal1")
     static let customGlobal2 = Self("customGlobal2")
     static let customGlobal3 = Self("customGlobal3")
