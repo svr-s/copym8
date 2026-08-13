@@ -6,10 +6,27 @@ extension SettingsView {
     var shortcutsTab: some View {
         VStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Global Launch Shortcuts")
+                Text("Global Queue Shortcuts")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(.secondary)
                     .padding(.top, 4)
+                    
+                HStack {
+                    Text("Toggle Queue Recording:").font(.system(size: 12))
+                    Spacer()
+                    KeyboardShortcuts.Recorder("", name: .toggleQueueRecord)
+                }
+                HStack {
+                    Text("Paste Next in Queue:").font(.system(size: 12))
+                    Spacer()
+                    KeyboardShortcuts.Recorder("", name: .pasteNextInQueue)
+                }
+                
+                Divider().padding(.vertical, 4)
+
+                Text("Global Launch Shortcuts")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.secondary)
                     
                 HStack {
                     Text("Open CopyM8:").font(.system(size: 12))
@@ -24,23 +41,6 @@ extension SettingsView {
                     Text("Open Pinned Tab:").font(.system(size: 12))
                     Spacer()
                     KeyboardShortcuts.Recorder("", name: .openPinned)
-                }
-                
-                Divider().padding(.vertical, 4)
-                
-                Text("Global Queue Shortcuts")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.secondary)
-                    
-                HStack {
-                    Text("Toggle Queue Recording:").font(.system(size: 12))
-                    Spacer()
-                    KeyboardShortcuts.Recorder("", name: .toggleQueueRecord)
-                }
-                HStack {
-                    Text("Paste Next in Queue:").font(.system(size: 12))
-                    Spacer()
-                    KeyboardShortcuts.Recorder("", name: .pasteNextInQueue)
                 }
                 
                 Divider().padding(.vertical, 4)
