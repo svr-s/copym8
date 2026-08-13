@@ -31,6 +31,9 @@ extension ClipboardManager {
     func pasteNextInQueue() {
         guard !queueIDs.isEmpty else { return }
         
+        // Stop recording when paste is initiated
+        isQueueRecording = false
+        
         // Find the item
         let idToPaste = queueIDs[queuePlayheadIndex]
         if let item = history.first(where: { $0.id == idToPaste }) {
@@ -43,17 +46,15 @@ extension ClipboardManager {
             // Advance the playhead
             queuePlayheadIndex += 1
             
-            // Auto reset and turn off recording if we hit the end
+            // Auto reset if we hit the end
             if queuePlayheadIndex >= queueIDs.count {
                 queuePlayheadIndex = 0
-                isQueueRecording = false
             }
         } else {
             // Item might have been deleted, just advance
             queuePlayheadIndex += 1
             if queuePlayheadIndex >= queueIDs.count {
                 queuePlayheadIndex = 0
-                isQueueRecording = false
             }
         }
     }
