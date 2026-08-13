@@ -95,12 +95,7 @@ struct ClipboardItemView: View {
                         .font(.system(size: 14))
                         .frame(width: 16, alignment: .leading)
                 } else {
-                    if let status = queueStatus, status == .next {
-                        Image(systemName: "play.fill")
-                            .font(.system(size: 11))
-                            .foregroundColor(.green)
-                            .frame(width: 16, alignment: .leading)
-                    } else if let sIndex = shortcutIndex {
+                    if let sIndex = shortcutIndex {
                         let shortcutText = sIndex == 9 ? "0" : "\(sIndex + 1)"
                         Text(shortcutText)
                             .font(.system(size: 11, weight: .bold, design: .monospaced))
@@ -200,9 +195,18 @@ struct ClipboardItemView: View {
                             case .pasted: return .red
                             }
                         }()
-                        Rectangle()
-                            .fill(color)
-                            .frame(width: 3)
+                        HStack(spacing: 0) {
+                            Rectangle()
+                                .fill(color)
+                                .frame(width: 3)
+                            
+                            if status == .next {
+                                Image(systemName: "play.fill")
+                                    .font(.system(size: 8))
+                                    .foregroundColor(.green)
+                                    .padding(.leading, 2)
+                            }
+                        }
                     }
                 },
                 alignment: .leading

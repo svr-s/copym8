@@ -116,13 +116,18 @@ class ClipboardManager: ObservableObject, CloudSyncDelegate {
     var isReordering: Bool = false
     
     // MARK: - Queue State
-    @Published var queueIDs: [UUID] = []
-    @Published var queuePlayheadIndex: Int = 0
+    @Published var queueIDs: [UUID] = [] {
+        didSet { saveQueueState() }
+    }
+    @Published var queuePlayheadIndex: Int = 0 {
+        didSet { saveQueueState() }
+    }
     @Published var isQueueRecording: Bool = false
     
     init() {
         CloudSyncService.shared.delegate = self
         loadHistory()
+        loadQueueState()
         lastChangeCount = pasteboard.changeCount
         startPolling()
         CloudSyncService.shared.startPolling()
@@ -154,6 +159,19 @@ class ClipboardManager: ObservableObject, CloudSyncDelegate {
             try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         }
         return dir.appendingPathComponent("folders.json")
+    }
+    
+    private func saveQueueState() {
+        let stringIDs = queueIDs.map { $0.uuidString }
+        UserDefaults.standard.set(stringIDs, forKey: "savedQueueIDs")
+        UserDefaults.standard.set(queuePlayheadIndex, forKey: "savedQueuePlayheadIndex")
+    }
+    
+    private func loadQueueState() {
+        if let stringIDs = UserDefaults.standard.array(forKey: "savedQueueIDs") as? [String] {
+            queueIDs = stringIDs.compactMap { UUID(uuidString: $0) }
+        }
+        queuePlayheadIndex = UserDefaults.standard.integer(forKey: "savedQueuePlayheadIndex")
     }
     
     private func processLoadedHistory(_ decoded: [ClipboardItem]) -> [ClipboardItem] {
