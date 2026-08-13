@@ -22,6 +22,14 @@ Here is a comprehensive list of all keyboard shortcuts available in CopyM8, grou
 | **Previous Tab** | `Option + Shift + Tab` | Cycles to the previous visible tab. |
 | **Quick Switch Tabs** | `Option + 1-7` | Instantly switches to a specific tab (All, Pinned, Groups, Text, Links, Images, Files). |
 | **Quick Switch (Letters)** | `Option + A/P/G/T/L/I/F` | Same as above, mapped to the first letter of each tab. |
+| **Open Queue Tab** | `Option + Q` / `Option + \`` | Instantly opens the Queue tab for sequential pasting. |
+
+### 🔀 Sequential Paste (Queue Mode)
+| Action | Shortcut | Description |
+| :--- | :--- | :--- |
+| **Toggle Queue Record** | Custom (Global) | Toggles Queue Recording mode. When on, new copies are appended to your queue. |
+| **Paste Next in Queue** | Custom (Global) | Pastes the item at the playhead and advances the playhead forward by one. |
+| **Snap Playhead** | `Cmd + Enter / Click` | Inside the Queue tab, instantly snaps the playhead to the selected item without pasting it. |
 
 ### 📋 Clipboard Items (Copy / Paste)
 | Action | Shortcut | Description |

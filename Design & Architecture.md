@@ -28,6 +28,12 @@ To maintain peak performance, the `HistoryEvictionService` constantly manages th
 * **Item Count & Size:** Enforces limits on the total number of items, individual item size, and total storage weight (in MB).
 * **Time-to-Live (TTL):** Automatically purges unpinned items older than a specific threshold (e.g., 7 days).
 
+### D. Sequential Paste (Queue Mode)
+A dedicated Queue architecture handles high-volume data entry workflows.
+* **Global Interception:** When `isQueueRecording` is active, newly copied items bypass standard visual rendering and are appended directly into an ordered `queueIDs` buffer, while providing a global visual indicator (red glow).
+* **Sequential Exhaustion:** A persistent `queuePlayheadIndex` tracks exactly which item is next to be pasted globally. `pasteNextInQueue` performs an AppleScript/Accessibility paste operation of the active item, automatically advancing the playhead without requiring the user to open the UI.
+* **Internal Snapping:** Users can enter the dedicated Queue tab and explicitly snap the playhead to any item using `Cmd + Enter` or `Cmd + Click` to forcefully change the pasting sequence order.
+
 ## 3. UI/UX Design System
 
 * **Typography & Sizing:** Relies heavily on system fonts (San Francisco) sized between `10pt` to `12pt`. Density is favored over whitespace to display maximum history without scrolling.

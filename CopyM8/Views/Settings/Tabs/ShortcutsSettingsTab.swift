@@ -105,6 +105,11 @@ extension SettingsView {
             }
             
             Group {
+                shortcutCategory("Queue Mode")
+                shortcutRow(action: "Snap Playhead to Item", key: "Cmd + Enter / Click")
+            }
+            
+            Group {
                 shortcutCategory("Clipboard Items")
                 shortcutRow(action: "Navigate Items", key: "Up / Down")
                 shortcutRow(action: "Expand / Collapse Item", key: "Right / Left")
