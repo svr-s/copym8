@@ -290,6 +290,11 @@ struct ContentView: View {
                     pasteItem: pasteItem
                 )
                 .frame(width: windowWidth, height: windowHeight)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(clipboard.isQueueRecording ? Color.red : Color.clear, lineWidth: 2)
+                        .shadow(color: clipboard.isQueueRecording ? Color.red.opacity(0.8) : .clear, radius: 8, x: 0, y: 0)
+                )
                 .transition(.asymmetric(insertion: .opacity, removal: .opacity.animation(.easeOut(duration: 0.1))))
             } else {
                 PillView(
@@ -297,6 +302,7 @@ struct ContentView: View {
                     activeColorName: activeColorName,
                     activeColor: activeColor,
                     isHovering: $viewModel.isHovering,
+                    isQueueRecording: clipboard.isQueueRecording,
                     onExpanded: {
                         withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                             shortcut.isExpanded = true
@@ -391,6 +397,12 @@ struct ContentView: View {
                 NSApp.activate(ignoringOtherApps: true)
                 NSApp.windows.first(where: { $0 is CopyM8Window })?.makeKeyAndOrderFront(nil)
             }
+        }
+        .onChange(of: shortcut.queueToggleTrigger) { _, _ in
+            clipboard.isQueueRecording.toggle()
+        }
+        .onChange(of: shortcut.queuePasteTrigger) { _, _ in
+            clipboard.pasteNextInQueue()
         }
         .onAppear { applyTheme(themePreference) }
         .environmentObject(clipboard)

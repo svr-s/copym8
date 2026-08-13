@@ -7,6 +7,7 @@ struct PillView: View {
     var activeColorName: String
     var activeColor: Color
     @Binding var isHovering: Bool
+    var isQueueRecording: Bool
     var onExpanded: () -> Void
     var snapToEdge: () -> Void
     
@@ -14,8 +15,10 @@ struct PillView: View {
         let isTop = dockEdge == .top
         let width: CGFloat = isTop ? 40 : 28
         let height: CGFloat = isTop ? 28 : 40
+        let recordingColor = Color.red
         let hoverLogoColor = activeColorName == "Black" ? Color.primary : activeColor
-        let logoColor = isHovering ? hoverLogoColor : Color.primary.opacity(0.4)
+        
+        let logoColor = isQueueRecording ? recordingColor : (isHovering ? hoverLogoColor : Color.primary.opacity(0.4))
         
         return RoundedRectangle(cornerRadius: 24)
             .fill(Color.clear)

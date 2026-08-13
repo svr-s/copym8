@@ -492,12 +492,18 @@ func checkForChanges() {
                         }
                     }
                     self.history.insert(item, at: 0)
+                    if self.isQueueRecording {
+                        self.enqueueItem(id: item.id)
+                    }
                 }
                 return
             }
             
             DispatchQueue.main.async {
                 self.history.insert(itemToSave, at: 0)
+                if self.isQueueRecording {
+                    self.enqueueItem(id: itemToSave.id)
+                }
                 self.truncateHistory(to: self.maxHistoryCount)
                 self.pruneStorageIfNeeded()
             }

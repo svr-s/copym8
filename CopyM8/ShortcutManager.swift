@@ -29,6 +29,8 @@ class ShortcutManager: ObservableObject {
     @Published var requestedTab: String? = nil
     @Published var requestedFolder: String? = nil
     @Published var isPresentingModal: Bool = false
+    @Published var queueToggleTrigger: UUID = UUID()
+    @Published var queuePasteTrigger: UUID = UUID()
     private var eventMonitor: Any?
     
     init() {
@@ -49,6 +51,18 @@ class ShortcutManager: ObservableObject {
             DispatchQueue.main.async {
                 self?.requestedTab = "Groups"
                 self?.isExpanded = true
+            }
+        }
+        
+        KeyboardShortcuts.onKeyUp(for: .toggleQueueRecord) { [weak self] in
+            DispatchQueue.main.async {
+                self?.queueToggleTrigger = UUID()
+            }
+        }
+        
+        KeyboardShortcuts.onKeyUp(for: .pasteNextInQueue) { [weak self] in
+            DispatchQueue.main.async {
+                self?.queuePasteTrigger = UUID()
             }
         }
         

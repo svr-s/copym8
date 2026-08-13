@@ -26,4 +26,35 @@ extension ClipboardManager {
     func resetPlayhead() {
         queuePlayheadIndex = 0
     }
+    
+    /// Pastes the next item in the queue.
+    func pasteNextInQueue() {
+        guard !queueIDs.isEmpty else { return }
+        
+        // Find the item
+        let idToPaste = queueIDs[queuePlayheadIndex]
+        if let item = history.first(where: { $0.id == idToPaste }) {
+            // Prepare the pasteboard
+            prepareForPaste(item, formatType: .plain)
+            
+            // Trigger paste keystroke
+            triggerPasteKeystroke()
+            
+            // Advance the playhead
+            queuePlayheadIndex += 1
+            
+            // Auto reset and turn off recording if we hit the end
+            if queuePlayheadIndex >= queueIDs.count {
+                queuePlayheadIndex = 0
+                isQueueRecording = false
+            }
+        } else {
+            // Item might have been deleted, just advance
+            queuePlayheadIndex += 1
+            if queuePlayheadIndex >= queueIDs.count {
+                queuePlayheadIndex = 0
+                isQueueRecording = false
+            }
+        }
+    }
 }
