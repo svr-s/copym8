@@ -195,7 +195,7 @@ struct ClipboardItemView: View {
                             case .pasted: return .red
                             }
                         }()
-                        HStack(spacing: 0) {
+                        ZStack(alignment: .leading) {
                             Rectangle()
                                 .fill(color)
                                 .frame(width: 3)
@@ -204,7 +204,7 @@ struct ClipboardItemView: View {
                                 Image(systemName: "play.fill")
                                     .font(.system(size: 8))
                                     .foregroundColor(.green)
-                                    .padding(.leading, 2)
+                                    .offset(x: 3)
                             }
                         }
                     }

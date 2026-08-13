@@ -12,19 +12,21 @@ extension ClipboardManager {
                 queuePlayheadIndex -= 1
             }
         }
-        
         queueIDs.append(id)
+        saveQueueState()
     }
     
     /// Clears the queue entirely.
     func clearQueue() {
         queueIDs.removeAll()
         queuePlayheadIndex = 0
+        saveQueueState()
     }
     
     /// Resets the playhead to the beginning of the queue.
     func resetPlayhead() {
         queuePlayheadIndex = 0
+        saveQueueState()
     }
     
     /// Pastes the next item in the queue.
@@ -57,5 +59,7 @@ extension ClipboardManager {
                 queuePlayheadIndex = 0
             }
         }
+        
+        saveQueueState()
     }
 }

@@ -481,6 +481,7 @@ extension ContentView {
                 if event.modifierFlags.contains(.command) && event.modifierFlags.contains(.option) && !clipboard.queueIDs.isEmpty {
                     if clipboard.queuePlayheadIndex > 0 {
                         clipboard.queuePlayheadIndex -= 1
+                        clipboard.saveQueueState()
                     }
                     return nil
                 }
@@ -536,6 +537,7 @@ extension ContentView {
                 if event.modifierFlags.contains(.command) && event.modifierFlags.contains(.option) && !clipboard.queueIDs.isEmpty {
                     if clipboard.queuePlayheadIndex < clipboard.queueIDs.count - 1 {
                         clipboard.queuePlayheadIndex += 1
+                        clipboard.saveQueueState()
                     }
                     return nil
                 }

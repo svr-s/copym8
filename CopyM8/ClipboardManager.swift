@@ -116,12 +116,8 @@ class ClipboardManager: ObservableObject, CloudSyncDelegate {
     var isReordering: Bool = false
     
     // MARK: - Queue State
-    @Published var queueIDs: [UUID] = [] {
-        didSet { saveQueueState() }
-    }
-    @Published var queuePlayheadIndex: Int = 0 {
-        didSet { saveQueueState() }
-    }
+    @Published var queueIDs: [UUID] = []
+    @Published var queuePlayheadIndex: Int = 0
     @Published var isQueueRecording: Bool = false
     
     init() {
@@ -161,10 +157,11 @@ class ClipboardManager: ObservableObject, CloudSyncDelegate {
         return dir.appendingPathComponent("folders.json")
     }
     
-    private func saveQueueState() {
+    func saveQueueState() {
         let stringIDs = queueIDs.map { $0.uuidString }
         UserDefaults.standard.set(stringIDs, forKey: "savedQueueIDs")
         UserDefaults.standard.set(queuePlayheadIndex, forKey: "savedQueuePlayheadIndex")
+        UserDefaults.standard.synchronize()
     }
     
     private func loadQueueState() {
