@@ -204,7 +204,7 @@ struct ClipboardItemView: View {
                                 Image(systemName: "play.fill")
                                     .font(.system(size: 8))
                                     .foregroundColor(.green)
-                                    .offset(x: 3)
+                                    .offset(x: 1.5)
                             }
                         }
                     }
