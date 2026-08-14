@@ -16,6 +16,20 @@ extension ContentView {
                 if event.keyCode == 53 {
                     if viewModel.itemToAssignGroup != nil { viewModel.itemToAssignGroup = nil }
                     if viewModel.showingDeviceSwitcher { viewModel.showingDeviceSwitcher = false }
+                    if viewModel.showingEmptyTrashAlert { viewModel.showingEmptyTrashAlert = false }
+                    
+                    if viewModel.showingUngroupAlert {
+                        viewModel.showingUngroupAlert = false
+                        if !viewModel.isEditMode { viewModel.selectedItemsForDeletion.removeAll() }
+                    }
+                    if viewModel.showingDeleteSelectedAlert {
+                        viewModel.showingDeleteSelectedAlert = false
+                        if !viewModel.isEditMode { viewModel.selectedItemsForDeletion.removeAll() }
+                    }
+                    if viewModel.showingFolderDeleteAlert {
+                        viewModel.showingFolderDeleteAlert = false
+                        if !viewModel.isEditMode { viewModel.selectedItemsForDeletion.removeAll() }
+                    }
                     return nil
                 }
                 return event
