@@ -349,6 +349,8 @@ struct ContentView: View {
                 viewModel.showingDeviceSwitcher = false
                 viewModel.showingDeleteSelectedAlert = false
                 viewModel.showingFolderDeleteAlert = false
+                viewModel.showingUngroupAlert = false
+                viewModel.showingEmptyTrashAlert = false
                 viewModel.expandedFolderIds.removeAll()
                 viewModel.isEditMode = false
                 viewModel.selectedItemsForDeletion.removeAll()
