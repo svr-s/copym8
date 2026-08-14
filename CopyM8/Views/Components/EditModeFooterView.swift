@@ -68,8 +68,13 @@ struct EditModeFooterView: View {
                             }
                         }
                         
-                        let allPinned = !selectedItemsForDeletion.isEmpty && selectedItemsForDeletion.allSatisfy { id in
-                            clipboard.history.first(where: { $0.id == id })?.isPinned == true
+                        let allPinned: Bool
+                        if selectedItemsForDeletion.isEmpty {
+                            allPinned = (activeTab == "Pinned")
+                        } else {
+                            allPinned = selectedItemsForDeletion.allSatisfy { id in
+                                clipboard.history.first(where: { $0.id == id })?.isPinned == true
+                            }
                         }
                         
                         GhostHoverButton(
