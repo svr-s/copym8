@@ -12,7 +12,7 @@ Here is a comprehensive list of all keyboard shortcuts available in CopyM8, grou
 | **Open Settings** | `Cmd + ,` | Toggles the Settings pane. Features organized tabs (General, Types, Sync, Privacy, Shortcuts) and dynamic custom launch shortcut controls. |
 | **Toggle CopyM8** | `Cmd + Shift + Space` (Default) | Instantly toggles the CopyM8 window. Deleting this shortcut resets it to the default. |
 | **Custom Global Launches** | Custom (up to 10) | Assign custom global shortcuts in Settings to instantly launch CopyM8 directly into specific tabs or even directly focused into specific folders. |
-| **Close Window / Cancel Modals** | `Esc` | Instantly dismisses the CopyM8 window or cancels out of modals/reorder modes. |
+| **Close Window / Cancel Modals** | `Esc` | Instantly dismisses the CopyM8 window or cancels out of *any* active modal (Group Assignment, Ungroup, Delete, Trash) or reorder mode. |
 | **Navigate Pop-Up Modals** | `Up/Down & Enter` | Use arrow keys to select options in custom alerts, and `Enter` to confirm. |
 
 ### 📁 Tabs & Views
