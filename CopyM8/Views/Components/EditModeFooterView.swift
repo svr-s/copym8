@@ -68,39 +68,27 @@ struct EditModeFooterView: View {
                             }
                         }
                         
-                        if activeTab == "Pinned" {
-                            GhostHoverButton(
-                                icon: "pin.slash.fill",
-                                text: "Unpin",
-                                shortcut: "⌘U",
-                                color: .blue,
-                                isDisabled: !hasEntrySelected
-                            ) {
-                                for id in selectedItemsForDeletion {
-                                    if let idx = clipboard.history.firstIndex(where: { $0.id == id }) {
-                                        clipboard.history[idx].isPinned = false
-                                    }
-                                }
-                                selectedItemsForDeletion.removeAll()
-                                isEditMode = false
-                            }
-                        } else {
-                            GhostHoverButton(
-                                icon: "pin.fill",
-                                text: "Pin",
-                                shortcut: "⌘P",
-                                color: .blue,
-                                isDisabled: !hasEntrySelected
-                            ) {
-                                for id in selectedItemsForDeletion {
-                                    if let idx = clipboard.history.firstIndex(where: { $0.id == id }) {
-                                        clipboard.history[idx].isPinned = true
+                        let allPinned = !selectedItemsForDeletion.isEmpty && selectedItemsForDeletion.allSatisfy { id in
+                            clipboard.history.first(where: { $0.id == id })?.isPinned == true
+                        }
+                        
+                        GhostHoverButton(
+                            icon: allPinned ? "pin.slash.fill" : "pin.fill",
+                            text: allPinned ? "Unpin" : "Pin",
+                            shortcut: "⌘P",
+                            color: .blue,
+                            isDisabled: !hasEntrySelected
+                        ) {
+                            for id in selectedItemsForDeletion {
+                                if let idx = clipboard.history.firstIndex(where: { $0.id == id }) {
+                                    clipboard.history[idx].isPinned = !allPinned
+                                    if !allPinned {
                                         clipboard.setFolderId(for: [id], folderId: nil)
                                     }
                                 }
-                                selectedItemsForDeletion.removeAll()
-                                isEditMode = false
                             }
+                            selectedItemsForDeletion.removeAll()
+                            isEditMode = false
                         }
                     }
                     
