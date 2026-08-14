@@ -189,10 +189,10 @@ extension ContentView {
     }
     
     private func getQueueStatus(for itemId: UUID) -> QueueStatus? {
-        guard let index = clipboard.queueIDs.firstIndex(of: itemId) else { return nil }
-        if index < clipboard.queuePlayheadIndex {
+        guard let index = clipboard.activeQueueIDs.firstIndex(of: itemId) else { return nil }
+        if index < clipboard.activeQueuePlayheadIndex {
             return .pasted
-        } else if index == clipboard.queuePlayheadIndex {
+        } else if index == clipboard.activeQueuePlayheadIndex {
             return .next
         } else {
             return .upcoming
