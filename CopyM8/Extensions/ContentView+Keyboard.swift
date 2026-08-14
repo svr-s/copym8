@@ -294,7 +294,7 @@ extension ContentView {
                     let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                     if let letterIndex = alphabet.firstIndex(of: Character(char)) {
                         let folderIndex = alphabet.distance(from: alphabet.startIndex, to: letterIndex)
-                        let standardFolders = clipboard.activeFolders.filter { $0.id != UUID(uuidString: "00000000-0000-0000-0000-000000000000")! }
+                        let standardFolders = clipboard.activeFolders.filter { $0.id != UUID(uuidString: "00000000-0000-0000-0000-000000000000")! && $0.id != restoredFolderId }
                         if folderIndex < standardFolders.count {
                             let targetFolder = standardFolders[folderIndex]
                             if let nodeIndex = displayNodesLocal.firstIndex(where: { $0.isFolder && $0.folder?.id == targetFolder.id }) {

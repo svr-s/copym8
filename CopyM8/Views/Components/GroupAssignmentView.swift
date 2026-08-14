@@ -29,9 +29,10 @@ struct GroupAssignmentView: View {
                 ScrollView {
                     ScrollViewReader { proxy in
                         VStack(spacing: 8) {
-                            ForEach(Array(clipboard.folders.enumerated()), id: \.element.id) { index, folder in
+                            let displayFolders = clipboard.folders.filter { $0.id != restoredFolderId }
+                            ForEach(Array(displayFolders.enumerated()), id: \.element.id) { index, folder in
                                 let isCloud = folder.id == cloudFolderId
-                                let letterIndex = isCloud ? 0 : index - (clipboard.folders.first?.id == cloudFolderId ? 1 : 0)
+                                let letterIndex = isCloud ? 0 : index - (displayFolders.first?.id == cloudFolderId ? 1 : 0)
                                 let letter = isCloud ? "`" : String(UnicodeScalar(UInt8(65 + letterIndex)))
                             Button(action: {
                                 assignToFolder(folder.id)
@@ -133,7 +134,7 @@ struct GroupAssignmentView: View {
                 let scalar = chars.unicodeScalars.first!.value
                 if scalar >= 65 && scalar <= 90 { // A-Z
                     let index = Int(scalar - 65)
-                    let standardFolders = clipboard.folders.filter { $0.id != cloudFolderId }
+                    let standardFolders = clipboard.folders.filter { $0.id != cloudFolderId && $0.id != restoredFolderId }
                     if index < standardFolders.count {
                         assignToFolder(standardFolders[index].id)
                         return nil
