@@ -377,6 +377,17 @@ struct ContentView: View {
         .onChange(of: maxHistoryCount) { _, newValue in clipboard.truncateHistory(to: newValue) }
         .onChange(of: themePreference) { _, newTheme in applyTheme(newTheme) }
         .onChange(of: viewModel.isEditMode) { _, editMode in 
+            let currentNodes = self.displayNodes
+            var targetId: String? = nil
+            if viewModel.selectedIndex >= 0 && viewModel.selectedIndex < currentNodes.count {
+                let node = currentNodes[viewModel.selectedIndex]
+                if !editMode && !node.isFolder {
+                    targetId = node.parentFolderId != nil ? "folder_\(node.parentFolderId!.uuidString)" : node.id
+                } else {
+                    targetId = node.id
+                }
+            }
+            
             viewModel.selectedItemsForDeletion.removeAll() 
             viewModel.selectionAnchorIndex = nil
             if viewModel.activeTab == "Groups" {
@@ -386,6 +397,15 @@ struct ContentView: View {
                     viewModel.expandedFolderIds.insert(restoredFolderId)
                 } else {
                     viewModel.expandedFolderIds.removeAll()
+                }
+                
+                if let target = targetId {
+                    DispatchQueue.main.async {
+                        let newNodes = self.displayNodes
+                        if let newIdx = newNodes.firstIndex(where: { $0.id == target }) {
+                            viewModel.selectedIndex = newIdx
+                        }
+                    }
                 }
             }
         }

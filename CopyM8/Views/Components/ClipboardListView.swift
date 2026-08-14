@@ -13,6 +13,7 @@ struct ClipboardListView: View {
     @Binding var selectedItemsForDeletion: Set<UUID>
     @Binding var expandedFolderIds: Set<UUID>
     @Binding var editingFolderId: UUID?
+    var onToggleFolder: ((UUID) -> Void)? = nil
     var activeTab: String
     var pasteItem: (Int, PasteFormatType) -> Void
     
@@ -43,14 +44,18 @@ struct ClipboardListView: View {
                                 isChecked: selectedItemsForDeletion.contains(folder.id),
                                 editingFolderId: $editingFolderId,
                                 onTap: {
-                                if !isEditMode {
-                                        withAnimation {
-                                            if expandedFolderIds.contains(folder.id) {
-                                                expandedFolderIds.remove(folder.id)
-                                            } else {
-                                                expandedFolderIds.insert(folder.id)
+                                    if !isEditMode {
+                                        if let onToggleFolder = onToggleFolder {
+                                            onToggleFolder(folder.id)
+                                        } else {
+                                            withAnimation {
+                                                if expandedFolderIds.contains(folder.id) {
+                                                    expandedFolderIds.remove(folder.id)
+                                                } else {
+                                                    expandedFolderIds.insert(folder.id)
+                                                }
+                                                selectedIndex = index
                                             }
-                                            selectedIndex = index
                                         }
                                     } else {
                                         if NSEvent.modifierFlags.contains(.shift), let anchor = selectionAnchorIndex {
