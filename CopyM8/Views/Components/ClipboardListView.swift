@@ -14,6 +14,8 @@ struct ClipboardListView: View {
     @Binding var expandedFolderIds: Set<UUID>
     @Binding var editingFolderId: UUID?
     var onToggleFolder: ((UUID) -> Void)? = nil
+    
+    @State private var lastLayoutChangeTime: Date = .distantPast
     var activeTab: String
     var pasteItem: (Int, PasteFormatType) -> Void
     
@@ -150,15 +152,20 @@ struct ClipboardListView: View {
                 .onChange(of: selectedIndex) { _, newIndex in
                     if newIndex >= 0 && newIndex < displayNodes.count {
                         let targetId = displayNodes[newIndex].id
-                        proxy.scrollTo(targetId, anchor: nil)
+                        if Date().timeIntervalSince(lastLayoutChangeTime) > 0.4 {
+                            withAnimation(.easeOut(duration: 0.15)) {
+                                proxy.scrollTo(targetId, anchor: nil)
+                            }
+                        }
                     }
                 }
                 .onChange(of: displayNodes.count) { _, _ in
+                    lastLayoutChangeTime = Date()
                     // Wait for the .spring animation (0.3s) to fully finish layout changes before re-anchoring
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
                         if selectedIndex >= 0 && selectedIndex < displayNodes.count {
                             let targetId = displayNodes[selectedIndex].id
-                            withAnimation {
+                            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
                                 proxy.scrollTo(targetId, anchor: .center)
                             }
                         }
