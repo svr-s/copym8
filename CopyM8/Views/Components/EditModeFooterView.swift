@@ -54,7 +54,6 @@ struct EditModeFooterView: View {
                         }
                     }
                 } else {
-                } else {
                     if activeTab != "Queue" {
                         HStack(spacing: 8) {
                             GhostHoverButton(
