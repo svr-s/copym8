@@ -51,12 +51,12 @@ extension ContentView {
         
         if viewModel.activeTab == "Queue" {
             var nodes: [DisplayNode] = []
-            for (index, id) in clipboard.queueIDs.enumerated() {
-                if let item = clipboard.history.first(where: { $0.id == id }) {
+            for (index, id) in clipboard.activeQueueIDs.enumerated() {
+                if let item = clipboard.activeHistory.first(where: { $0.id == id }) {
                     let status: QueueStatus
-                    if index < clipboard.queuePlayheadIndex {
+                    if index < clipboard.activeQueuePlayheadIndex {
                         status = .pasted
-                    } else if index == clipboard.queuePlayheadIndex {
+                    } else if index == clipboard.activeQueuePlayheadIndex {
                         status = .next
                     } else {
                         status = .upcoming

@@ -120,6 +120,17 @@ class ClipboardManager: ObservableObject, CloudSyncDelegate {
     @Published var queuePlayheadIndex: Int = 0
     @Published var isQueueRecording: Bool = false
     
+    @Published var remoteQueueIDs: [UUID] = []
+    @Published var remoteQueuePlayheadIndex: Int = 0
+    
+    var activeQueueIDs: [UUID] {
+        return selectedDevice == "Local (This Mac)" ? queueIDs : remoteQueueIDs
+    }
+    
+    var activeQueuePlayheadIndex: Int {
+        return selectedDevice == "Local (This Mac)" ? queuePlayheadIndex : remoteQueuePlayheadIndex
+    }
+    
     init() {
         CloudSyncService.shared.delegate = self
         loadHistory()
@@ -162,6 +173,18 @@ class ClipboardManager: ObservableObject, CloudSyncDelegate {
         UserDefaults.standard.set(stringIDs, forKey: "savedQueueIDs")
         UserDefaults.standard.set(queuePlayheadIndex, forKey: "savedQueuePlayheadIndex")
         UserDefaults.standard.synchronize()
+        
+        // Sync to Cloud Folder
+        if let syncPath = UserDefaults.standard.string(forKey: "syncFolderPath"), !syncPath.isEmpty {
+            let deviceName = UserDefaults.standard.string(forKey: "syncDeviceName") ?? (Host.current().localizedName ?? "My Mac")
+            let safeName = deviceName.replacingOccurrences(of: "/", with: "-")
+            let syncURL = URL(fileURLWithPath: syncPath).appendingPathComponent("\(safeName)_queue.json")
+            
+            let state = QueueState(queueIDs: queueIDs, queuePlayheadIndex: queuePlayheadIndex)
+            if let syncEncoded = try? JSONEncoder().encode(state) {
+                try? syncEncoded.write(to: syncURL, options: .atomic)
+            }
+        }
     }
     
     private func loadQueueState() {

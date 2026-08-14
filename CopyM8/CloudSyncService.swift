@@ -13,6 +13,16 @@ protocol CloudSyncDelegate: AnyObject {
     var remoteHistory: [ClipboardItem] { get set }
     /// The folders loaded from a selected remote device.
     var remoteFolders: [ClipboardFolder] { get set }
+    /// The queue IDs loaded from a selected remote device.
+    var remoteQueueIDs: [UUID] { get set }
+    /// The queue playhead index loaded from a selected remote device.
+    var remoteQueuePlayheadIndex: Int { get set }
+}
+
+/// A lightweight struct to sync queue state across devices.
+struct QueueState: Codable {
+    let queueIDs: [UUID]
+    let queuePlayheadIndex: Int
 }
 
 /// `CloudSyncService` orchestrates the iCloud syncing mechanism.
@@ -133,9 +143,20 @@ class CloudSyncService {
             let currentCloudItems = delegate.history.filter { $0.folderId == self.cloudFolderId }
             filtered.append(contentsOf: currentCloudItems)
             
+            let queueUrl = URL(fileURLWithPath: syncPath).appendingPathComponent("\(deviceName)_queue.json")
+            var fetchedQueueIDs: [UUID] = []
+            var fetchedQueuePlayhead: Int = 0
+            if let queueData = try? Data(contentsOf: queueUrl),
+               let queueState = try? JSONDecoder().decode(QueueState.self, from: queueData) {
+                fetchedQueueIDs = queueState.queueIDs
+                fetchedQueuePlayhead = queueState.queuePlayheadIndex
+            }
+            
             DispatchQueue.main.async {
                 delegate.remoteHistory = filtered
                 delegate.remoteFolders = fetchedFolders
+                delegate.remoteQueueIDs = fetchedQueueIDs
+                delegate.remoteQueuePlayheadIndex = fetchedQueuePlayhead
             }
         }
     }
@@ -149,10 +170,12 @@ class CloudSyncService {
         let entriesURL = url.appendingPathComponent("\(deviceName)_entries.json")
         let foldersURL = url.appendingPathComponent("\(deviceName)_folders.json")
         let trashURL = url.appendingPathComponent("\(deviceName)_trash.json")
+        let queueURL = url.appendingPathComponent("\(deviceName)_queue.json")
         
         try? FileManager.default.removeItem(at: entriesURL)
         try? FileManager.default.removeItem(at: foldersURL)
         try? FileManager.default.removeItem(at: trashURL)
+        try? FileManager.default.removeItem(at: queueURL)
         
         pollSyncFolder()
     }
@@ -166,10 +189,12 @@ class CloudSyncService {
         let entriesURL = url.appendingPathComponent("\(localDeviceName)_entries.json")
         let foldersURL = url.appendingPathComponent("\(localDeviceName)_folders.json")
         let trashURL = url.appendingPathComponent("\(localDeviceName)_trash.json")
+        let queueURL = url.appendingPathComponent("\(localDeviceName)_queue.json")
         
         try? FileManager.default.removeItem(at: entriesURL)
         try? FileManager.default.removeItem(at: foldersURL)
         try? FileManager.default.removeItem(at: trashURL)
+        try? FileManager.default.removeItem(at: queueURL)
         
         UserDefaults.standard.removeObject(forKey: "syncFolderPath")
         UserDefaults.standard.removeObject(forKey: "syncDeviceName")

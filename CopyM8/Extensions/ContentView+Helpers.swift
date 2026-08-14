@@ -28,9 +28,7 @@ extension ContentView {
     /// Core tabs (All, Pinned, Groups) are always visible. Content-specific tabs are toggled based on Settings.
     /// - Returns: An array of strings representing the visible tab names.
     func getVisibleTabs() -> [String] {
-        let tabs = clipboard.selectedDevice == "Local (This Mac)" 
-            ? ["Queue", "All", "Pinned", "Groups", "Text", "Links", "Images", "Files"]
-            : ["All", "Pinned", "Groups", "Text", "Links", "Images", "Files"]
+        let tabs = ["Queue", "All", "Pinned", "Groups", "Text", "Links", "Images", "Files"]
         var visible = tabs.filter { t in
             switch t {
             case "Queue", "All", "Pinned", "Groups": return true

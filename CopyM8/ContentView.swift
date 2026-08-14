@@ -150,8 +150,8 @@ struct ContentView: View {
                         currentDevice: clipboard.selectedDevice,
                         onSelect: { selected in
                             clipboard.selectedDevice = selected
-                            if selected != "Local (This Mac)" && (viewModel.activeTab == "Trash" || viewModel.activeTab == "Queue") {
-                                viewModel.activeTab = (viewModel.previousTab == "Trash" || viewModel.previousTab == "Queue") ? "All" : viewModel.previousTab
+                            if selected != "Local (This Mac)" && viewModel.activeTab == "Trash" {
+                                viewModel.activeTab = viewModel.previousTab == "Trash" ? "All" : viewModel.previousTab
                             }
                             viewModel.showingDeviceSwitcher = false
                         },
