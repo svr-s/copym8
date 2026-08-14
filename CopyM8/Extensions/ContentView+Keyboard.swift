@@ -774,9 +774,11 @@ extension ContentView {
                 }
                 if isSearchFocused { isSearchFocused = false }
                 else if viewModel.isReorderMode {
-                    clipboard.history = viewModel.reorderBackupHistory
-                    clipboard.folders = viewModel.reorderBackupFolders
-                    clipboard.isReordering = false
+                    if viewModel.reorderTarget != .queue {
+                        clipboard.history = viewModel.reorderBackupHistory
+                        clipboard.folders = viewModel.reorderBackupFolders
+                        clipboard.isReordering = false
+                    }
                     viewModel.isReorderMode = false
                     viewModel.selectedItemsForDeletion.removeAll()
                 }
