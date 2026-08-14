@@ -151,6 +151,10 @@ struct ClipboardListView: View {
                     if newIndex >= 0 && newIndex < displayNodes.count {
                         let targetId = displayNodes[newIndex].id
                         proxy.scrollTo(targetId, anchor: nil)
+                        // Allow SwiftUI to finish rendering layout changes (e.g., massive folder expansions) before attempting to scroll again
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            proxy.scrollTo(targetId, anchor: nil)
+                        }
                     }
                 }
             }
