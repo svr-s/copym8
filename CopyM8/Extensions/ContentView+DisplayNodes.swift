@@ -44,6 +44,14 @@ extension ContentView {
                     nodes.append(DisplayNode(id: "item_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: nil, queueStatus: getQueueStatus(for: item.id)))
                 }
                 return nodes
+            case .queue:
+                var nodes: [DisplayNode] = []
+                for (index, id) in clipboard.activeQueueIDs.enumerated() {
+                    if let item = clipboard.history.first(where: { $0.id == id && !($0.isDeleted ?? false) }) {
+                        nodes.append(DisplayNode(id: "item_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: nil, queueStatus: getQueueStatus(for: item.id)))
+                    }
+                }
+                return nodes
             case .none:
                 return []
             }

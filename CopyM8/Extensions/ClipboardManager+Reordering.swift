@@ -206,6 +206,9 @@ extension ClipboardManager {
             }
             saveFolders()
             
+        case .queue:
+            break
+            
         case .none:
             break
         }

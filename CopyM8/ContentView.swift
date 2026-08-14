@@ -42,6 +42,7 @@ enum ReorderTarget: Equatable {
     case pinned
     case folders
     case items(folderId: UUID)
+    case queue
 }
 
 struct ContentView: View {

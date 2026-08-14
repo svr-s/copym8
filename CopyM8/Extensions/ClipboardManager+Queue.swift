@@ -44,6 +44,34 @@ extension ClipboardManager {
         saveQueueState()
     }
     
+    /// Shifts the given items up or down within the queue sequence.
+    func moveQueueItems(up: Bool, ids: [UUID]) {
+        if up {
+            for id in ids {
+                if let index = queueIDs.firstIndex(of: id), index > 0 {
+                    let prevId = queueIDs[index - 1]
+                    if !ids.contains(prevId) {
+                        queueIDs.swapAt(index, index - 1)
+                        if queuePlayheadIndex == index { queuePlayheadIndex -= 1 }
+                        else if queuePlayheadIndex == index - 1 { queuePlayheadIndex += 1 }
+                    }
+                }
+            }
+        } else {
+            for id in ids.reversed() {
+                if let index = queueIDs.firstIndex(of: id), index < queueIDs.count - 1 {
+                    let nextId = queueIDs[index + 1]
+                    if !ids.contains(nextId) {
+                        queueIDs.swapAt(index, index + 1)
+                        if queuePlayheadIndex == index { queuePlayheadIndex += 1 }
+                        else if queuePlayheadIndex == index + 1 { queuePlayheadIndex -= 1 }
+                    }
+                }
+            }
+        }
+        // Do not call saveQueueState() here yet, let it be saved when user explicitly presses "Save Queue Sequence".
+    }
+    
     /// Pastes the next item in the queue.
     func pasteNextInQueue() {
         guard !queueIDs.isEmpty else { return }

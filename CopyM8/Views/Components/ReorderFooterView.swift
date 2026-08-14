@@ -14,9 +14,11 @@ struct ReorderFooterView: View {
     
     var body: some View {
         HStack {
-            Spacer()
-            
-            if reorderTarget != .folders {
+            if reorderTarget == .queue {
+                Text("Edit Queue Sequence")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.primary.opacity(0.8))
+            } else if reorderTarget == .pinned || (reorderTarget != .folders && { if case .items = reorderTarget { return true } else { return false } }()) {
                 HStack(spacing: 6) {
                     Text("Freeze Top ⌃F")
                         .font(.system(size: 11, weight: .medium))
@@ -58,11 +60,11 @@ struct ReorderFooterView: View {
             
             GhostHoverButton(
                 icon: "checkmark.circle.fill",
-                text: "Save",
+                text: reorderTarget == .queue ? "Save Queue Sequence" : "Save",
                 shortcut: "↵",
                 color: .blue,
                 isDisabled: false,
-                maxWidth: footerWidth / 3,
+                maxWidth: reorderTarget == .queue ? footerWidth / 2.2 : footerWidth / 3,
                 action: saveReorder
             )
         }
@@ -79,20 +81,28 @@ struct ReorderFooterView: View {
     }
     
     private func cancelReorder() {
-        clipboard.history = reorderBackupHistory
-        clipboard.folders = reorderBackupFolders
-        clipboard.isReordering = false
+        if reorderTarget != .queue {
+            clipboard.history = reorderBackupHistory
+            clipboard.folders = reorderBackupFolders
+            clipboard.isReordering = false
+        }
         isReorderMode = false
     }
     
     private func saveReorder() {
-        let freezeLimit = Int(reorderFreezeLimit) ?? 0
+        if reorderTarget == .queue {
+            clipboard.saveQueueState()
+        } else {
+            let freezeLimit = Int(reorderFreezeLimit) ?? 0
+            clipboard.applyReorder(target: reorderTarget, freezeLimit: freezeLimit)
+        }
         
-        clipboard.applyReorder(target: reorderTarget, freezeLimit: freezeLimit)
         selectedItemsForDeletion.removeAll()
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            clipboard.isReordering = false
+            if reorderTarget != .queue {
+                clipboard.isReordering = false
+            }
             isReorderMode = false
         }
     }

@@ -108,36 +108,45 @@ extension ContentView {
                     }
                     return event
                 case 15: // R
-                    if viewModel.activeTab == "Pinned" || viewModel.activeTab == "Groups" {
+                    if viewModel.activeTab == "Pinned" || viewModel.activeTab == "Groups" || viewModel.activeTab == "Queue" {
                         if viewModel.isReorderMode {
                             viewModel.isReorderMode = false
+                            if viewModel.reorderTarget == .queue {
+                                clipboard.saveQueueState()
+                            }
                         } else {
                             viewModel.isEditMode = false
-                            clipboard.isReordering = true
                             viewModel.isReorderMode = true
-                            viewModel.reorderBackupHistory = clipboard.history
-                            viewModel.reorderBackupFolders = clipboard.folders
                             
-                            if viewModel.activeTab == "Pinned" {
-                                viewModel.reorderTarget = .pinned
-                                let pinned = clipboard.history.filter { $0.isPinned && $0.folderId == nil }
-                                let frozenCount = pinned.filter { $0.orderIndex > 0 }.count
-                                viewModel.reorderFreezeLimit = "\(frozenCount)"
-                            } else if viewModel.activeTab == "Groups" {
-                                if viewModel.selectedIndex >= 0 && viewModel.selectedIndex < displayNodesLocal.count {
-                                    let node = displayNodesLocal[viewModel.selectedIndex]
-                                    if node.isFolder {
+                            if viewModel.activeTab == "Queue" {
+                                viewModel.reorderTarget = .queue
+                                // Do not set clipboard.isReordering = true for Queue to avoid modifying db/orderIndex
+                            } else {
+                                clipboard.isReordering = true
+                                viewModel.reorderBackupHistory = clipboard.history
+                                viewModel.reorderBackupFolders = clipboard.folders
+                                
+                                if viewModel.activeTab == "Pinned" {
+                                    viewModel.reorderTarget = .pinned
+                                    let pinned = clipboard.history.filter { $0.isPinned && $0.folderId == nil }
+                                    let frozenCount = pinned.filter { $0.orderIndex > 0 }.count
+                                    viewModel.reorderFreezeLimit = "\(frozenCount)"
+                                } else if viewModel.activeTab == "Groups" {
+                                    if viewModel.selectedIndex >= 0 && viewModel.selectedIndex < displayNodesLocal.count {
+                                        let node = displayNodesLocal[viewModel.selectedIndex]
+                                        if node.isFolder {
+                                            viewModel.reorderTarget = .folders
+                                            viewModel.reorderFreezeLimit = "0"
+                                        } else if let fid = node.parentFolderId {
+                                            viewModel.reorderTarget = .items(folderId: fid)
+                                            let items = clipboard.history.filter { $0.folderId == fid }
+                                            let frozenCount = items.filter { $0.orderIndex > 0 }.count
+                                            viewModel.reorderFreezeLimit = "\(frozenCount)"
+                                        }
+                                    } else {
                                         viewModel.reorderTarget = .folders
                                         viewModel.reorderFreezeLimit = "0"
-                                    } else if let fid = node.parentFolderId {
-                                        viewModel.reorderTarget = .items(folderId: fid)
-                                        let items = clipboard.history.filter { $0.folderId == fid }
-                                        let frozenCount = items.filter { $0.orderIndex > 0 }.count
-                                        viewModel.reorderFreezeLimit = "\(frozenCount)"
                                     }
-                                } else {
-                                    viewModel.reorderTarget = .folders
-                                    viewModel.reorderFreezeLimit = "0"
                                 }
                             }
                             viewModel.selectedIndex = 0
@@ -508,11 +517,10 @@ extension ContentView {
                     viewModel.expandedFolderIds.removeAll()
                     return nil
                 }
-                if viewModel.isReorderMode && event.modifierFlags.contains(.command) && (viewModel.activeTab == "Pinned" || viewModel.activeTab == "Groups") {
+                if viewModel.isReorderMode && event.modifierFlags.contains(.command) && (viewModel.activeTab == "Pinned" || viewModel.activeTab == "Groups" || viewModel.activeTab == "Queue") {
                     var idsToMove: [(index: Int, id: UUID, isFolder: Bool)] = []
                     if viewModel.selectedItemsForDeletion.isEmpty {
                         return nil
-
                     } else {
                         for (i, node) in displayNodesLocal.enumerated() {
                             if node.isFolder, let fid = node.folder?.id, viewModel.selectedItemsForDeletion.contains(fid) {
@@ -523,10 +531,16 @@ extension ContentView {
                         }
                     }
                     
-                    let folderIds = idsToMove.filter { $0.isFolder }.map { $0.id }
-                    let itemIds = idsToMove.filter { !$0.isFolder }.map { $0.id }
-                    if !folderIds.isEmpty { clipboard.moveFolders(up: true, ids: folderIds) }
-                    if !itemIds.isEmpty { clipboard.moveItems(up: true, ids: itemIds) }
+                    if viewModel.reorderTarget == .queue {
+                        let itemIds = idsToMove.filter { !$0.isFolder }.map { $0.id }
+                        if !itemIds.isEmpty { clipboard.moveQueueItems(up: true, ids: itemIds) }
+                    } else {
+                        let folderIds = idsToMove.filter { $0.isFolder }.map { $0.id }
+                        let itemIds = idsToMove.filter { !$0.isFolder }.map { $0.id }
+                        if !folderIds.isEmpty { clipboard.moveFolders(up: true, ids: folderIds) }
+                        if !itemIds.isEmpty { clipboard.moveItems(up: true, ids: itemIds) }
+                    }
+                    
                     if viewModel.selectedIndex > 0 { viewModel.selectedIndex -= 1 }
                     return nil
                 }
@@ -557,11 +571,10 @@ extension ContentView {
                     viewModel.expandedFolderIds = Set(clipboard.folders.map { $0.id })
                     return nil
                 }
-                if viewModel.isReorderMode && event.modifierFlags.contains(.command) && (viewModel.activeTab == "Pinned" || viewModel.activeTab == "Groups") {
+                if viewModel.isReorderMode && event.modifierFlags.contains(.command) && (viewModel.activeTab == "Pinned" || viewModel.activeTab == "Groups" || viewModel.activeTab == "Queue") {
                     var idsToMove: [(index: Int, id: UUID, isFolder: Bool)] = []
                     if viewModel.selectedItemsForDeletion.isEmpty {
                         return nil
-
                     } else {
                         for (i, node) in displayNodesLocal.enumerated() {
                             if node.isFolder, let fid = node.folder?.id, viewModel.selectedItemsForDeletion.contains(fid) {
@@ -572,10 +585,16 @@ extension ContentView {
                         }
                     }
                     
-                    let folderIds = idsToMove.filter { $0.isFolder }.map { $0.id }
-                    let itemIds = idsToMove.filter { !$0.isFolder }.map { $0.id }
-                    if !folderIds.isEmpty { clipboard.moveFolders(up: false, ids: folderIds) }
-                    if !itemIds.isEmpty { clipboard.moveItems(up: false, ids: itemIds) }
+                    if viewModel.reorderTarget == .queue {
+                        let itemIds = idsToMove.filter { !$0.isFolder }.map { $0.id }
+                        if !itemIds.isEmpty { clipboard.moveQueueItems(up: false, ids: itemIds) }
+                    } else {
+                        let folderIds = idsToMove.filter { $0.isFolder }.map { $0.id }
+                        let itemIds = idsToMove.filter { !$0.isFolder }.map { $0.id }
+                        if !folderIds.isEmpty { clipboard.moveFolders(up: false, ids: folderIds) }
+                        if !itemIds.isEmpty { clipboard.moveItems(up: false, ids: itemIds) }
+                    }
+                    
                     if viewModel.selectedIndex < displayNodesLocal.count - 1 { viewModel.selectedIndex += 1 }
                     return nil
                 }
