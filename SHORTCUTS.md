@@ -63,7 +63,7 @@ Here is a comprehensive list of all keyboard shortcuts available in CopyM8, grou
 | **Multi-Select Range** | `Shift + Up/Down` | Highlights a continuous range of items in Edit Mode. |
 | **Toggle Selection** | `Space` | Selects/deselects the highlighted item. If a range is highlighted with Shift, toggles the entire range! |
 | **Select All in Tab** | `Cmd + A` | Selects or deselects all visible items in the current tab. |
-| **Unpin / Ungroup** | `Cmd + U` | Unpins items (Pinned tab) or triggers the Ungroup modal (Groups tab) for selected items. |
+| **Ungroup Item(s)** | `Cmd + U` | Triggers the Ungroup modal for selected grouped items (Groups tab only). |
 | **Reorder Item/Group** | `Cmd + Up/Down Arrow` | Dedicated Reorder Mode shortcut: Moves the selected item (or group) up or down in the list. |
 | **Focus Freeze Limit** | `Control + F` | While in Reorder Mode, focuses the "Freeze Top Rows" field. |
 | **Change Freeze Limit** | `Up/Down Arrow` | While the Freeze Limit field is focused, instantly increments or decrements the freeze row limit. |

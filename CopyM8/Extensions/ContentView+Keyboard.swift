@@ -410,16 +410,21 @@ extension ContentView {
                     if viewModel.activeTab == "Trash" { return nil }
                     if viewModel.isEditMode {
                         if viewModel.selectedItemsForDeletion.isEmpty { return nil }
-                        if viewModel.activeTab != "Pinned" {
-                            for id in viewModel.selectedItemsForDeletion {
-                                if let idx = clipboard.history.firstIndex(where: { $0.id == id }) {
-                                    clipboard.history[idx].isPinned = true
+                        
+                        let allPinned = viewModel.selectedItemsForDeletion.allSatisfy { id in
+                            clipboard.history.first(where: { $0.id == id })?.isPinned == true
+                        }
+                        
+                        for id in viewModel.selectedItemsForDeletion {
+                            if let idx = clipboard.history.firstIndex(where: { $0.id == id }) {
+                                clipboard.history[idx].isPinned = !allPinned
+                                if !allPinned {
                                     clipboard.setFolderId(for: [id], folderId: nil)
                                 }
                             }
-                            viewModel.selectedItemsForDeletion.removeAll()
-                            viewModel.isEditMode = false
                         }
+                        viewModel.selectedItemsForDeletion.removeAll()
+                        viewModel.isEditMode = false
                     } else if viewModel.selectedIndex >= 0 && viewModel.selectedIndex < displayNodesLocal.count {
                         if let id = displayNodesLocal[viewModel.selectedIndex].item?.id { clipboard.togglePin(for: id) }
                     }
@@ -448,15 +453,7 @@ extension ContentView {
                     if viewModel.activeTab == "Trash" { return nil }
                     if viewModel.isEditMode {
                         if viewModel.selectedItemsForDeletion.isEmpty { return nil }
-                        if viewModel.activeTab == "Pinned" {
-                            for id in viewModel.selectedItemsForDeletion {
-                                if let idx = clipboard.history.firstIndex(where: { $0.id == id }) {
-                                    clipboard.history[idx].isPinned = false
-                                }
-                            }
-                            viewModel.selectedItemsForDeletion.removeAll()
-                            viewModel.isEditMode = false
-                        } else if viewModel.activeTab == "Groups" {
+                        if viewModel.activeTab == "Groups" {
                             let hasGroupedItem = clipboard.history.contains { item in viewModel.selectedItemsForDeletion.contains(item.id) && item.folderId != nil }
                             if hasGroupedItem {
                                 viewModel.showingUngroupAlert = true
