@@ -151,9 +151,17 @@ struct ClipboardListView: View {
                     if newIndex >= 0 && newIndex < displayNodes.count {
                         let targetId = displayNodes[newIndex].id
                         proxy.scrollTo(targetId, anchor: nil)
-                        // Allow SwiftUI to finish rendering layout changes (e.g., massive folder expansions) before attempting to scroll again
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            proxy.scrollTo(targetId, anchor: nil)
+                    }
+                }
+                .onChange(of: displayNodes.count) { _, _ in
+                    let currentIdx = selectedIndex
+                    // Wait for the .spring animation (0.3s) to fully finish layout changes before re-anchoring
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                        if currentIdx == selectedIndex && currentIdx >= 0 && currentIdx < displayNodes.count {
+                            let targetId = displayNodes[currentIdx].id
+                            withAnimation {
+                                proxy.scrollTo(targetId, anchor: .center)
+                            }
                         }
                     }
                 }
