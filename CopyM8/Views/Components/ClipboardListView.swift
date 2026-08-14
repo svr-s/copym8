@@ -154,11 +154,10 @@ struct ClipboardListView: View {
                     }
                 }
                 .onChange(of: displayNodes.count) { _, _ in
-                    let currentIdx = selectedIndex
                     // Wait for the .spring animation (0.3s) to fully finish layout changes before re-anchoring
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                        if currentIdx == selectedIndex && currentIdx >= 0 && currentIdx < displayNodes.count {
-                            let targetId = displayNodes[currentIdx].id
+                        if selectedIndex >= 0 && selectedIndex < displayNodes.count {
+                            let targetId = displayNodes[selectedIndex].id
                             withAnimation {
                                 proxy.scrollTo(targetId, anchor: .center)
                             }
