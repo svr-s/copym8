@@ -93,7 +93,7 @@ struct ContentView: View {
         Group {
             if let payload = viewModel.itemToAssignGroup {
                 ZStack {
-                    Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
+                    Color.black.opacity(0.5).edgesIgnoringSafeArea(.all).cornerRadius(12)
                         .onTapGesture { viewModel.itemToAssignGroup = nil }
                     GroupAssignmentView(
                         itemIds: payload.itemIds, 
@@ -110,7 +110,7 @@ struct ContentView: View {
                 }
             } else if viewModel.showingUngroupAlert {
                 ZStack {
-                    Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
+                    Color.black.opacity(0.5).edgesIgnoringSafeArea(.all).cornerRadius(12)
                         .onTapGesture { viewModel.showingUngroupAlert = false }
                     ActionConfirmationModalView(
                         title: "Ungroup selected items?",
@@ -141,7 +141,7 @@ struct ContentView: View {
                 }
             } else if viewModel.showingDeviceSwitcher {
                 ZStack {
-                    Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
+                    Color.black.opacity(0.5).edgesIgnoringSafeArea(.all).cornerRadius(12)
                         .onTapGesture { viewModel.showingDeviceSwitcher = false }
                     
                     let devices = ["Local (This Mac)"] + clipboard.availableDevices.filter { $0 != "Local (This Mac)" }
@@ -165,7 +165,7 @@ struct ContentView: View {
                 }
             } else if viewModel.showingEmptyTrashAlert {
                 ZStack {
-                    Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
+                    Color.black.opacity(0.5).edgesIgnoringSafeArea(.all).cornerRadius(12)
                         .onTapGesture { viewModel.showingEmptyTrashAlert = false }
                     let trashCount = clipboard.history.filter { ($0.isDeleted ?? false) }.count
                     ActionConfirmationModalView(
@@ -189,7 +189,7 @@ struct ContentView: View {
                 }
             } else if viewModel.showingDeleteSelectedAlert {
                 ZStack {
-                    Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
+                    Color.black.opacity(0.5).edgesIgnoringSafeArea(.all).cornerRadius(12)
                         .onTapGesture { viewModel.showingDeleteSelectedAlert = false }
                     let count = viewModel.selectedItemsForDeletion.count
                     ActionConfirmationModalView(
@@ -220,7 +220,7 @@ struct ContentView: View {
                 }
             } else if viewModel.showingFolderDeleteAlert {
                 ZStack {
-                    Color.black.opacity(0.5).edgesIgnoringSafeArea(.all)
+                    Color.black.opacity(0.5).edgesIgnoringSafeArea(.all).cornerRadius(12)
                         .onTapGesture { viewModel.showingFolderDeleteAlert = false }
                     let folderIds = viewModel.selectedItemsForDeletion.filter { id in clipboard.folders.contains(where: { $0.id == id }) }
                     ActionConfirmationModalView(
