@@ -54,76 +54,90 @@ struct EditModeFooterView: View {
                         }
                     }
                 } else {
-                    HStack(spacing: 8) {
-                        GhostHoverButton(
-                            icon: "folder.fill.badge.plus",
-                            text: "Group",
-                            shortcut: "⌘G",
-                            color: .blue,
-                            isDisabled: !hasEntrySelected
-                        ) {
-                            itemToAssignGroup = GroupAssignmentPayload(itemIds: selectedItemsForDeletion) {
+                } else {
+                    if activeTab != "Queue" {
+                        HStack(spacing: 8) {
+                            GhostHoverButton(
+                                icon: "folder.fill.badge.plus",
+                                text: "Group",
+                                shortcut: "⌘G",
+                                color: .blue,
+                                isDisabled: !hasEntrySelected
+                            ) {
+                                itemToAssignGroup = GroupAssignmentPayload(itemIds: selectedItemsForDeletion) {
+                                    selectedItemsForDeletion.removeAll()
+                                    isEditMode = false
+                                }
+                            }
+                            
+                            let allPinned = selectedItemsForDeletion.isEmpty 
+                                ? (activeTab == "Pinned") 
+                                : selectedItemsForDeletion.allSatisfy { id in clipboard.history.first(where: { $0.id == id })?.isPinned == true }
+                            
+                            GhostHoverButton(
+                                icon: allPinned ? "pin.slash.fill" : "pin.fill",
+                                text: allPinned ? "Unpin" : "Pin",
+                                shortcut: "⌘P",
+                                color: .blue,
+                                isDisabled: !hasEntrySelected
+                            ) {
+                                for id in selectedItemsForDeletion {
+                                    if let idx = clipboard.history.firstIndex(where: { $0.id == id }) {
+                                        clipboard.history[idx].isPinned = !allPinned
+                                        if !allPinned {
+                                            clipboard.setFolderId(for: [id], folderId: nil)
+                                        }
+                                    }
+                                }
                                 selectedItemsForDeletion.removeAll()
                                 isEditMode = false
                             }
                         }
-                        
-                        let allPinned: Bool
-                        if selectedItemsForDeletion.isEmpty {
-                            allPinned = (activeTab == "Pinned")
-                        } else {
-                            allPinned = selectedItemsForDeletion.allSatisfy { id in
-                                clipboard.history.first(where: { $0.id == id })?.isPinned == true
-                            }
-                        }
-                        
-                        GhostHoverButton(
-                            icon: allPinned ? "pin.slash.fill" : "pin.fill",
-                            text: allPinned ? "Unpin" : "Pin",
-                            shortcut: "⌘P",
-                            color: .blue,
-                            isDisabled: !hasEntrySelected
-                        ) {
-                            for id in selectedItemsForDeletion {
-                                if let idx = clipboard.history.firstIndex(where: { $0.id == id }) {
-                                    clipboard.history[idx].isPinned = !allPinned
-                                    if !allPinned {
-                                        clipboard.setFolderId(for: [id], folderId: nil)
-                                    }
-                                }
-                            }
-                            selectedItemsForDeletion.removeAll()
-                            isEditMode = false
-                        }
                     }
                     
                     HStack(spacing: 8) {
-                        let hasGroupedItem = clipboard.history.contains { item in selectedItemsForDeletion.contains(item.id) && item.folderId != nil }
-                        if activeTab == "Groups" && hasGroupedItem {
+                        if activeTab == "Queue" {
                             GhostHoverButton(
-                                icon: "folder.badge.minus",
-                                text: "Ungroup",
-                                shortcut: "⌘U",
-                                color: .blue,
-                                isDisabled: !hasEntrySelected
+                                icon: "minus.circle.fill",
+                                text: "Remove",
+                                shortcut: "⌫",
+                                color: .orange,
+                                isDisabled: selectedItemsForDeletion.isEmpty
                             ) {
-                                showingUngroupAlert = true
+                                withAnimation {
+                                    clipboard.removeFromQueue(ids: Array(selectedItemsForDeletion))
+                                }
+                                selectedItemsForDeletion.removeAll()
+                                isEditMode = false
                             }
-                        }
-                        
-                        GhostHoverButton(
-                            icon: "trash.fill",
-                            text: "Delete",
-                            shortcut: "⌫",
-                            color: .red,
-                            isDisabled: selectedItemsForDeletion.isEmpty
-                        ) {
-                            if !selectedItemsForDeletion.isEmpty {
-                                let hasFolder = clipboard.folders.contains(where: { selectedItemsForDeletion.contains($0.id) })
-                                if hasFolder {
-                                    showingFolderDeleteAlert = true
-                                } else {
-                                    showingDeleteSelectedAlert = true
+                        } else {
+                            let hasGroupedItem = clipboard.history.contains { item in selectedItemsForDeletion.contains(item.id) && item.folderId != nil }
+                            if activeTab == "Groups" && hasGroupedItem {
+                                GhostHoverButton(
+                                    icon: "folder.badge.minus",
+                                    text: "Ungroup",
+                                    shortcut: "⌘U",
+                                    color: .blue,
+                                    isDisabled: !hasEntrySelected
+                                ) {
+                                    showingUngroupAlert = true
+                                }
+                            }
+                            
+                            GhostHoverButton(
+                                icon: "trash.fill",
+                                text: "Delete",
+                                shortcut: "⌫",
+                                color: .red,
+                                isDisabled: selectedItemsForDeletion.isEmpty
+                            ) {
+                                if !selectedItemsForDeletion.isEmpty {
+                                    let hasFolder = clipboard.folders.contains(where: { selectedItemsForDeletion.contains($0.id) })
+                                    if hasFolder {
+                                        showingFolderDeleteAlert = true
+                                    } else {
+                                        showingDeleteSelectedAlert = true
+                                    }
                                 }
                             }
                         }

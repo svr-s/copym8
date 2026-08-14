@@ -368,31 +368,41 @@ extension ContentView {
                 
 
                 if viewModel.isEditMode {
-                    let validDeletions = viewModel.selectedItemsForDeletion.filter { $0 != cloudFolderId && $0 != restoredFolderId }
-                    if !validDeletions.isEmpty {
-                        if isCmd {
-                            // Hard Delete (with popup)
-                            viewModel.selectedItemsForDeletion = validDeletions
-                            let hasFoldersSelected = validDeletions.contains { id in clipboard.folders.contains(where: { $0.id == id }) }
-                            if hasFoldersSelected {
-                                viewModel.showingFolderDeleteAlert = true
-                            } else {
-                                viewModel.showingDeleteSelectedAlert = true
+                    if viewModel.activeTab == "Queue" {
+                        if !viewModel.selectedItemsForDeletion.isEmpty {
+                            withAnimation {
+                                clipboard.removeFromQueue(ids: Array(viewModel.selectedItemsForDeletion))
                             }
-                        } else {
-                            // Soft Delete (no popup)
-                            let folderIds = validDeletions.filter { id in clipboard.folders.contains(where: { $0.id == id }) }
-                            let independentItemIds = validDeletions.filter { !folderIds.contains($0) }
-                            
-                            clipboard.deleteItems(where: { item in
-                                if let fId = item.folderId { return folderIds.contains(fId) }
-                                return false
-                            })
-                            clipboard.folders.removeAll { folderIds.contains($0.id) }
-                            clipboard.deleteItems(where: { independentItemIds.contains($0.id) })
-                            
                             viewModel.selectedItemsForDeletion.removeAll()
                             viewModel.isEditMode = false
+                        }
+                    } else {
+                        let validDeletions = viewModel.selectedItemsForDeletion.filter { $0 != cloudFolderId && $0 != restoredFolderId }
+                        if !validDeletions.isEmpty {
+                            if isCmd {
+                                // Hard Delete (with popup)
+                                viewModel.selectedItemsForDeletion = validDeletions
+                                let hasFoldersSelected = validDeletions.contains { id in clipboard.folders.contains(where: { $0.id == id }) }
+                                if hasFoldersSelected {
+                                    viewModel.showingFolderDeleteAlert = true
+                                } else {
+                                    viewModel.showingDeleteSelectedAlert = true
+                                }
+                            } else {
+                                // Soft Delete (no popup)
+                                let folderIds = validDeletions.filter { id in clipboard.folders.contains(where: { $0.id == id }) }
+                                let independentItemIds = validDeletions.filter { !folderIds.contains($0) }
+                                
+                                clipboard.deleteItems(where: { item in
+                                    if let fId = item.folderId { return folderIds.contains(fId) }
+                                    return false
+                                })
+                                clipboard.folders.removeAll { folderIds.contains($0.id) }
+                                clipboard.deleteItems(where: { independentItemIds.contains($0.id) })
+                                
+                                viewModel.selectedItemsForDeletion.removeAll()
+                                viewModel.isEditMode = false
+                            }
                         }
                     }
                 } else if viewModel.selectedIndex >= 0 && viewModel.selectedIndex < displayNodesLocal.count {
@@ -409,12 +419,17 @@ extension ContentView {
                             }
                         }
                     } else if let id = node.item?.id {
-                        if isCmd {
-                            viewModel.selectedItemsForDeletion = [id]
-                            viewModel.showingDeleteSelectedAlert = true
-                        } else {
+                        if viewModel.activeTab == "Queue" {
                             if viewModel.selectedIndex >= displayNodesLocal.count - 1 && viewModel.selectedIndex > 0 { viewModel.selectedIndex -= 1 }
-                            withAnimation { clipboard.deleteItems(where: { $0.id == id }) }
+                            withAnimation { clipboard.removeFromQueue(ids: [id]) }
+                        } else {
+                            if isCmd {
+                                viewModel.selectedItemsForDeletion = [id]
+                                viewModel.showingDeleteSelectedAlert = true
+                            } else {
+                                if viewModel.selectedIndex >= displayNodesLocal.count - 1 && viewModel.selectedIndex > 0 { viewModel.selectedIndex -= 1 }
+                                withAnimation { clipboard.deleteItems(where: { $0.id == id }) }
+                            }
                         }
                     }
                 }
