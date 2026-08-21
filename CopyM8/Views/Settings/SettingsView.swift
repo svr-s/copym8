@@ -187,6 +187,7 @@ struct SettingsView: View {
         .onAppear {
             setupKeyboardMonitor()
             draftHistoryCount = maxHistoryCount
+            draftMaxBackupsCount = maxBackupsCount
             
             if let saved = UserDefaults.standard.stringArray(forKey: "blacklistedApps") {
                 blacklistedApps = saved
