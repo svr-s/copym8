@@ -141,6 +141,56 @@ extension SettingsView {
                     .foregroundColor(.secondary)
             }
             
+            Divider().padding(.vertical, 4)
+            
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Rolling Backups")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.secondary)
+                
+                HStack {
+                    Text("Number of Backups (Max 3):")
+                        .font(.system(size: 13))
+                    Spacer()
+                    TextField("", value: $maxBackupsCount, format: .number)
+                        .frame(width: 50)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .onChange(of: maxBackupsCount) { _, newValue in
+                            if newValue > 3 { maxBackupsCount = 3 }
+                            else if newValue < 0 { maxBackupsCount = 0 }
+                        }
+                    Stepper("", value: $maxBackupsCount, in: 0...3)
+                        .labelsHidden()
+                }
+                
+                Text("CopyM8 creates a backup when you close the app. Set to 0 to disable.")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                
+                if !availableBackups.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(availableBackups, id: \.slotIndex) { backup in
+                            Button(action: {
+                                clipboard.applyRestore(fromSlot: backup.slotIndex)
+                                // Refresh list
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                    availableBackups = BackupManager.shared.getAvailableBackups()
+                                }
+                            }) {
+                                Text("⏪ Restore from \(backupDateFormatter.string(from: backup.date)) \(backup.label)")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.blue)
+                            }
+                            .buttonStyle(.plain)
+                            .onHover { isHovered in
+                                NSCursor.pointingHand.set()
+                            }
+                        }
+                    }
+                    .padding(.top, 4)
+                }
+            }
+            
             Spacer()
             
             Divider()
@@ -214,6 +264,9 @@ extension SettingsView {
             } message: {
                 Text("This action cannot be undone.")
             }
+        }
+        .onAppear {
+            availableBackups = BackupManager.shared.getAvailableBackups()
         }
     }
 }

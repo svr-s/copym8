@@ -62,6 +62,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
+    func applicationWillResignActive(_ notification: Notification) {
+        let maxBackups = UserDefaults.standard.integer(forKey: "maxBackupsCount")
+        if maxBackups > 0 {
+            // Note: In AppDelegate, we don't have direct access to ClipboardManager's history.
+            // Let's use NotificationCenter to tell ClipboardManager to trigger a backup.
+            NotificationCenter.default.post(name: NSNotification.Name("TriggerBackup"), object: nil)
+        }
+    }
+    
     private func requestAccessibilityPermission() {
         let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
         let trusted = AXIsProcessTrustedWithOptions(options)

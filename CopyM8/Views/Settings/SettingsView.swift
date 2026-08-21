@@ -62,6 +62,18 @@ struct SettingsView: View {
     
     @AppStorage("maxQueueSize") var maxQueueSize: Int = 10
     
+    @AppStorage("maxBackupsCount") var maxBackupsCount: Int = 3
+    @State var availableBackups: [BackupInfo] = []
+    
+    let backupDateFormatter: DateFormatter = {
+        let df = DateFormatter()
+        df.dateStyle = .medium
+        df.timeStyle = .short
+        df.doesRelativeDateFormatting = true
+        return df
+    }()
+    
+    
     @AppStorage("saveText") var saveText: Bool = true
     @AppStorage("saveLinks") var saveLinks: Bool = true
     @AppStorage("saveImages") var saveImages: Bool = true
