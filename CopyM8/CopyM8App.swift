@@ -63,7 +63,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationWillResignActive(_ notification: Notification) {
-        let maxBackups = UserDefaults.standard.integer(forKey: "maxBackupsCount")
+        let maxBackups = UserDefaults.standard.object(forKey: "maxBackupsCount") as? Int ?? 3
         if maxBackups > 0 {
             // Note: In AppDelegate, we don't have direct access to ClipboardManager's history.
             // Let's use NotificationCenter to tell ClipboardManager to trigger a backup.
