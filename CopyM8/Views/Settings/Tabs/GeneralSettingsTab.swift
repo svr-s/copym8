@@ -270,6 +270,14 @@ extension SettingsView {
                     Text(String(format: "%.1f MB", deletedSize))
                         .font(.system(size: 12, weight: .medium))
                 }
+                
+                HStack {
+                    Text("Backup Storage Size:")
+                        .font(.system(size: 12))
+                    Spacer()
+                    Text(String(format: "%.1f MB", BackupManager.shared.getTotalBackupsSizeMB()))
+                        .font(.system(size: 12, weight: .medium))
+                }
             }
             .padding(10)
             .background(Color.primary.opacity(0.05))

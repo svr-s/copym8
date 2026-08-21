@@ -38,6 +38,25 @@ class BackupManager {
         return backups
     }
     
+    /// Returns the total storage size consumed by backups in MB.
+    func getTotalBackupsSizeMB() -> Double {
+        let fm = FileManager.default
+        var totalSize: Int64 = 0
+        
+        guard let enumerator = fm.enumerator(at: backupsDir, includingPropertiesForKeys: [.fileSizeKey], options: []) else {
+            return 0.0
+        }
+        
+        for case let fileURL as URL in enumerator {
+            if let attrs = try? fileURL.resourceValues(forKeys: [.fileSizeKey]),
+               let size = attrs.fileSize {
+                totalSize += Int64(size)
+            }
+        }
+        
+        return Double(totalSize) / (1024.0 * 1024.0)
+    }
+    
     /// Rotates backups and saves the current live session to slot 1.
     /// Limits the maximum number of backups according to user preferences.
     func rotateAndSave(maxBackupsCount: Int, history: [ClipboardItem], folders: [ClipboardFolder], queueIDs: [UUID]) {
