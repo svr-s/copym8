@@ -48,7 +48,15 @@ extension ContentView {
                 var nodes: [DisplayNode] = []
                 for (index, id) in clipboard.activeQueueIDs.enumerated() {
                     if let item = clipboard.history.first(where: { $0.id == id && !($0.isDeleted ?? false) }) {
-                        nodes.append(DisplayNode(id: "item_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: nil, queueStatus: getQueueStatus(for: item.id)))
+                        let status: QueueStatus
+                        if index < clipboard.activeQueuePlayheadIndex {
+                            status = .pasted
+                        } else if index == clipboard.activeQueuePlayheadIndex {
+                            status = .next
+                        } else {
+                            status = .upcoming
+                        }
+                        nodes.append(DisplayNode(id: "queue_\(index)_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: nil, queueStatus: status))
                     }
                 }
                 return nodes
@@ -69,7 +77,7 @@ extension ContentView {
                     } else {
                         status = .upcoming
                     }
-                    nodes.append(DisplayNode(id: "item_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: nil, queueStatus: status))
+                    nodes.append(DisplayNode(id: "queue_\(index)_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: nil, queueStatus: status))
                 }
             }
             return nodes
@@ -197,7 +205,7 @@ extension ContentView {
     }
     
     private func getQueueStatus(for itemId: UUID) -> QueueStatus? {
-        guard let index = clipboard.activeQueueIDs.firstIndex(of: itemId) else { return nil }
+        guard let index = clipboard.activeQueueIDs.lastIndex(of: itemId) else { return nil }
         if index < clipboard.activeQueuePlayheadIndex {
             return .pasted
         } else if index == clipboard.activeQueuePlayheadIndex {
