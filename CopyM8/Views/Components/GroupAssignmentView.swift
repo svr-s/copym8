@@ -158,6 +158,9 @@ struct GroupAssignmentView: View {
                     assignToFolder(clipboard.folders[selectedIndex].id)
                 }
                 return nil
+            case 53: // Esc
+                onCancel()
+                return nil
             default:
                 break
             }
