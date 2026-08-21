@@ -119,6 +119,18 @@ class BackupManager {
         }
     }
     
+    /// Deletes backups in slots greater than the specified limit
+    func deleteBackups(olderThan limit: Int) {
+        // If limit is 1, deletes slots 2 and 3.
+        // If limit is 0, deletes all slots 1, 2, 3.
+        for slotIndex in (limit + 1)...max(3, limit + 1) {
+            let slotDir = backupsDir.appendingPathComponent("\(slotIndex)")
+            if FileManager.default.fileExists(atPath: slotDir.path) {
+                try? FileManager.default.removeItem(at: slotDir)
+            }
+        }
+    }
+    
     /// Fetches the backup data and overwrites the live environment with it.
     /// Safely backs up the current session first before applying the restore.
     func restoreBackup(slotIndex: Int, currentHistory: [ClipboardItem], currentFolders: [ClipboardFolder], currentQueue: [UUID], maxBackupsCount: Int) -> (history: [ClipboardItem], folders: [ClipboardFolder], queue: [UUID])? {

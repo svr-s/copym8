@@ -26,6 +26,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var window: CopyM8Window!
     
     func applicationDidFinishLaunching(_ notification: Notification) {
+        UserDefaults.standard.register(defaults: [
+            "maxBackupsCount": 3
+        ])
+        
         // Request Accessibility permission — required for System Events to paste into other apps.
         requestAccessibilityPermission()
         
@@ -63,7 +67,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationWillResignActive(_ notification: Notification) {
-        let maxBackups = UserDefaults.standard.object(forKey: "maxBackupsCount") as? Int ?? 3
+        let maxBackups = UserDefaults.standard.integer(forKey: "maxBackupsCount")
         if maxBackups > 0 {
             // Note: In AppDelegate, we don't have direct access to ClipboardManager's history.
             // Let's use NotificationCenter to tell ClipboardManager to trigger a backup.

@@ -141,7 +141,7 @@ class ClipboardManager: ObservableObject, CloudSyncDelegate {
         
         NotificationCenter.default.addObserver(forName: NSNotification.Name("TriggerBackup"), object: nil, queue: .main) { [weak self] _ in
             guard let self = self else { return }
-            let maxBackups = UserDefaults.standard.object(forKey: "maxBackupsCount") as? Int ?? 3
+            let maxBackups = UserDefaults.standard.integer(forKey: "maxBackupsCount")
             BackupManager.shared.rotateAndSave(maxBackupsCount: maxBackups, history: self.history, folders: self.folders, queueIDs: self.queueIDs)
         }
     }

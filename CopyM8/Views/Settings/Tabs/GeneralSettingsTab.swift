@@ -152,15 +152,37 @@ extension SettingsView {
                     Text("Number of Backups (Max 3):")
                         .font(.system(size: 13))
                     Spacer()
-                    TextField("", value: $maxBackupsCount, format: .number)
+                    TextField("", value: $draftMaxBackupsCount, format: .number)
                         .frame(width: 50)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .onChange(of: maxBackupsCount) { _, newValue in
-                            if newValue > 3 { maxBackupsCount = 3 }
-                            else if newValue < 0 { maxBackupsCount = 0 }
+                        .onChange(of: draftMaxBackupsCount) { _, newValue in
+                            let clamped = max(0, min(3, newValue))
+                            if clamped < maxBackupsCount {
+                                pendingBackupLimit = clamped
+                                draftMaxBackupsCount = maxBackupsCount
+                                showDecreaseAlert = true
+                            } else if clamped > maxBackupsCount {
+                                maxBackupsCount = clamped
+                                draftMaxBackupsCount = clamped
+                                NotificationCenter.default.post(name: Notification.Name("ShowSettingsToast"), object: "Backup limit increased to \(clamped)")
+                            }
                         }
-                    Stepper("", value: $maxBackupsCount, in: 0...3)
+                    Stepper("", value: $draftMaxBackupsCount, in: 0...3)
                         .labelsHidden()
+                }
+                .alert("Reduce backup limit?", isPresented: $showDecreaseAlert) {
+                    Button("Cancel", role: .cancel) {
+                        draftMaxBackupsCount = maxBackupsCount
+                    }
+                    Button("Delete Old Backups", role: .destructive) {
+                        BackupManager.shared.deleteBackups(olderThan: pendingBackupLimit)
+                        maxBackupsCount = pendingBackupLimit
+                        draftMaxBackupsCount = pendingBackupLimit
+                        availableBackups = BackupManager.shared.getAvailableBackups()
+                        NotificationCenter.default.post(name: Notification.Name("ShowSettingsToast"), object: "Old backups deleted")
+                    }
+                } message: {
+                    Text("This will permanently delete your oldest backup(s) immediately.")
                 }
                 
                 Text("CopyM8 creates a backup when you close the app. Set to 0 to disable.")
@@ -172,6 +194,7 @@ extension SettingsView {
                         ForEach(availableBackups, id: \.slotIndex) { backup in
                             Button(action: {
                                 clipboard.applyRestore(fromSlot: backup.slotIndex)
+                                NotificationCenter.default.post(name: Notification.Name("ShowSettingsToast"), object: "Backup restored successfully")
                                 // Refresh list
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                                     availableBackups = BackupManager.shared.getAvailableBackups()

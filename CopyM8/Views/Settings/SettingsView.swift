@@ -63,6 +63,10 @@ struct SettingsView: View {
     @AppStorage("maxQueueSize") var maxQueueSize: Int = 10
     
     @AppStorage("maxBackupsCount") var maxBackupsCount: Int = 3
+    @State var draftMaxBackupsCount: Int = 3
+    @State var showDecreaseAlert = false
+    @State var pendingBackupLimit: Int = 0
+    
     @State var availableBackups: [BackupInfo] = []
     
     let backupDateFormatter: DateFormatter = {
@@ -103,6 +107,9 @@ struct SettingsView: View {
     
     @State var selectedTab = "General"
     
+    @State var showingToast: Bool = false
+    @State var toastMessage: String = ""
+    
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
@@ -142,6 +149,41 @@ struct SettingsView: View {
             .frame(height: 380)
         }
         .frame(width: 400)
+        .overlay(
+            Group {
+                if showingToast {
+                    VStack {
+                        Spacer()
+                        HStack(spacing: 6) {
+                            Image(systemName: "checkmark.circle.fill").foregroundColor(.green)
+                            Text(toastMessage)
+                        }
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(Color.black.opacity(0.8))
+                        .cornerRadius(20)
+                        .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 2)
+                        .padding(.bottom, 24)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                }
+            }
+        )
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("ShowSettingsToast"))) { notif in
+            if let msg = notif.object as? String {
+                toastMessage = msg
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    showingToast = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        showingToast = false
+                    }
+                }
+            }
+        }
         .onAppear {
             setupKeyboardMonitor()
             draftHistoryCount = maxHistoryCount
