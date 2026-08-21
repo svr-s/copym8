@@ -157,13 +157,16 @@ extension SettingsView {
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .onChange(of: draftMaxBackupsCount) { _, newValue in
                             let clamped = max(0, min(3, newValue))
+                            if clamped == maxBackupsCount { return }
+                            
                             if clamped < maxBackupsCount {
                                 pendingBackupLimit = clamped
-                                draftMaxBackupsCount = maxBackupsCount
-                                showDecreaseAlert = true
+                                DispatchQueue.main.async {
+                                    draftMaxBackupsCount = maxBackupsCount
+                                    showDecreaseAlert = true
+                                }
                             } else if clamped > maxBackupsCount {
                                 maxBackupsCount = clamped
-                                draftMaxBackupsCount = clamped
                                 NotificationCenter.default.post(name: Notification.Name("ShowSettingsToast"), object: "Backup limit increased to \(clamped)")
                             }
                         }
@@ -177,9 +180,12 @@ extension SettingsView {
                     Button("Delete Old Backups", role: .destructive) {
                         BackupManager.shared.deleteBackups(olderThan: pendingBackupLimit)
                         maxBackupsCount = pendingBackupLimit
-                        draftMaxBackupsCount = pendingBackupLimit
-                        availableBackups = BackupManager.shared.getAvailableBackups()
-                        NotificationCenter.default.post(name: Notification.Name("ShowSettingsToast"), object: "Old backups deleted")
+                        
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            draftMaxBackupsCount = pendingBackupLimit
+                            availableBackups = BackupManager.shared.getAvailableBackups()
+                            NotificationCenter.default.post(name: Notification.Name("ShowSettingsToast"), object: "Old backups deleted")
+                        }
                     }
                 } message: {
                     Text("This will permanently delete your oldest backup(s) immediately.")
