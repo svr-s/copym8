@@ -69,13 +69,15 @@ extension ContentView {
             var nodes: [DisplayNode] = []
             for (index, id) in clipboard.activeQueueIDs.enumerated() {
                 if let item = clipboard.activeHistory.first(where: { $0.id == id }) {
-                    let status: QueueStatus
-                    if index < clipboard.activeQueuePlayheadIndex {
+                    let status: QueueStatus?
+                    if index == clipboard.activeQueuePlayheadIndex - 1 {
                         status = .pasted
                     } else if index == clipboard.activeQueuePlayheadIndex {
                         status = .next
-                    } else {
+                    } else if index > clipboard.activeQueuePlayheadIndex {
                         status = .upcoming
+                    } else {
+                        status = nil
                     }
                     nodes.append(DisplayNode(id: "queue_\(index)_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: nil, queueStatus: status))
                 }
@@ -205,13 +207,21 @@ extension ContentView {
     }
     
     private func getQueueStatus(for itemId: UUID) -> QueueStatus? {
-        guard let index = clipboard.activeQueueIDs.lastIndex(of: itemId) else { return nil }
-        if index < clipboard.activeQueuePlayheadIndex {
-            return .pasted
-        } else if index == clipboard.activeQueuePlayheadIndex {
+        let indices = clipboard.activeQueueIDs.enumerated().compactMap { $0.element == itemId ? $0.offset : nil }
+        guard !indices.isEmpty else { return nil }
+        
+        if indices.contains(clipboard.activeQueuePlayheadIndex) {
             return .next
-        } else {
+        }
+        
+        if indices.contains(where: { $0 > clipboard.activeQueuePlayheadIndex }) {
             return .upcoming
         }
+        
+        if indices.contains(clipboard.activeQueuePlayheadIndex - 1) {
+            return .pasted
+        }
+        
+        return nil
     }
 }
