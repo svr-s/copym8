@@ -9,6 +9,7 @@ extension ClipboardManager {
     ///                 If `false`, marks it as deleted (moves it to the Trash).
     func deleteItem(at index: Int, hardDelete: Bool = false) {
         let item = history[index]
+        removeFromQueue(ids: [item.id]) // Ensure we remove from the queue
         if hardDelete {
             LocalPayloadStore.shared.deletePayloads(for: item.id)
             if item.itemType == .image {
@@ -30,6 +31,7 @@ extension ClipboardManager {
     func deleteItems(where predicate: (ClipboardItem) -> Bool, hardDelete: Bool = false) {
         if hardDelete {
             let itemsToDelete = history.filter(predicate)
+            removeFromQueue(ids: itemsToDelete.map { $0.id })
             for item in itemsToDelete {
                 LocalPayloadStore.shared.deletePayloads(for: item.id)
                 if item.itemType == .image {
@@ -38,12 +40,15 @@ extension ClipboardManager {
             }
             history.removeAll(where: predicate)
         } else {
+            var idsToRemove: [UUID] = []
             for i in 0..<history.count {
                 if predicate(history[i]) {
+                    idsToRemove.append(history[i].id)
                     history[i].isDeleted = true
                     history[i].deletedAt = Date()
                 }
             }
+            removeFromQueue(ids: idsToRemove)
         }
     }
 

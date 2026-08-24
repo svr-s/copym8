@@ -67,8 +67,12 @@ extension ContentView {
         
         if viewModel.activeTab == "Queue" {
             var nodes: [DisplayNode] = []
+            
+            // For the Queue tab, we look at the full history so queued items moved to folders/cloud aren't invisible
+            let baseHistory = clipboard.selectedDevice == "Local (This Mac)" ? clipboard.history : clipboard.remoteHistory
+            
             for (index, id) in clipboard.activeQueueIDs.enumerated() {
-                if let item = clipboard.activeHistory.first(where: { $0.id == id }) {
+                if let item = baseHistory.first(where: { $0.id == id }) {
                     let status: QueueStatus?
                     if index == clipboard.activeQueuePlayheadIndex - 1 {
                         status = .pasted

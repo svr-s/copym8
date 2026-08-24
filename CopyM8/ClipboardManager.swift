@@ -195,9 +195,36 @@ class ClipboardManager: ObservableObject, CloudSyncDelegate {
     
     private func loadQueueState() {
         if let stringIDs = UserDefaults.standard.array(forKey: "savedQueueIDs") as? [String] {
-            queueIDs = stringIDs.compactMap { UUID(uuidString: $0) }
+            let loadedIDs = stringIDs.compactMap { UUID(uuidString: $0) }
+            
+            queueIDs = loadedIDs.filter { id in 
+                if let item = history.first(where: { $0.id == id }) {
+                    return !(item.isDeleted ?? false)
+                }
+                return false
+            }
+            
+            var playhead = UserDefaults.standard.integer(forKey: "savedQueuePlayheadIndex")
+            let removedCount = loadedIDs.prefix(playhead).filter { id in
+                if let item = history.first(where: { $0.id == id }) {
+                    return item.isDeleted ?? false
+                }
+                return true
+            }.count
+            
+            queuePlayheadIndex = max(0, playhead - removedCount)
+            if queuePlayheadIndex >= queueIDs.count && !queueIDs.isEmpty {
+                queuePlayheadIndex = max(0, queueIDs.count - 1)
+            } else if queueIDs.isEmpty {
+                queuePlayheadIndex = 0
+            }
+            
+            if queueIDs.count != loadedIDs.count {
+                saveQueueState() // Commit the cleaned up state
+            }
+        } else {
+            queuePlayheadIndex = UserDefaults.standard.integer(forKey: "savedQueuePlayheadIndex")
         }
-        queuePlayheadIndex = UserDefaults.standard.integer(forKey: "savedQueuePlayheadIndex")
     }
     
     private func processLoadedHistory(_ decoded: [ClipboardItem]) -> [ClipboardItem] {

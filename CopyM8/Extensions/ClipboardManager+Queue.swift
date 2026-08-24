@@ -23,18 +23,26 @@ extension ClipboardManager {
         saveQueueState()
     }
     
-    /// Removes specific items from the queue and adjusts the playhead appropriately.
     func removeFromQueue(ids: [UUID]) {
-        for id in ids {
-            if let index = queueIDs.firstIndex(of: id) {
-                queueIDs.remove(at: index)
-                if queuePlayheadIndex > index {
-                    queuePlayheadIndex -= 1
-                } else if queuePlayheadIndex >= queueIDs.count {
-                    queuePlayheadIndex = max(0, queueIDs.count - 1)
-                }
+        let indicesToRemove = queueIDs.enumerated()
+            .filter { ids.contains($0.element) }
+            .map { $0.offset }
+            .reversed()
+        
+        for index in indicesToRemove {
+            queueIDs.remove(at: index)
+            if queuePlayheadIndex > index {
+                queuePlayheadIndex -= 1
             }
         }
+        
+        if queuePlayheadIndex >= queueIDs.count {
+            queuePlayheadIndex = max(0, queueIDs.count - 1)
+        }
+        if queueIDs.isEmpty {
+            queuePlayheadIndex = 0
+        }
+        
         saveQueueState()
     }
     
