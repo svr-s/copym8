@@ -3,6 +3,12 @@ import Foundation
 extension ClipboardManager {
     /// Adds an item to the queue. Respects the user's max queue size limit.
     func enqueueItem(id: UUID) {
+        // Prevent duplicates in the queue.
+        // As requested: "In such a scenario we must retain the queue's order"
+        if queueIDs.contains(id) {
+            return
+        }
+        
         let maxQueueSize = UserDefaults.standard.integer(forKey: "maxQueueSize")
         let limit = maxQueueSize == 0 ? 10 : maxQueueSize // Default to 10 if not set
         
