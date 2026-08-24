@@ -13,6 +13,7 @@
 		0B3EC2FBF6D5D3CA8357C078 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F537A567B33B532658632D61 /* EmptyStateView.swift */; };
 		0BB82E789601C21315C81423 /* ExpandedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062C5782E45CD930AA05DC0F /* ExpandedView.swift */; };
 		0C21559E6A6D080D39BA5771 /* NativeDragView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B772BEF3EA5851ED7AE1278F /* NativeDragView.swift */; };
+		0E34904AC72BF0EE7E11485F /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = D06CAC97EAE45E2BAC814B09 /* AppIcon.icns */; };
 		11FADE0C67FD4EF0AA736A3A /* ContentView+Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B3C4D032E9EB40E8CA80964 /* ContentView+Actions.swift */; };
 		1A521F304E94CD3F62B16160 /* ActionConfirmationModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B25A08F7F951AEE13AE43CCB /* ActionConfirmationModalView.swift */; };
 		1B478EB92B0DF60A53A17BF1 /* CopyM8App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9870C57343C9C60F93714D9C /* CopyM8App.swift */; };
@@ -102,6 +103,7 @@
 		BFCA4AEE1A8FD76CAABB5ED2 /* ClipboardFolderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardFolderView.swift; sourceTree = "<group>"; };
 		C5C661F84DB97AE3C5A00F75 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		CFC782A55FF056C6C18DD0EA /* KeyboardMonitorModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardMonitorModifier.swift; sourceTree = "<group>"; };
+		D06CAC97EAE45E2BAC814B09 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		D0C193A9E47C581EFD57012E /* EditModeFooterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditModeFooterView.swift; sourceTree = "<group>"; };
 		D76CD67F7A65510AC15F7770 /* SyncSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSettingsTab.swift; sourceTree = "<group>"; };
 		D834C7E0E6A6002EA57C89CE /* HeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeaderView.swift; sourceTree = "<group>"; };
@@ -207,6 +209,7 @@
 		AF8B5A3326A0D3B725AC6559 /* CopyM8 */ = {
 			isa = PBXGroup;
 			children = (
+				D06CAC97EAE45E2BAC814B09 /* AppIcon.icns */,
 				785BEE7B1738C1C4F863A88D /* Assets.xcassets */,
 				BC36D4F3777ED863606C6FF3 /* BackupManager.swift */,
 				288D2FCD5D67DDA11FBF95F9 /* ClipboardManager.swift */,
@@ -304,6 +307,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0E34904AC72BF0EE7E11485F /* AppIcon.icns in Resources */,
 				DA1CA14816A64BF8D75B50CF /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
