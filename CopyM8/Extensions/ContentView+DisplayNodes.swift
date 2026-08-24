@@ -56,7 +56,7 @@ extension ContentView {
                         } else {
                             status = .upcoming
                         }
-                        nodes.append(DisplayNode(id: "queue_\(index)_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: nil, queueStatus: status))
+                        nodes.append(DisplayNode(id: "item_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: nil, queueStatus: status))
                     }
                 }
                 return nodes
@@ -83,7 +83,7 @@ extension ContentView {
                     } else {
                         status = nil
                     }
-                    nodes.append(DisplayNode(id: "queue_\(index)_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: nil, queueStatus: status))
+                    nodes.append(DisplayNode(id: "item_\(item.id.uuidString)", isFolder: false, folder: nil, item: item, parentFolderId: nil, queueStatus: status))
                 }
             }
             return nodes
