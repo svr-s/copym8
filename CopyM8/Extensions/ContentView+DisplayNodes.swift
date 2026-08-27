@@ -222,7 +222,7 @@ extension ContentView {
             return .upcoming
         }
         
-        if indices.contains(clipboard.activeQueuePlayheadIndex - 1) {
+        if indices.contains(where: { $0 < clipboard.activeQueuePlayheadIndex }) {
             return .pasted
         }
         
