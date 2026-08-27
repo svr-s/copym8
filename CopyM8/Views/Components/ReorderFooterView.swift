@@ -82,10 +82,13 @@ struct ReorderFooterView: View {
     }
     
     private func cancelReorder() {
-        clipboard.history = reorderBackupHistory
-        clipboard.folders = reorderBackupFolders
-        clipboard.queueIDs = reorderBackupQueueIDs
-        clipboard.isReordering = false
+        if reorderTarget != .queue {
+            clipboard.history = reorderBackupHistory
+            clipboard.folders = reorderBackupFolders
+            clipboard.isReordering = false
+        } else {
+            clipboard.queueIDs = reorderBackupQueueIDs
+        }
         isReorderMode = false
     }
     

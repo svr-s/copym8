@@ -340,10 +340,13 @@ struct ContentView: View {
             } else {
                 // Keyboard monitor teardown removed
                 if viewModel.isReorderMode {
-                    clipboard.history = viewModel.reorderBackupHistory
-                    clipboard.folders = viewModel.reorderBackupFolders
-                    clipboard.queueIDs = viewModel.reorderBackupQueueIDs
-                    clipboard.isReordering = false
+                    if viewModel.reorderTarget != .queue {
+                        clipboard.history = viewModel.reorderBackupHistory
+                        clipboard.folders = viewModel.reorderBackupFolders
+                        clipboard.isReordering = false
+                    } else {
+                        clipboard.queueIDs = viewModel.reorderBackupQueueIDs
+                    }
                     viewModel.isReorderMode = false
                     viewModel.reorderTarget = .none
                     viewModel.activeTab = "All"
