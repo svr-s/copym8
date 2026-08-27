@@ -74,7 +74,7 @@ extension ContentView {
             for (index, id) in clipboard.activeQueueIDs.enumerated() {
                 if let item = baseHistory.first(where: { $0.id == id }) {
                     let status: QueueStatus?
-                    if index == clipboard.activeQueuePlayheadIndex - 1 {
+                    if index < clipboard.activeQueuePlayheadIndex {
                         status = .pasted
                     } else if index == clipboard.activeQueuePlayheadIndex {
                         status = .next
