@@ -169,6 +169,9 @@ extension ClipboardManager {
     ///   - target: The target context of the reorder (e.g., pinned items, specific folder, or folders list).
     ///   - freezeLimit: The index up to which items should retain an explicit sort order.
     func applyReorder(target: ReorderTarget?, freezeLimit: Int) {
+        let previousReorderingState = isReordering
+        isReordering = false // Temporarily drop the flag so save operations can persist to disk
+        
         switch target {
         case .pinned:
             var pinned = history.filter { $0.isPinned && $0.folderId == nil }
@@ -212,6 +215,8 @@ extension ClipboardManager {
         case .none:
             break
         }
+        
+        isReordering = previousReorderingState // Restore state, ReorderFooterView will properly unset it later
     }
 
 }
