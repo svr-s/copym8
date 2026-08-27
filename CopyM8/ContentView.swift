@@ -55,6 +55,9 @@ struct ContentView: View {
     @FocusState var isFreezeFieldFocused: Bool
     @FocusState var isPlayFromFocused: Bool
     
+    @State var playFromFieldIsFocused: Bool = false
+    @State var freezeFieldIsFocused: Bool = false
+    
     
     @AppStorage("activeColorName") var activeColorName: String = "Glacier"
     @AppStorage("themePreference") var themePreference: String = "System"
@@ -324,6 +327,10 @@ struct ContentView: View {
                 )
                 .transition(.opacity)
             }
+            
+            // Dummy views to force SwiftUI to track these as dependencies for displayNodes
+            if viewModel.reorderQueuePlayhead.isEmpty { Color.clear }
+            if viewModel.reorderFreezeLimit.isEmpty { Color.clear }
         }
         .clipShape(RoundedRectangle(cornerRadius: shortcut.isExpanded ? 12 : 24))
         .background(Color.clear)
@@ -378,6 +385,8 @@ struct ContentView: View {
                 viewModel.expandedFolderIds.insert(restoredFolderId)
             }
         }
+        .onChange(of: isPlayFromFocused) { _, isFocused in playFromFieldIsFocused = isFocused }
+        .onChange(of: isFreezeFieldFocused) { _, isFocused in freezeFieldIsFocused = isFocused }
         .onChange(of: viewModel.searchText) { _, _ in
             viewModel.selectedIndex = 0
             viewModel.selectionAnchorIndex = nil

@@ -517,12 +517,12 @@ extension ContentView {
                 return nil
             case 126: // Up
                 if viewModel.editingFolderId != nil { return event }
-                if isFreezeFieldFocused {
+                if freezeFieldIsFocused {
                     let current = Int(viewModel.reorderFreezeLimit) ?? 0
                     if current < 10 { viewModel.reorderFreezeLimit = "\(current + 1)" }
                     return nil
                 }
-                if isPlayFromFocused {
+                if playFromFieldIsFocused {
                     let current = Int(viewModel.reorderQueuePlayhead) ?? 0
                     if current < clipboard.queueIDs.count { viewModel.reorderQueuePlayhead = "\(current + 1)" }
                     return nil
@@ -579,12 +579,12 @@ extension ContentView {
                 return nil
             case 125: // Down
                 if viewModel.editingFolderId != nil { return event }
-                if isFreezeFieldFocused {
+                if freezeFieldIsFocused {
                     let current = Int(viewModel.reorderFreezeLimit) ?? 0
                     if current > 0 { viewModel.reorderFreezeLimit = "\(current - 1)" }
                     return nil
                 }
-                if isPlayFromFocused {
+                if playFromFieldIsFocused {
                     let current = Int(viewModel.reorderQueuePlayhead) ?? 0
                     if current > 1 { viewModel.reorderQueuePlayhead = "\(current - 1)" }
                     return nil
