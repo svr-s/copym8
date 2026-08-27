@@ -36,8 +36,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let contentView = ContentView()
         
         // Start with the pill size
+        let dockEdgeString = UserDefaults.standard.string(forKey: "dockEdge") ?? "right"
+        let isTop = dockEdgeString == "top"
+        let pillWidth: CGFloat = isTop ? 40 : 28
+        let pillHeight: CGFloat = isTop ? 28 : 40
+        
         window = CopyM8Window(
-            contentRect: NSRect(x: 0, y: 0, width: 28, height: 72),
+            contentRect: NSRect(x: 0, y: 0, width: pillWidth, height: pillHeight),
             styleMask: [.borderless, .nonactivatingPanel, .resizable],
             backing: .buffered,
             defer: false
