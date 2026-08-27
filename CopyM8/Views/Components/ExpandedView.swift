@@ -20,10 +20,12 @@ struct ExpandedView: View {
     @Binding var isReorderMode: Bool
     @Binding var reorderTarget: ReorderTarget?
     @Binding var reorderFreezeLimit: String
+    @Binding var reorderQueuePlayhead: String
     @Binding var reorderBackupHistory: [ClipboardItem]
     @Binding var reorderBackupFolders: [ClipboardFolder]
     @Binding var reorderBackupQueueIDs: [UUID]
     var isFreezeFieldFocused: FocusState<Bool>.Binding
+    var isPlayFromFocused: FocusState<Bool>.Binding
     
     @Binding var selectedIndex: Int
     @Binding var selectionAnchorIndex: Int?
@@ -123,6 +125,8 @@ struct ExpandedView: View {
                         reorderTarget: $reorderTarget,
                         reorderFreezeLimit: $reorderFreezeLimit,
                         isFreezeFieldFocused: isFreezeFieldFocused,
+                        isPlayFromFocused: isPlayFromFocused,
+                        reorderQueuePlayhead: $reorderQueuePlayhead,
                         reorderBackupHistory: $reorderBackupHistory,
                         reorderBackupFolders: $reorderBackupFolders,
                         reorderBackupQueueIDs: $reorderBackupQueueIDs,

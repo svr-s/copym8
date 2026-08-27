@@ -76,6 +76,8 @@ class ContentViewModel: ObservableObject {
     /// The maximum number of items frozen at the top (unaffected by regular eviction).
     @Published var reorderFreezeLimit: String = "0"
     
+    @Published var reorderQueuePlayhead: String = ""
+    
     /// A snapshot of the clipboard history before reordering started, allowing cancellation.
     @Published var reorderBackupHistory: [ClipboardItem] = []
     

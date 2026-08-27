@@ -121,6 +121,7 @@ extension ContentView {
                             if viewModel.activeTab == "Queue" {
                                 viewModel.reorderTarget = .queue
                                 viewModel.reorderBackupQueueIDs = clipboard.queueIDs
+                                viewModel.reorderQueuePlayhead = String(clipboard.queuePlayheadIndex + 1)
                                 // Do not set clipboard.isReordering = true for Queue to avoid modifying db/orderIndex
                             } else {
                                 clipboard.isReordering = true
@@ -262,10 +263,17 @@ extension ContentView {
                 }
             }
             
-            if viewModel.isReorderMode && event.keyCode == 3 && event.modifierFlags.contains(.control) {
-                if viewModel.reorderTarget == .pinned || (viewModel.activeTab == "Groups" && viewModel.reorderTarget != .folders) {
-                    isFreezeFieldFocused.toggle()
-                    return nil
+            if viewModel.isReorderMode && event.modifierFlags.contains(.control) {
+                if event.keyCode == 3 { // F
+                    if viewModel.reorderTarget == .pinned || (viewModel.activeTab == "Groups" && viewModel.reorderTarget != .folders) {
+                        isFreezeFieldFocused.toggle()
+                        return nil
+                    }
+                } else if event.keyCode == 35 { // P
+                    if viewModel.reorderTarget == .queue {
+                        isPlayFromFocused.toggle()
+                        return nil
+                    }
                 }
             }
             

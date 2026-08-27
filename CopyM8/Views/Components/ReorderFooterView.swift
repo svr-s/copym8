@@ -6,6 +6,8 @@ struct ReorderFooterView: View {
     @Binding var reorderTarget: ReorderTarget?
     @Binding var reorderFreezeLimit: String
     var isFreezeFieldFocused: FocusState<Bool>.Binding
+    var isPlayFromFocused: FocusState<Bool>.Binding
+    @Binding var reorderQueuePlayhead: String
     @Binding var reorderBackupHistory: [ClipboardItem]
     @Binding var reorderBackupFolders: [ClipboardFolder]
     @Binding var reorderBackupQueueIDs: [UUID]
@@ -16,9 +18,29 @@ struct ReorderFooterView: View {
     var body: some View {
         HStack {
             if reorderTarget == .queue {
-                Text("Edit Queue Sequence")
+                HStack(spacing: 6) {
+                    Text("Play From ⌃P")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.primary.opacity(0.8))
+                    
+                    TextField("1", text: Binding(
+                        get: { reorderQueuePlayhead },
+                        set: { newValue in
+                            let filtered = newValue.filter { "0123456789".contains($0) }
+                            reorderQueuePlayhead = filtered
+                        }
+                    ))
+                    .focused(isPlayFromFocused)
+                    .textFieldStyle(PlainTextFieldStyle())
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.primary.opacity(0.8))
+                    .multilineTextAlignment(.center)
+                    .frame(width: 30)
+                    .padding(.vertical, 2)
+                    .background(Color.primary.opacity(0.1))
+                    .cornerRadius(4)
+                    .foregroundColor(isPlayFromFocused.wrappedValue ? .primary : .primary.opacity(0.8))
+                    .allowsHitTesting(false)
+                }
             } else if reorderTarget == .pinned || (reorderTarget != .folders && { if case .items = reorderTarget { return true } else { return false } }()) {
                 HStack(spacing: 6) {
                     Text("Freeze Top ⌃F")
@@ -94,6 +116,10 @@ struct ReorderFooterView: View {
     
     private func saveReorder() {
         if reorderTarget == .queue {
+            if let newPlayhead = Int(reorderQueuePlayhead) {
+                let clampedPlayhead = max(0, min(newPlayhead - 1, clipboard.queueIDs.count - 1))
+                clipboard.queuePlayheadIndex = clampedPlayhead
+            }
             clipboard.saveQueueState()
         } else {
             let freezeLimit = Int(reorderFreezeLimit) ?? 0

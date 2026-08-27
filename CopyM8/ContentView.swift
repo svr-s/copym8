@@ -53,6 +53,7 @@ struct ContentView: View {
     
     
     @FocusState var isFreezeFieldFocused: Bool
+    @FocusState var isPlayFromFocused: Bool
     
     
     @AppStorage("activeColorName") var activeColorName: String = "Glacier"
@@ -273,10 +274,12 @@ struct ContentView: View {
                     isReorderMode: $viewModel.isReorderMode,
                     reorderTarget: $viewModel.reorderTarget,
                     reorderFreezeLimit: $viewModel.reorderFreezeLimit,
+                    reorderQueuePlayhead: $viewModel.reorderQueuePlayhead,
                     reorderBackupHistory: $viewModel.reorderBackupHistory,
                     reorderBackupFolders: $viewModel.reorderBackupFolders,
                     reorderBackupQueueIDs: $viewModel.reorderBackupQueueIDs,
                     isFreezeFieldFocused: $isFreezeFieldFocused,
+                    isPlayFromFocused: $isPlayFromFocused,
                     selectedIndex: $viewModel.selectedIndex,
                     selectionAnchorIndex: $viewModel.selectionAnchorIndex,
                     activeColor: activeColor,
