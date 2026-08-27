@@ -643,10 +643,6 @@ extension ContentView {
                 if viewModel.activeTab == "Trash" {
                     return nil
                 }
-                if isFreezeFieldFocused {
-                    isFreezeFieldFocused = false
-                    return nil
-                }
                 if viewModel.editingFolderId != nil {
                     // Let the textfield handle the Enter key to submit
                     return event
