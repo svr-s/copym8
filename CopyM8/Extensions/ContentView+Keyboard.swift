@@ -652,12 +652,19 @@ extension ContentView {
                     return event
                 }
                 if viewModel.isReorderMode {
-                    clipboard.isReordering = false
+                    if viewModel.reorderTarget == .queue {
+                        if let newPlayhead = Int(viewModel.reorderQueuePlayhead) {
+                            let clampedPlayhead = max(0, min(newPlayhead - 1, clipboard.queueIDs.count - 1))
+                            clipboard.queuePlayheadIndex = clampedPlayhead
+                        }
+                        clipboard.saveQueueState()
+                    } else {
+                        clipboard.isReordering = false
+                        let freezeLimit = Int(viewModel.reorderFreezeLimit) ?? 0
+                        clipboard.applyReorder(target: viewModel.reorderTarget, freezeLimit: freezeLimit)
+                    }
+                    
                     viewModel.isReorderMode = false
-                    
-                    let freezeLimit = Int(viewModel.reorderFreezeLimit) ?? 0
-                    clipboard.applyReorder(target: viewModel.reorderTarget, freezeLimit: freezeLimit)
-                    
                     viewModel.reorderTarget = .none
                     viewModel.selectedItemsForDeletion.removeAll()
                     return nil
