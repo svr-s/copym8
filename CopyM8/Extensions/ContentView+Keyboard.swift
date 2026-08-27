@@ -522,6 +522,11 @@ extension ContentView {
                     if current < 10 { viewModel.reorderFreezeLimit = "\(current + 1)" }
                     return nil
                 }
+                if isPlayFromFocused {
+                    let current = Int(viewModel.reorderQueuePlayhead) ?? 0
+                    if current < clipboard.queueIDs.count { viewModel.reorderQueuePlayhead = "\(current + 1)" }
+                    return nil
+                }
                 if event.modifierFlags.contains(.command) && event.modifierFlags.contains(.shift) && viewModel.activeTab == "Groups" {
                     viewModel.expandedFolderIds.removeAll()
                     return nil
@@ -542,7 +547,10 @@ extension ContentView {
                     
                     if viewModel.reorderTarget == .queue {
                         let itemIds = idsToMove.filter { !$0.isFolder }.map { $0.id }
-                        if !itemIds.isEmpty { clipboard.moveQueueItems(up: true, ids: itemIds) }
+                        if !itemIds.isEmpty { 
+                            clipboard.moveQueueItems(up: true, ids: itemIds) 
+                            viewModel.reorderQueuePlayhead = String(clipboard.queuePlayheadIndex + 1)
+                        }
                     } else {
                         let folderIds = idsToMove.filter { $0.isFolder }.map { $0.id }
                         let itemIds = idsToMove.filter { !$0.isFolder }.map { $0.id }
@@ -576,6 +584,11 @@ extension ContentView {
                     if current > 0 { viewModel.reorderFreezeLimit = "\(current - 1)" }
                     return nil
                 }
+                if isPlayFromFocused {
+                    let current = Int(viewModel.reorderQueuePlayhead) ?? 0
+                    if current > 1 { viewModel.reorderQueuePlayhead = "\(current - 1)" }
+                    return nil
+                }
                 if event.modifierFlags.contains(.command) && event.modifierFlags.contains(.shift) && viewModel.activeTab == "Groups" {
                     viewModel.expandedFolderIds = Set(clipboard.folders.map { $0.id })
                     return nil
@@ -596,7 +609,10 @@ extension ContentView {
                     
                     if viewModel.reorderTarget == .queue {
                         let itemIds = idsToMove.filter { !$0.isFolder }.map { $0.id }
-                        if !itemIds.isEmpty { clipboard.moveQueueItems(up: false, ids: itemIds) }
+                        if !itemIds.isEmpty { 
+                            clipboard.moveQueueItems(up: false, ids: itemIds)
+                            viewModel.reorderQueuePlayhead = String(clipboard.queuePlayheadIndex + 1)
+                        }
                     } else {
                         let folderIds = idsToMove.filter { $0.isFolder }.map { $0.id }
                         let itemIds = idsToMove.filter { !$0.isFolder }.map { $0.id }
