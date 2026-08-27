@@ -22,6 +22,7 @@ struct ExpandedView: View {
     @Binding var reorderFreezeLimit: String
     @Binding var reorderBackupHistory: [ClipboardItem]
     @Binding var reorderBackupFolders: [ClipboardFolder]
+    @Binding var reorderBackupQueueIDs: [UUID]
     var isFreezeFieldFocused: FocusState<Bool>.Binding
     
     @Binding var selectedIndex: Int
@@ -124,6 +125,7 @@ struct ExpandedView: View {
                         isFreezeFieldFocused: isFreezeFieldFocused,
                         reorderBackupHistory: $reorderBackupHistory,
                         reorderBackupFolders: $reorderBackupFolders,
+                        reorderBackupQueueIDs: $reorderBackupQueueIDs,
                         selectedItemsForDeletion: $selectedItemsForDeletion
                     )
                 }

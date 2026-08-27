@@ -275,6 +275,7 @@ struct ContentView: View {
                     reorderFreezeLimit: $viewModel.reorderFreezeLimit,
                     reorderBackupHistory: $viewModel.reorderBackupHistory,
                     reorderBackupFolders: $viewModel.reorderBackupFolders,
+                    reorderBackupQueueIDs: $viewModel.reorderBackupQueueIDs,
                     isFreezeFieldFocused: $isFreezeFieldFocused,
                     selectedIndex: $viewModel.selectedIndex,
                     selectionAnchorIndex: $viewModel.selectionAnchorIndex,
@@ -339,11 +340,10 @@ struct ContentView: View {
             } else {
                 // Keyboard monitor teardown removed
                 if viewModel.isReorderMode {
-                    if viewModel.reorderTarget != .queue {
-                        clipboard.history = viewModel.reorderBackupHistory
-                        clipboard.folders = viewModel.reorderBackupFolders
-                        clipboard.isReordering = false
-                    }
+                    clipboard.history = viewModel.reorderBackupHistory
+                    clipboard.folders = viewModel.reorderBackupFolders
+                    clipboard.queueIDs = viewModel.reorderBackupQueueIDs
+                    clipboard.isReordering = false
                     viewModel.isReorderMode = false
                     viewModel.reorderTarget = .none
                     viewModel.activeTab = "All"

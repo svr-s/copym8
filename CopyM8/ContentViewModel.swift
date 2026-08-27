@@ -82,6 +82,9 @@ class ContentViewModel: ObservableObject {
     /// A snapshot of the clipboard folders before reordering started, allowing cancellation.
     @Published var reorderBackupFolders: [ClipboardFolder] = []
     
+    /// A snapshot of the clipboard queue IDs before reordering started, allowing cancellation.
+    @Published var reorderBackupQueueIDs: [UUID] = []
+    
     // MARK: - Navigation State
     
     /// The currently active tab name (e.g., "All", "Groups", "Trash").

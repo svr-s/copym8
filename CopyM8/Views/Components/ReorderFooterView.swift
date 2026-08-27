@@ -8,6 +8,7 @@ struct ReorderFooterView: View {
     var isFreezeFieldFocused: FocusState<Bool>.Binding
     @Binding var reorderBackupHistory: [ClipboardItem]
     @Binding var reorderBackupFolders: [ClipboardFolder]
+    @Binding var reorderBackupQueueIDs: [UUID]
     @Binding var selectedItemsForDeletion: Set<UUID>
     
     @State private var footerWidth: CGFloat = 300
@@ -81,11 +82,10 @@ struct ReorderFooterView: View {
     }
     
     private func cancelReorder() {
-        if reorderTarget != .queue {
-            clipboard.history = reorderBackupHistory
-            clipboard.folders = reorderBackupFolders
-            clipboard.isReordering = false
-        }
+        clipboard.history = reorderBackupHistory
+        clipboard.folders = reorderBackupFolders
+        clipboard.queueIDs = reorderBackupQueueIDs
+        clipboard.isReordering = false
         isReorderMode = false
     }
     

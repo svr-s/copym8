@@ -120,6 +120,7 @@ extension ContentView {
                             
                             if viewModel.activeTab == "Queue" {
                                 viewModel.reorderTarget = .queue
+                                viewModel.reorderBackupQueueIDs = clipboard.queueIDs
                                 // Do not set clipboard.isReordering = true for Queue to avoid modifying db/orderIndex
                             } else {
                                 clipboard.isReordering = true
