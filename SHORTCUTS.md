@@ -65,8 +65,10 @@ Here is a comprehensive list of all keyboard shortcuts available in CopyM8, grou
 | **Select All in Tab** | `Cmd + A` | Selects or deselects all visible items in the current tab. |
 | **Ungroup Item(s)** | `Cmd + U` | Triggers the Ungroup modal for selected grouped items (Groups tab only). |
 | **Reorder Item/Group** | `Cmd + Up/Down Arrow` | Dedicated Reorder Mode shortcut: Moves the selected item (or group) up or down in the list. |
-| **Focus Freeze Limit** | `Control + F` | While in Reorder Mode, focuses the "Freeze Top Rows" field. |
-| **Change Freeze Limit** | `Up/Down Arrow` | While the Freeze Limit field is focused, instantly increments or decrements the freeze row limit. |
+| **Focus Freeze Limit** | `Control + F` | While in Reorder Mode (Pinned/Groups), focuses the "Freeze Top Rows" field. |
+| **Focus Queue Playhead** | `Control + P` | While in Reorder Mode (Queue), focuses the "Queue Playhead" field. |
+| **Change Value (Freeze/Playhead)** | `Up/Down Arrow` | While a field is focused, instantly increments or decrements its value. |
+| **Save Reorder / Values** | `Enter` | While in Reorder Mode, instantly saves all changes and exits the mode. |
 
 ### 🗑 Trash & Deletion
 | Action | Shortcut | Description |

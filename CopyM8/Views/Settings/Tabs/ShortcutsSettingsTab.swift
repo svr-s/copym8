@@ -143,7 +143,9 @@ extension SettingsView {
                 shortcutRow(action: "Select All in Tab", key: "Cmd + A")
                 shortcutRow(action: "Ungroup Item", key: "Cmd + U")
                 shortcutRow(action: "Focus Freeze Limit", key: "Control + F")
-                shortcutRow(action: "Change Freeze Limit", key: "Up / Down")
+                shortcutRow(action: "Focus Queue Playhead", key: "Control + P")
+                shortcutRow(action: "Change Value", key: "Up / Down")
+                shortcutRow(action: "Save Reorder", key: "Enter")
             }
             
             Group {

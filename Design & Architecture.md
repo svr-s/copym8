@@ -32,7 +32,7 @@ To maintain peak performance, the `HistoryEvictionService` constantly manages th
 A dedicated Queue architecture handles high-volume data entry workflows.
 * **Global Interception:** When `isQueueRecording` is active, newly copied items bypass standard visual rendering and are appended directly into an ordered `queueIDs` buffer, while providing a global visual indicator (red glow).
 * **Sequential Exhaustion:** A persistent `queuePlayheadIndex` tracks exactly which item is next to be pasted globally. `pasteNextInQueue` performs an AppleScript/Accessibility paste operation of the active item, automatically advancing the playhead without requiring the user to open the UI.
-* **Internal Snapping:** Users can enter the dedicated Queue tab and explicitly snap the playhead to any item using `Cmd + Enter` or `Cmd + Click` to forcefully change the pasting sequence order.
+* **Internal Snapping & Reordering:** Users can enter the dedicated Queue tab and explicitly snap the playhead to any item using `Cmd + Enter` or `Cmd + Click`. Additionally, they can use Reorder Mode (`Cmd + Up/Down`) to shift items and use `Control + P` to dynamically focus and change the queue playhead index using Arrow keys, pressing `Enter` to instantly save the configuration.
 
 ## 3. UI/UX Design System
 
