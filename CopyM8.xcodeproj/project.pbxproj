@@ -21,6 +21,7 @@
 		2F89AC82606B4208C0087923 /* ClipboardManager+Reordering.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC1E8AE6675C1A16860C38EB /* ClipboardManager+Reordering.swift */; };
 		315F0714E2B60E5EB78A17BB /* ClipboardManager+Queue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85133DBA7971D324B0A51CB8 /* ClipboardManager+Queue.swift */; };
 		3631EBCC4D9E1E7024F4CC10 /* NSEvent+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6175B26DB02864F3CAF8D87B /* NSEvent+Extensions.swift */; };
+		39329DEA93D3B9557C35DC3D /* QueueHUDView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72BAE07969D50F5E346F0A93 /* QueueHUDView.swift */; };
 		3DAAE5949C907B15AD96D4BB /* EditModeFooterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C193A9E47C581EFD57012E /* EditModeFooterView.swift */; };
 		581912D7D3DFB6BDB07727D1 /* ClipboardManager+Sync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 624AF7E284DE964FB8588AFB /* ClipboardManager+Sync.swift */; };
 		5D946B7AE0F50A2868AFE0C2 /* TypesSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 743BBCC2F45DAE65010700FD /* TypesSettingsTab.swift */; };
@@ -79,6 +80,7 @@
 		6175B26DB02864F3CAF8D87B /* NSEvent+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSEvent+Extensions.swift"; sourceTree = "<group>"; };
 		624AF7E284DE964FB8588AFB /* ClipboardManager+Sync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ClipboardManager+Sync.swift"; sourceTree = "<group>"; };
 		6B868909F0B81C4E16B8214A /* PrivacySettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacySettingsTab.swift; sourceTree = "<group>"; };
+		72BAE07969D50F5E346F0A93 /* QueueHUDView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QueueHUDView.swift; sourceTree = "<group>"; };
 		743BBCC2F45DAE65010700FD /* TypesSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypesSettingsTab.swift; sourceTree = "<group>"; };
 		785BEE7B1738C1C4F863A88D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7C5DD7D390AD90A064ABFD3F /* ResizeEdgesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizeEdgesView.swift; sourceTree = "<group>"; };
@@ -123,6 +125,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0D864FA93B03761EA28B0F61 /* HUD */ = {
+			isa = PBXGroup;
+			children = (
+				72BAE07969D50F5E346F0A93 /* QueueHUDView.swift */,
+			);
+			name = HUD;
+			sourceTree = "<group>";
+		};
 		181FA14C096CE70675A2FAD9 /* Components */ = {
 			isa = PBXGroup;
 			children = (
@@ -152,6 +162,7 @@
 				181FA14C096CE70675A2FAD9 /* Components */,
 				C4C0C6408EE554F4E90BED22 /* Modifiers */,
 				8566A503C124E4E6CF3181B2 /* Settings */,
+				0D864FA93B03761EA28B0F61 /* HUD */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -362,6 +373,7 @@
 				F5CDB2FCA549E209A420E1EE /* TabBarView.swift in Sources */,
 				5D946B7AE0F50A2868AFE0C2 /* TypesSettingsTab.swift in Sources */,
 				9A7DBBB05A39B362B9E45472 /* VisualEffectView.swift in Sources */,
+				39329DEA93D3B9557C35DC3D /* QueueHUDView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

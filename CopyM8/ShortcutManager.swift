@@ -10,6 +10,8 @@ extension KeyboardShortcuts.Name {
     static let openGroups = Self("openGroups")
     static let toggleQueueRecord = Self("toggleQueueRecord")
     static let pasteNextInQueue = Self("pasteNextInQueue")
+    static let queueScrubForward = Self("queueScrubForward")
+    static let queueScrubBackward = Self("queueScrubBackward")
     static let customGlobal1 = Self("customGlobal1")
     static let customGlobal2 = Self("customGlobal2")
     static let customGlobal3 = Self("customGlobal3")
@@ -31,6 +33,8 @@ class ShortcutManager: ObservableObject {
     @Published var isPresentingModal: Bool = false
     @Published var queueToggleTrigger: UUID = UUID()
     @Published var queuePasteTrigger: UUID = UUID()
+    @Published var queueScrubForwardTrigger: UUID = UUID()
+    @Published var queueScrubBackwardTrigger: UUID = UUID()
     private var eventMonitor: Any?
     
     init() {
@@ -63,6 +67,18 @@ class ShortcutManager: ObservableObject {
         KeyboardShortcuts.onKeyUp(for: .pasteNextInQueue) { [weak self] in
             DispatchQueue.main.async {
                 self?.queuePasteTrigger = UUID()
+            }
+        }
+        
+        KeyboardShortcuts.onKeyUp(for: .queueScrubForward) { [weak self] in
+            DispatchQueue.main.async {
+                self?.queueScrubForwardTrigger = UUID()
+            }
+        }
+        
+        KeyboardShortcuts.onKeyUp(for: .queueScrubBackward) { [weak self] in
+            DispatchQueue.main.async {
+                self?.queueScrubBackwardTrigger = UUID()
             }
         }
         

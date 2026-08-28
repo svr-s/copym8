@@ -118,5 +118,32 @@ extension ClipboardManager {
         }
         
         saveQueueState()
+        showQueueHUD()
+    }
+    
+    func scrubQueueForward() {
+        guard !queueIDs.isEmpty else { return }
+        queuePlayheadIndex += 1
+        if queuePlayheadIndex >= queueIDs.count {
+            queuePlayheadIndex = 0
+        }
+        saveQueueState()
+        showQueueHUD()
+    }
+    
+    func scrubQueueBackward() {
+        guard !queueIDs.isEmpty else { return }
+        queuePlayheadIndex -= 1
+        if queuePlayheadIndex < 0 {
+            queuePlayheadIndex = max(0, queueIDs.count - 1)
+        }
+        saveQueueState()
+        showQueueHUD()
+    }
+    
+    func showQueueHUD() {
+        DispatchQueue.main.async {
+            QueueHUDWindowController.shared.showHUD(with: self)
+        }
     }
 }

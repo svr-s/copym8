@@ -21,6 +21,16 @@ extension SettingsView {
                     Spacer()
                     KeyboardShortcuts.Recorder("", name: .pasteNextInQueue)
                 }
+                HStack {
+                    Text("Scrub Back (Previous):").font(.system(size: 12))
+                    Spacer()
+                    KeyboardShortcuts.Recorder("", name: .queueScrubBackward)
+                }
+                HStack {
+                    Text("Scrub Forward (Next):").font(.system(size: 12))
+                    Spacer()
+                    KeyboardShortcuts.Recorder("", name: .queueScrubForward)
+                }
                 
                 Divider().padding(.vertical, 4)
 

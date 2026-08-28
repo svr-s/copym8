@@ -451,9 +451,7 @@ struct ContentView: View {
         .onChange(of: shortcut.queueToggleTrigger) { _, _ in
             clipboard.isQueueRecording.toggle()
         }
-        .onChange(of: shortcut.queuePasteTrigger) { _, _ in
-            clipboard.pasteNextInQueue()
-        }
+        .modifier(QueueShortcutModifier(clipboard: clipboard, shortcut: shortcut))
         .onAppear { applyTheme(themePreference) }
         .environmentObject(clipboard)
         .environmentObject(shortcut)
@@ -553,3 +551,21 @@ extension ContentView {
     }
 
 // DeviceSwitcherView extracted to Views/Components/DeviceSwitcherView.swift
+
+struct QueueShortcutModifier: ViewModifier {
+    @ObservedObject var clipboard: ClipboardManager
+    @ObservedObject var shortcut: ShortcutManager
+    
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: shortcut.queuePasteTrigger) { _, _ in
+                clipboard.pasteNextInQueue()
+            }
+            .onChange(of: shortcut.queueScrubForwardTrigger) { _, _ in
+                clipboard.scrubQueueForward()
+            }
+            .onChange(of: shortcut.queueScrubBackwardTrigger) { _, _ in
+                clipboard.scrubQueueBackward()
+            }
+    }
+}

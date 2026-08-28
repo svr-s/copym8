@@ -1,8 +1,13 @@
 require 'xcodeproj'
-project_path = 'CopyM8.xcodeproj'
-project = Xcodeproj::Project.open(project_path)
+project = Xcodeproj::Project.open('CopyM8.xcodeproj')
 target = project.targets.first
-group = project.main_group.find_subpath(File.join('CopyM8'), true)
-file_ref = group.new_reference('BackupManager.swift')
-target.add_file_references([file_ref])
+
+# Add the file reference
+group = project.main_group.find_subpath(File.join('CopyM8', 'Views', 'HUD'), true)
+group.set_source_tree('<group>')
+file_ref = group.new_reference('QueueHUDView.swift')
+
+# Add to compile sources phase
+target.source_build_phase.add_file_reference(file_ref)
+
 project.save
