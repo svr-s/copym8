@@ -94,25 +94,23 @@ struct QueueHUDView: View {
     
     var body: some View {
         HStack(spacing: 0) {
-            // Left Side: 8 Logo Pill
+            // Left Side: Logo Pill
             ZStack {
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: 10)
                     .fill(Color.primary.opacity(0.05))
-                    .frame(width: 32)
+                    .frame(width: 28) // Tighter pill
                 
-                Image(systemName: "infinity")
+                Image("CopyM8_Logo_Crescent_8")
                     .resizable()
                     .scaledToFit()
-                    .font(Font.system(size: 10, weight: .medium))
                     .foregroundColor(clipboard.isQueueRecording ? .red : .primary.opacity(0.8))
-                    .frame(width: 20, height: 12)
-                    .rotationEffect(.degrees(90))
+                    .frame(width: 16, height: 16) // Adjust to fit
             }
-            .padding(.leading, 8)
-            .padding(.vertical, 8)
+            .padding(.leading, 6)
+            .padding(.vertical, 6)
             
             // Right Side: List
-            VStack(spacing: 4) {
+            VStack(spacing: 2) { // Tighter spacing
                 let items = clipboard.queueIDs.compactMap { id in clipboard.history.first(where: { $0.id == id }) }
                 let activeIndex = clipboard.queuePlayheadIndex
                 
@@ -121,10 +119,10 @@ struct QueueHUDView: View {
                         .font(.system(size: 13))
                         .foregroundColor(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 12)
+                        .padding(.horizontal, 8)
                 } else {
-                    // Always show 3 slots: activeIndex - 1, activeIndex, activeIndex + 1
-                    ForEach(-1...1, id: \.self) { offset in
+                    // Always show 5 slots: activeIndex - 2 to activeIndex + 2
+                    ForEach(-2...2, id: \.self) { offset in
                         let targetIndex = activeIndex + offset
                         if targetIndex >= 0 && targetIndex < items.count {
                             let item = items[targetIndex]
@@ -136,16 +134,16 @@ struct QueueHUDView: View {
                             QueueHUDRowView(item: item, status: status)
                         } else {
                             // Empty slot to maintain layout height
-                            Color.clear.frame(height: 28) // approximate height of concise row
+                            Color.clear.frame(height: 26) // precise height of concise row
                         }
                     }
                 }
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .padding(.horizontal, 6)
             .frame(maxWidth: .infinity)
         }
-        .frame(width: 320)
+        .frame(width: 280) // Tighter width
     }
 }
 
