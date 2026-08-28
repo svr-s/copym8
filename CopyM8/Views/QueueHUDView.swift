@@ -16,7 +16,7 @@ class QueueHUDWindowController: NSWindowController {
     
     convenience init() {
         let window = QueueHUDPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 320, height: 160),
+            contentRect: NSRect(x: 0, y: 0, width: 280, height: 160),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -38,32 +38,19 @@ class QueueHUDWindowController: NSWindowController {
             self.hudView = QueueHUDView()
             let view = AnyView(self.hudView!.environmentObject(clipboard))
             let host = NSHostingController(rootView: view)
+            host.sizingOptions = [.intrinsicContentSize]
             self.hostingController = host
-            
-            // Apply visual effect wrapper for contrast
-            let visualEffect = NSVisualEffectView()
-            visualEffect.material = .hudWindow
-            visualEffect.state = .active
-            visualEffect.blendingMode = .behindWindow
-            visualEffect.wantsLayer = true
-            visualEffect.layer?.cornerRadius = 12
-            visualEffect.clipsToBounds = true
-            
-            host.view.frame = visualEffect.bounds
-            host.view.autoresizingMask = [.width, .height]
-            visualEffect.addSubview(host.view)
-            
-            self.window?.contentView = visualEffect
+            self.window?.contentView = host.view
         }
         
         guard let window = self.window else { return }
         
-        // Position at bottom center
+        // Position at bottom center (it will grow upward dynamically because of macOS coords)
         if let screen = NSScreen.main {
             let screenRect = screen.visibleFrame
             let windowRect = window.frame
             let x = screenRect.minX + (screenRect.width - windowRect.width) / 2
-            let y = screenRect.minY + 40 // 40 points above the dock/bottom
+            let y = screenRect.minY + 40 // Bottom anchored
             window.setFrameOrigin(NSPoint(x: x, y: y))
         }
         
@@ -93,57 +80,56 @@ struct QueueHUDView: View {
     @EnvironmentObject var clipboard: ClipboardManager
     
     var body: some View {
-        HStack(spacing: 0) {
-            // Left Side: Logo Pill
-            ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color.primary.opacity(0.05))
-                    .frame(width: 28) // Tighter pill
-                
-                Image("CopyM8_Logo_Crescent_8")
-                    .resizable()
-                    .scaledToFit()
-                    .foregroundColor(clipboard.isQueueRecording ? .red : .primary.opacity(0.8))
-                    .frame(width: 16, height: 16) // Adjust to fit
-            }
-            .padding(.leading, 6)
-            .padding(.vertical, 6)
+        VStack(spacing: 2) {
+            let items = clipboard.queueIDs.compactMap { id in clipboard.history.first(where: { $0.id == id }) }
+            let activeIndex = clipboard.queuePlayheadIndex
             
-            // Right Side: List
-            VStack(spacing: 2) { // Tighter spacing
-                let items = clipboard.queueIDs.compactMap { id in clipboard.history.first(where: { $0.id == id }) }
-                let activeIndex = clipboard.queuePlayheadIndex
+            if items.isEmpty {
+                Text("Queue is empty")
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 8)
+            } else {
+                let maxItems = min(5, items.count)
+                let half = 2 // Max sliding window padding
                 
-                if items.isEmpty {
-                    Text("Queue is empty")
-                        .font(.system(size: 13))
-                        .foregroundColor(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 8)
-                } else {
-                    // Always show 5 slots: activeIndex - 2 to activeIndex + 2
-                    ForEach(-2...2, id: \.self) { offset in
-                        let targetIndex = activeIndex + offset
-                        if targetIndex >= 0 && targetIndex < items.count {
-                            let item = items[targetIndex]
-                            let status: QueueStatus = {
-                                if offset < 0 { return .pasted }
-                                if offset == 0 { return .next }
-                                return .upcoming
-                            }()
-                            QueueHUDRowView(item: item, status: status)
-                        } else {
-                            // Empty slot to maintain layout height
-                            Color.clear.frame(height: 26) // precise height of concise row
-                        }
+                let (safeStart, safeEnd): (Int, Int) = {
+                    var s = activeIndex - half
+                    var e = activeIndex + half
+                    
+                    if s < 0 {
+                        e += abs(s)
+                        s = 0
+                    }
+                    
+                    if e >= items.count {
+                        let overflow = e - items.count + 1
+                        s -= overflow
+                        e = items.count - 1
+                    }
+                    
+                    return (max(0, s), min(items.count - 1, e))
+                }()
+                
+                if safeStart <= safeEnd {
+                    ForEach(safeStart...safeEnd, id: \.self) { idx in
+                        let item = items[idx]
+                        let status: QueueStatus = {
+                            if idx < activeIndex { return .pasted }
+                            if idx == activeIndex { return .next }
+                            return .upcoming
+                        }()
+                        QueueHUDRowView(item: item, status: status)
                     }
                 }
             }
-            .padding(.vertical, 6)
-            .padding(.horizontal, 6)
-            .frame(maxWidth: .infinity)
         }
-        .frame(width: 280) // Tighter width
+        .padding(.vertical, 6)
+        .padding(.horizontal, 6)
+        .frame(width: 280) // Fixed width, intrinsic height
+        .background(VisualEffectView(material: .hudWindow, blendingMode: .behindWindow))
+        .cornerRadius(12)
     }
 }
 
