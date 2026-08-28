@@ -325,7 +325,10 @@ struct ContentView: View {
                     },
                     snapToEdge: snapToEdge
                 )
-                .transition(.opacity)
+                .transition(.asymmetric(
+                    insertion: .opacity.animation(.easeIn(duration: 0.2).delay(0.25)),
+                    removal: .opacity.animation(.easeOut(duration: 0.1))
+                ))
             }
             
             // Dummy views to force SwiftUI to track these as dependencies for displayNodes
