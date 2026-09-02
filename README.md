@@ -1,6 +1,6 @@
 # CopyM8 ♾️
 
-CopyM8 is a fast, native clipboard manager that securely stores and synchronizes your copy history across devices.
+CopyM8 is a fast, native clipboard manager that securely stores and synchronizes your copy history across devices. It acts as an infinitely expanding memory bank for your clipboard, tucked away beautifully on the edge of your screen.
 
 ## Repository Structure
 This repository utilizes a monorepo architecture to house the cross-platform ecosystem for CopyM8:
