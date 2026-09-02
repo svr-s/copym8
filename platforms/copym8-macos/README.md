@@ -1,4 +1,5 @@
 # [CopyM8](https://copym8.com) ♾️
+[![Downloads](https://img.shields.io/github/downloads/svr-s/CopyM8/total)](https://github.com/svr-s/CopyM8/releases)
 CopyM8 is a fast, native clipboard manager that securely stores and synchronizes your copy history across devices. It acts as an infinitely expanding memory bank for your clipboard, tucked away beautifully on the edge of your screen.
 
 ## ✨ Features
