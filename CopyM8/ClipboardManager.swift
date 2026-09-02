@@ -447,156 +447,172 @@ func checkForChanges() {
                 }
             }
             
-            var newItem: ClipboardItem? = nil
             
-            if isFile {
-                if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], !urls.isEmpty {
-                    newItem = createFileClipboardItem(urls: urls, appName: appName, isImage: isImage)
-                } else if let str = pasteboard.string(forType: vsCodeFileType) {
-                    let lines = str.components(separatedBy: .newlines).filter { !$0.isEmpty }
-                    let urls = lines.compactMap { URL(string: $0) }
-                    newItem = createFileClipboardItem(urls: urls, appName: appName, isImage: isImage)
-                }
-            }
-            
-            if newItem == nil && isImage {
-                let imgData = pasteboard.data(forType: .png) ?? pasteboard.data(forType: .tiff)
-                if let data = imgData {
-                    if data.count <= maxItemSizeMB * 1024 * 1024 {
-                        let id = UUID()
-                        if LocalImageStore.shared.saveImage(data, id: id) {
-                            let formatter = DateFormatter()
-                            formatter.timeStyle = .short
-                            let name = "Screenshot at \(formatter.string(from: Date()))"
-                            newItem = ClipboardItem(id: id, text: name, timestamp: Date(), sourceApp: appName, hasRTF: false, hasHTML: false, isPinned: false, itemType: .image, fileURLs: nil)
-                        }
-                    }
-                }
-            }
-            
-            if newItem == nil {
-                var extractedString: String? = pasteboard.string(forType: .string)
-                if extractedString == nil {
-                    extractedString = pasteboard.string(forType: NSPasteboard.PasteboardType("public.utf8-plain-text"))
-                }
-                if extractedString == nil {
-                    extractedString = pasteboard.string(forType: NSPasteboard.PasteboardType("NSStringPboardType"))
-                }
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                guard let self = self else { return }
                 
-                if let newString = extractedString {
-                    let newItemId = UUID()
-                    var hasRTF = false
-                    if let rtf = pasteboard.data(forType: .rtf) {
-                        if rtf.count <= maxItemSizeMB * 1024 * 1024 {
-                            let _ = LocalPayloadStore.shared.savePayload(rtf, id: newItemId, type: .rtf)
-                            hasRTF = true
+                autoreleasepool {
+                    // Check if clipboard changed while we were dispatching
+                    guard self.pasteboard.changeCount == currentCount else { return }
+                    
+                    var newItem: ClipboardItem? = nil
+                    
+                    if isFile {
+                        if let urls = self.pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], !urls.isEmpty {
+                            newItem = self.createFileClipboardItem(urls: urls, appName: appName, isImage: isImage)
+                        } else if let str = self.pasteboard.string(forType: vsCodeFileType) {
+                            let lines = str.components(separatedBy: .newlines).filter { !$0.isEmpty }
+                            let urls = lines.compactMap { URL(string: $0) }
+                            newItem = self.createFileClipboardItem(urls: urls, appName: appName, isImage: isImage)
                         }
                     }
                     
-                    var hasHTML = false
-                    if let html = pasteboard.data(forType: .html) ?? pasteboard.data(forType: NSPasteboard.PasteboardType("public.html")) {
-                        if html.count <= maxItemSizeMB * 1024 * 1024 {
-                            let _ = LocalPayloadStore.shared.savePayload(html, id: newItemId, type: .html)
-                            hasHTML = true
+                    if newItem == nil && isImage {
+                        let imgData = self.pasteboard.data(forType: .png) ?? self.pasteboard.data(forType: .tiff)
+                        if let data = imgData {
+                            if data.count <= self.maxItemSizeMB * 1024 * 1024 {
+                                let id = UUID()
+                                if LocalImageStore.shared.saveImage(data, id: id) {
+                                    let formatter = DateFormatter()
+                                    formatter.timeStyle = .short
+                                    let name = "Screenshot at \(formatter.string(from: Date()))"
+                                    newItem = ClipboardItem(id: id, text: name, timestamp: Date(), sourceApp: appName, hasRTF: false, hasHTML: false, isPinned: false, itemType: .image, fileURLs: nil)
+                                }
+                            }
                         }
                     }
                     
-                    var hasRTFD = false
-                    if let rtfd = pasteboard.data(forType: .rtfd) ?? pasteboard.data(forType: NSPasteboard.PasteboardType("com.apple.flat-rtfd")) {
-                        if rtfd.count <= maxItemSizeMB * 1024 * 1024 {
-                            let _ = LocalPayloadStore.shared.savePayload(rtfd, id: newItemId, type: .rtfd)
-                            hasRTFD = true
+                    if newItem == nil {
+                        var extractedString: String? = self.pasteboard.string(forType: .string)
+                        if extractedString == nil {
+                            extractedString = self.pasteboard.string(forType: NSPasteboard.PasteboardType("public.utf8-plain-text"))
+                        }
+                        if extractedString == nil {
+                            extractedString = self.pasteboard.string(forType: NSPasteboard.PasteboardType("NSStringPboardType"))
+                        }
+                        
+                        if let newString = extractedString {
+                            let newItemId = UUID()
+                            var hasRTF = false
+                            if let rtf = self.pasteboard.data(forType: .rtf) {
+                                if rtf.count <= self.maxItemSizeMB * 1024 * 1024 {
+                                    let _ = LocalPayloadStore.shared.savePayload(rtf, id: newItemId, type: .rtf)
+                                    hasRTF = true
+                                }
+                            }
+                            
+                            var hasHTML = false
+                            if let html = self.pasteboard.data(forType: .html) ?? self.pasteboard.data(forType: NSPasteboard.PasteboardType("public.html")) {
+                                if html.count <= self.maxItemSizeMB * 1024 * 1024 {
+                                    let _ = LocalPayloadStore.shared.savePayload(html, id: newItemId, type: .html)
+                                    hasHTML = true
+                                }
+                            }
+                            
+                            var hasRTFD = false
+                            if let rtfd = self.pasteboard.data(forType: .rtfd) ?? self.pasteboard.data(forType: NSPasteboard.PasteboardType("com.apple.flat-rtfd")) {
+                                if rtfd.count <= self.maxItemSizeMB * 1024 * 1024 {
+                                    let _ = LocalPayloadStore.shared.savePayload(rtfd, id: newItemId, type: .rtfd)
+                                    hasRTFD = true
+                                }
+                            }
+                            
+                            var hasWebArchive = false
+                            if let webArchive = self.pasteboard.data(forType: NSPasteboard.PasteboardType("Apple Web Archive pasteboard type")) {
+                                if webArchive.count <= self.maxItemSizeMB * 1024 * 1024 {
+                                    let _ = LocalPayloadStore.shared.savePayload(webArchive, id: newItemId, type: .webArchive)
+                                    hasWebArchive = true
+                                }
+                            }
+                            
+                            var hasPDF = false
+                            if let pdf = self.pasteboard.data(forType: .pdf) ?? self.pasteboard.data(forType: NSPasteboard.PasteboardType("com.adobe.pdf")) {
+                                if pdf.count <= self.maxItemSizeMB * 1024 * 1024 {
+                                    let _ = LocalPayloadStore.shared.savePayload(pdf, id: newItemId, type: .pdf)
+                                    hasPDF = true
+                                }
+                            }
+                            
+                            var type: ItemType = .text
+                            let trimmedStr = newString.trimmingCharacters(in: .whitespacesAndNewlines)
+                            let lowerStr = trimmedStr.lowercased()
+                            
+                            // Browsers often attach a .URL type to regular text copies.
+                            // We should only classify it as a link if the text itself is actually a URL.
+                            let isActuallyURL = lowerStr.hasPrefix("http://") || lowerStr.hasPrefix("https://") || 
+                                                (isURL && !trimmedStr.contains(" ") && URL(string: trimmedStr) != nil)
+                                                
+                            if isActuallyURL { type = .link }
+                            
+                            newItem = ClipboardItem(id: newItemId, text: newString, timestamp: Date(), sourceApp: appName, hasRTF: hasRTF, hasHTML: hasHTML, hasRTFD: hasRTFD, hasWebArchive: hasWebArchive, hasPDF: hasPDF, isPinned: false, itemType: type, fileURLs: nil)
                         }
                     }
                     
-                    var hasWebArchive = false
-                    if let webArchive = pasteboard.data(forType: NSPasteboard.PasteboardType("Apple Web Archive pasteboard type")) {
-                        if webArchive.count <= maxItemSizeMB * 1024 * 1024 {
-                            let _ = LocalPayloadStore.shared.savePayload(webArchive, id: newItemId, type: .webArchive)
-                            hasWebArchive = true
+                    guard let itemToSave = newItem else { return }
+                    
+                    // Ensure the pasteboard hasn't changed again before saving
+                    guard self.pasteboard.changeCount == currentCount else { return }
+                    
+                    // Deduplication logic (requires main thread to safely read 'history' array)
+                    var existingItem: ClipboardItem? = nil
+                    DispatchQueue.main.sync {
+                        if let existingIndex = self.history.firstIndex(where: { $0.text == itemToSave.text && $0.itemType == itemToSave.itemType }) {
+                            existingItem = self.history[existingIndex]
                         }
                     }
                     
-                    var hasPDF = false
-                    if let pdf = pasteboard.data(forType: .pdf) ?? pasteboard.data(forType: NSPasteboard.PasteboardType("com.adobe.pdf")) {
-                        if pdf.count <= maxItemSizeMB * 1024 * 1024 {
-                            let _ = LocalPayloadStore.shared.savePayload(pdf, id: newItemId, type: .pdf)
-                            hasPDF = true
+                    if let existing = existingItem {
+                        let existingId = existing.id
+                        
+                        // Perform I/O on background thread
+                        if itemToSave.hasRTF, let data = LocalPayloadStore.shared.loadPayload(id: itemToSave.id, type: .rtf) {
+                            let _ = LocalPayloadStore.shared.savePayload(data, id: existingId, type: .rtf)
                         }
+                        if itemToSave.hasHTML, let data = LocalPayloadStore.shared.loadPayload(id: itemToSave.id, type: .html) {
+                            let _ = LocalPayloadStore.shared.savePayload(data, id: existingId, type: .html)
+                        }
+                        if itemToSave.hasRTFD, let data = LocalPayloadStore.shared.loadPayload(id: itemToSave.id, type: .rtfd) {
+                            let _ = LocalPayloadStore.shared.savePayload(data, id: existingId, type: .rtfd)
+                        }
+                        if itemToSave.hasWebArchive, let data = LocalPayloadStore.shared.loadPayload(id: itemToSave.id, type: .webArchive) {
+                            let _ = LocalPayloadStore.shared.savePayload(data, id: existingId, type: .webArchive)
+                        }
+                        if itemToSave.hasPDF, let data = LocalPayloadStore.shared.loadPayload(id: itemToSave.id, type: .pdf) {
+                            let _ = LocalPayloadStore.shared.savePayload(data, id: existingId, type: .pdf)
+                        }
+                        LocalPayloadStore.shared.deletePayloads(for: itemToSave.id)
+                        
+                        DispatchQueue.main.async {
+                            // Find index again to be absolutely sure it hasn't shifted
+                            if let index = self.history.firstIndex(where: { $0.id == existingId }) {
+                                var item = self.history.remove(at: index)
+                                item.timestamp = Date()
+                                if item.itemType == .text {
+                                    if itemToSave.hasRTF { item.hasRTF = true }
+                                    if itemToSave.hasHTML { item.hasHTML = true }
+                                    if itemToSave.hasRTFD { item.hasRTFD = true }
+                                    if itemToSave.hasWebArchive { item.hasWebArchive = true }
+                                    if itemToSave.hasPDF { item.hasPDF = true }
+                                }
+                                self.history.insert(item, at: 0)
+                                if self.isQueueRecording {
+                                    self.enqueueItem(id: item.id)
+                                }
+                            }
+                        }
+                        return
                     }
                     
-                    var type: ItemType = .text
-                    let trimmedStr = newString.trimmingCharacters(in: .whitespacesAndNewlines)
-                    let lowerStr = trimmedStr.lowercased()
-                    
-                    // Browsers often attach a .URL type to regular text copies.
-                    // We should only classify it as a link if the text itself is actually a URL.
-                    let isActuallyURL = lowerStr.hasPrefix("http://") || lowerStr.hasPrefix("https://") || 
-                                        (isURL && !trimmedStr.contains(" ") && URL(string: trimmedStr) != nil)
-                                        
-                    if isActuallyURL { type = .link }
-                    
-                    newItem = ClipboardItem(id: newItemId, text: newString, timestamp: Date(), sourceApp: appName, hasRTF: hasRTF, hasHTML: hasHTML, hasRTFD: hasRTFD, hasWebArchive: hasWebArchive, hasPDF: hasPDF, isPinned: false, itemType: type, fileURLs: nil)
-                }
-            }
-            
-            guard let itemToSave = newItem else { return }
-            
-            // Deduplication
-            if let existingIndex = history.firstIndex(where: { $0.text == itemToSave.text && $0.itemType == itemToSave.itemType }) {
-                let existingId = history[existingIndex].id
-                if itemToSave.hasRTF, let data = LocalPayloadStore.shared.loadPayload(id: itemToSave.id, type: .rtf) {
-                    let _ = LocalPayloadStore.shared.savePayload(data, id: existingId, type: .rtf)
-                }
-                if itemToSave.hasHTML, let data = LocalPayloadStore.shared.loadPayload(id: itemToSave.id, type: .html) {
-                    let _ = LocalPayloadStore.shared.savePayload(data, id: existingId, type: .html)
-                }
-                if itemToSave.hasRTFD, let data = LocalPayloadStore.shared.loadPayload(id: itemToSave.id, type: .rtfd) {
-                    let _ = LocalPayloadStore.shared.savePayload(data, id: existingId, type: .rtfd)
-                }
-                if itemToSave.hasWebArchive, let data = LocalPayloadStore.shared.loadPayload(id: itemToSave.id, type: .webArchive) {
-                    let _ = LocalPayloadStore.shared.savePayload(data, id: existingId, type: .webArchive)
-                }
-                if itemToSave.hasPDF, let data = LocalPayloadStore.shared.loadPayload(id: itemToSave.id, type: .pdf) {
-                    let _ = LocalPayloadStore.shared.savePayload(data, id: existingId, type: .pdf)
-                }
-                LocalPayloadStore.shared.deletePayloads(for: itemToSave.id)
-                
-                DispatchQueue.main.async {
-                    var item = self.history.remove(at: existingIndex)
-                    item.timestamp = Date()
-                    if item.itemType == .text {
-                        if itemToSave.hasRTF {
-                            item.hasRTF = true
+                    // If it's a completely new item, append it
+                    DispatchQueue.main.async {
+                        self.history.insert(itemToSave, at: 0)
+                        if self.isQueueRecording {
+                            self.enqueueItem(id: itemToSave.id)
                         }
-                        if itemToSave.hasHTML {
-                            item.hasHTML = true
-                        }
-                        if itemToSave.hasRTFD {
-                            item.hasRTFD = true
-                        }
-                        if itemToSave.hasWebArchive {
-                            item.hasWebArchive = true
-                        }
-                        if itemToSave.hasPDF {
-                            item.hasPDF = true
-                        }
-                    }
-                    self.history.insert(item, at: 0)
-                    if self.isQueueRecording {
-                        self.enqueueItem(id: item.id)
+                        self.truncateHistory(to: self.maxHistoryCount)
+                        self.pruneStorageIfNeeded()
                     }
                 }
-                return
-            }
-            
-            DispatchQueue.main.async {
-                self.history.insert(itemToSave, at: 0)
-                if self.isQueueRecording {
-                    self.enqueueItem(id: itemToSave.id)
-                }
-                self.truncateHistory(to: self.maxHistoryCount)
-                self.pruneStorageIfNeeded()
             }
         }
     }
