@@ -1,6 +1,6 @@
 # CopyM8 ♾️
 
-CopyM8 is a modern, buttery-smooth, and lightweight clipboard manager built natively for macOS. It acts as an infinitely expanding memory bank for your clipboard, tucked away beautifully on the edge of your screen. 
+CopyM8 is a fast, native clipboard manager that securely stores and synchronizes your copy history across devices.
 
 ## ✨ Features
 
