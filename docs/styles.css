@@ -100,13 +100,16 @@ section {
 
 @media (min-width: 1024px) {
     .hero {
-        flex-direction: row;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
         text-align: left;
+        gap: 4rem;
+        align-items: center;
     }
     
     .hero-content {
-        flex: 1;
-        max-width: 500px;
+        max-width: none;
+        padding-right: 2rem;
     }
     
     .hero-subtitle {
