@@ -98,27 +98,16 @@ section {
     gap: 4rem;
 }
 
-@media (min-width: 1024px) {
-    .hero {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        text-align: left;
-        gap: 4rem;
-        align-items: center;
-    }
-    
-    .hero-content {
-        max-width: none;
-        padding-right: 2rem;
-    }
-    
-    .hero-subtitle {
-        margin: 0 0 2.5rem 0;
-    }
-    
-    .cta-group {
-        justify-content: flex-start;
-    }
+/* Removed grid layout to keep hero center-aligned on all devices */
+.os-badge {
+    display: inline-block;
+    padding: 0.4rem 1rem;
+    background: rgba(0, 113, 227, 0.1);
+    color: var(--accent);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
 }
 
 .hero h1 {

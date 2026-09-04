@@ -1,153 +1,21 @@
-/* Modular Animation Styles for Hero Section */
+/* Static Showcase Styles for Hero Section */
 
-.hero-animation {
+.hero-showcase {
     width: 100%;
-    max-width: 600px;
-    height: 350px; /* Increased height for bigger display */
-    position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
-    flex: 1; /* Takes up remaining space in 2-column layout */
+    margin-top: 3rem;
 }
 
-.animation-scaler {
+/* Photorealistic UI Replica - Static */
+.static-mockup {
     width: 100%;
-    max-width: 450px;
-    height: 100%;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-@media (max-width: 500px) {
-    .animation-scaler {
-        transform: scale(0.85);
-    }
-}
-@media (max-width: 400px) {
-    .animation-scaler {
-        transform: scale(0.7);
-    }
-}
-
-.animation-stage {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-    border-radius: 12px;
-    background: transparent;
-}
-
-/* 1. Text Sequence */
-.text-sequence {
-    font-size: 5rem; /* Larger font */
-    font-weight: 700;
-    font-family: 'Inter', monospace;
-    display: flex;
-    position: absolute;
-    z-index: 10;
-    color: var(--text-primary);
-    align-items: center;
-}
-
-.letter {
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    animation: fadeOutLetter 6s 2 forwards;
-    opacity: 1;
-}
-
-.l-c { animation-delay: 0s; }
-.l-o { animation-delay: 0.1s; }
-.l-p { animation-delay: 0.2s; }
-.l-y { animation-delay: 0.3s; }
-.l-m { animation-delay: 0.4s; }
-
-.l-8 {
-    animation: snapRightAndFade 6s 2 forwards cubic-bezier(0.34, 1.56, 0.64, 1);
-    color: var(--accent);
-}
-
-/* 2. Screen Edge */
-.screen-edge {
-    position: absolute;
-    right: 0;
-    top: 5%;
-    bottom: 5%;
-    width: 2px;
-    background: linear-gradient(to bottom, transparent, var(--border-color), transparent);
-    opacity: 0;
-    animation: fadeInOutEdge 6s 2 forwards;
-}
-
-.magnetic-pill {
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 36px;
-    height: 56px;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1.5px solid rgba(0,0,0,0.1);
-    border-radius: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    opacity: 0;
-    z-index: 3;
-    animation: morphPillIn 6s 2 forwards;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-}
-.magnetic-pill span {
-    font-size: 26px;
-    font-weight: 500;
-    color: rgba(0,0,0,0.3);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-}
-
-/* 3. Keystroke Badge */
-.keystroke-badge {
-    position: absolute;
-    bottom: 10%;
-    left: 50%;
-    transform: translateX(-50%) scale(0.9);
-    background: var(--text-primary);
-    color: white;
-    padding: 10px 20px;
-    border-radius: 10px;
-    font-size: 1rem;
-    font-weight: 600;
-    font-family: monospace;
-    opacity: 0;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-    animation: popInKeystroke 6s 2 forwards;
-    z-index: 5;
-}
-
-/* 4. Photorealistic UI Replica */
-.wireframe-ui {
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%) translateX(100%);
-    width: 100%;
-    max-width: 400px; /* Slightly wider for the real layout */
+    max-width: 440px; 
     background: #FFFFFF;
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-    opacity: 0;
-    animation: slideInWireframe 6s 2 forwards cubic-bezier(0.2, 0.8, 0.2, 1);
-    z-index: 4;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.15);
     display: flex;
     flex-direction: column;
     color: #1c1c1e;
@@ -160,8 +28,6 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px 8px;
-    opacity: 0;
-    animation: fadeUIElements 6s 2 forwards;
 }
 
 .wf-window-controls { display: flex; gap: 8px; align-items: center; }
@@ -189,9 +55,6 @@
 .wf-search-container {
     padding: 8px 16px;
     position: relative;
-    opacity: 0;
-    animation: fadeUIElements 6s 2 forwards;
-    animation-delay: 0.05s;
 }
 
 .wf-search-bar {
@@ -225,9 +88,6 @@
     padding: 8px 16px 12px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     overflow-x: hidden;
-    opacity: 0;
-    animation: fadeUIElements 6s 2 forwards;
-    animation-delay: 0.1s;
 }
 
 .wf-tab {
@@ -252,6 +112,7 @@
     flex-direction: column;
     padding: 8px 16px 16px;
     gap: 2px;
+    text-align: left;
 }
 
 .wf-item {
@@ -261,18 +122,7 @@
     padding: 8px 12px;
     border-radius: 8px;
     position: relative;
-    opacity: 0;
-    animation: fadeUIElements 6s 2 forwards;
 }
-
-.wf-item:nth-child(1) { animation-delay: 0.15s; }
-.wf-item:nth-child(2) { animation-delay: 0.20s; }
-.wf-item:nth-child(3) { animation-delay: 0.25s; }
-.wf-item:nth-child(4) { animation-delay: 0.30s; }
-.wf-item:nth-child(5) { animation-delay: 0.35s; }
-.wf-item:nth-child(6) { animation-delay: 0.40s; }
-.wf-item:nth-child(7) { animation-delay: 0.45s; }
-.wf-item:nth-child(8) { animation-delay: 0.50s; }
 
 .wf-item.active { background: #007AFF; color: white; }
 .wf-item.active .wf-item-num { color: rgba(255,255,255,0.7); }
@@ -306,52 +156,4 @@
     overflow: hidden;
     text-overflow: ellipsis;
     flex: 1;
-}
-
-/* --- Keyframes (6s loop, 2 iterations, forwards fill) --- */
-
-@keyframes fadeOutLetter {
-    0%, 15% { opacity: 1; transform: scale(1); }
-    20%, 90% { opacity: 0; transform: scale(0.8); }
-    100% { opacity: 0; transform: scale(0.8); } /* Stays hidden at the end */
-}
-
-@keyframes snapRightAndFade {
-    0%, 25% { 
-        transform: translateX(0); 
-        opacity: 1;
-    }
-    30%, 100% { 
-        transform: translateX(100px); 
-        opacity: 0;
-    }
-}
-
-@keyframes morphPillIn {
-    0%, 28% { opacity: 0; }
-    32%, 100% { opacity: 1; }
-}
-
-@keyframes fadeInOutEdge {
-    0%, 20% { opacity: 0; }
-    30%, 85% { opacity: 1; }
-    100% { opacity: 1; } /* Freezes visible */
-}
-
-@keyframes popInKeystroke {
-    0%, 40% { opacity: 0; transform: translateX(-50%) scale(0.9); }
-    45%, 80% { opacity: 1; transform: translateX(-50%) scale(1); }
-    100% { opacity: 0; transform: translateX(-50%) scale(0.9); } /* Keystroke fades out at the end naturally */
-}
-
-@keyframes slideInWireframe {
-    0%, 45% { transform: translateY(-50%) translateX(100%); opacity: 0; }
-    50%, 85% { transform: translateY(-50%) translateX(0); opacity: 1; }
-    100% { transform: translateY(-50%) translateX(0); opacity: 1; } /* Freezes popped out */
-}
-
-@keyframes fadeUIElements {
-    0%, 55% { opacity: 0; transform: translateY(5px); }
-    60%, 85% { opacity: 1; transform: translateY(0); }
-    100% { opacity: 1; transform: translateY(0); } /* Freezes visible */
 }
