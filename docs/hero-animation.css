@@ -1,14 +1,14 @@
 /* Modular Animation Styles for Hero Section */
 
 .hero-animation {
-    margin-top: 4rem;
     width: 100%;
     max-width: 600px;
-    height: 250px;
+    height: 350px; /* Increased height for bigger display */
     position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
+    flex: 1; /* Takes up remaining space in 2-column layout */
 }
 
 .animation-stage {
@@ -25,18 +25,21 @@
 
 /* 1. Text Sequence */
 .text-sequence {
-    font-size: 4rem;
+    font-size: 5rem; /* Larger font */
     font-weight: 700;
     font-family: 'Inter', monospace;
     display: flex;
     position: absolute;
     z-index: 10;
     color: var(--text-primary);
+    align-items: center;
 }
 
 .letter {
-    display: inline-block;
-    animation: fadeOutLetter 6s infinite;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    animation: fadeOutLetter 6s 2 forwards;
     opacity: 1;
 }
 
@@ -47,116 +50,184 @@
 .l-m { animation-delay: 0.4s; }
 
 .l-8 {
-    animation: snapRight 6s infinite cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: snapRightAndMorph 6s 2 forwards cubic-bezier(0.34, 1.56, 0.64, 1);
     color: var(--accent);
+    width: 60px;
+    height: 80px;
+    border-radius: 10px;
+    background-color: transparent;
 }
 
 /* 2. Screen Edge */
 .screen-edge {
     position: absolute;
     right: 15%;
-    top: 10%;
-    bottom: 10%;
+    top: 5%;
+    bottom: 5%;
     width: 2px;
     background: linear-gradient(to bottom, transparent, var(--border-color), transparent);
     opacity: 0;
-    animation: fadeInOutEdge 6s infinite;
+    animation: fadeInOutEdge 6s 2 forwards;
 }
 
 /* 3. Keystroke Badge */
 .keystroke-badge {
     position: absolute;
-    bottom: 15%;
+    bottom: 10%;
     left: 50%;
     transform: translateX(-50%) scale(0.9);
     background: var(--text-primary);
     color: white;
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-size: 0.9rem;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 1rem;
     font-weight: 600;
     font-family: monospace;
     opacity: 0;
     box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-    animation: popInKeystroke 6s infinite;
+    animation: popInKeystroke 6s 2 forwards;
     z-index: 5;
 }
 
-/* 4. Wireframe UI */
+/* 4. Wireframe UI - Matching Reality */
 .wireframe-ui {
     position: absolute;
     right: 15%;
     top: 50%;
     transform: translateY(-50%) translateX(100%);
-    width: 200px;
+    width: 300px; /* Wider for realism */
     background: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--border-color);
     border-right: none;
-    border-radius: 12px 0 0 12px;
-    padding: 16px;
-    box-shadow: -10px 10px 30px rgba(0,0,0,0.05);
+    border-radius: 16px 0 0 16px;
+    padding: 20px;
+    box-shadow: -20px 20px 40px rgba(0,0,0,0.08);
     opacity: 0;
-    animation: slideInWireframe 6s infinite cubic-bezier(0.2, 0.8, 0.2, 1);
+    animation: slideInWireframe 6s 2 forwards cubic-bezier(0.2, 0.8, 0.2, 1);
     z-index: 4;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
 .wf-search {
-    height: 30px;
-    border: 2px dashed var(--text-secondary);
-    border-radius: 6px;
-    margin-bottom: 16px;
+    height: 36px;
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
     opacity: 0;
-    animation: fadeUIElements 6s infinite;
+    animation: fadeUIElements 6s 2 forwards;
+}
+
+.wf-search::before {
+    content: '🔍';
+    font-size: 14px;
+    opacity: 0.4;
+}
+
+.wf-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .wf-item {
-    height: 20px;
-    border: 2px dashed var(--text-secondary);
-    border-radius: 4px;
-    margin-bottom: 8px;
+    height: 48px;
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
     opacity: 0;
-    animation: fadeUIElements 6s infinite;
+    animation: fadeUIElements 6s 2 forwards;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
 }
-.wf-item:nth-child(1) { animation-delay: 0.1s; }
-.wf-item:nth-child(2) { animation-delay: 0.2s; }
-.wf-item:nth-child(3) { animation-delay: 0.3s; margin-bottom: 0; }
 
-/* --- Keyframes (6s loop) --- */
+.wf-item:nth-child(1) { 
+    animation-delay: 0.1s; 
+    border-left: 3px solid var(--accent); /* Active state */
+}
+.wf-item:nth-child(2) { animation-delay: 0.2s; }
+.wf-item:nth-child(3) { animation-delay: 0.3s; }
+
+.wf-item::before {
+    content: '';
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.05);
+    margin-right: 12px;
+}
+
+.wf-item::after {
+    content: '';
+    height: 8px;
+    width: 60%;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+}
+
+.wf-item:nth-child(1)::after { width: 80%; }
+.wf-item:nth-child(2)::after { width: 50%; }
+
+/* --- Keyframes (6s loop, 2 iterations, forwards fill) --- */
 
 @keyframes fadeOutLetter {
     0%, 15% { opacity: 1; transform: scale(1); }
     20%, 90% { opacity: 0; transform: scale(0.8); }
-    95%, 100% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.8); } /* Stays hidden at the end */
 }
 
-@keyframes snapRight {
-    0%, 25% { transform: translateX(0); }
-    35%, 85% { transform: translateX(180px); }
-    95%, 100% { transform: translateX(0); }
+@keyframes snapRightAndMorph {
+    0%, 25% { 
+        transform: translateX(0); 
+        color: var(--accent); 
+        background-color: transparent;
+        width: 60px;
+        height: 80px;
+    }
+    35%, 85% { 
+        transform: translateX(180px); /* Snapped to edge */
+        color: transparent; /* Hide the 8 */
+        background-color: var(--text-primary); /* Turn into dark pill */
+        width: 8px; /* Skinny pill width */
+        height: 100px; /* Tall pill height */
+        border-radius: 4px; /* Rounded pill edges */
+    }
+    100% { 
+        transform: translateX(180px); 
+        color: transparent; 
+        background-color: var(--text-primary); 
+        width: 8px; 
+        height: 100px; 
+        border-radius: 4px;
+    } /* Freezes in pill state */
 }
 
 @keyframes fadeInOutEdge {
     0%, 20% { opacity: 0; }
     30%, 85% { opacity: 1; }
-    95%, 100% { opacity: 0; }
+    100% { opacity: 1; } /* Freezes visible */
 }
 
 @keyframes popInKeystroke {
     0%, 40% { opacity: 0; transform: translateX(-50%) scale(0.9); }
     45%, 80% { opacity: 1; transform: translateX(-50%) scale(1); }
-    85%, 100% { opacity: 0; transform: translateX(-50%) scale(0.9); }
+    100% { opacity: 0; transform: translateX(-50%) scale(0.9); } /* Keystroke fades out at the end naturally */
 }
 
 @keyframes slideInWireframe {
     0%, 45% { transform: translateY(-50%) translateX(100%); opacity: 0; }
     50%, 85% { transform: translateY(-50%) translateX(0); opacity: 1; }
-    90%, 100% { transform: translateY(-50%) translateX(100%); opacity: 0; }
+    100% { transform: translateY(-50%) translateX(0); opacity: 1; } /* Freezes popped out */
 }
 
 @keyframes fadeUIElements {
     0%, 55% { opacity: 0; transform: translateY(5px); }
     60%, 85% { opacity: 1; transform: translateY(0); }
-    90%, 100% { opacity: 0; transform: translateY(5px); }
+    100% { opacity: 1; transform: translateY(0); } /* Freezes visible */
 }
