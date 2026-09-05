@@ -167,7 +167,7 @@ section {
 }
 
 /* ==========================================================================
-   Surround Layout for App Showcase
+   2-Column Split App Showcase
    ========================================================================== */
 
 .hero-showcase {
@@ -178,20 +178,20 @@ section {
     margin-top: 4rem;
 }
 
-.surround-layout {
+.showcase-split {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 3rem;
+    gap: 4rem;
     max-width: 1000px;
     width: 100%;
     margin: 0 auto;
 }
 
-.surround-center {
+.showcase-image-col {
     flex: 0 0 auto;
     width: 100%;
-    max-width: 360px; 
+    max-width: 400px; 
     border-radius: 12px;
     box-shadow: 0 20px 50px rgba(0,0,0,0.15);
 }
@@ -203,36 +203,20 @@ section {
     border-radius: 12px;
 }
 
-.surround-col {
+.showcase-details-col {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1.75rem;
     flex: 1;
 }
 
-/* On the left side, we want text right-aligned to point towards the center image */
-.surround-left {
-    align-items: flex-end;
-    text-align: right;
-}
-.surround-left .surround-item {
-    flex-direction: row-reverse;
-}
-
-/* On the right side, left-aligned */
-.surround-right {
-    align-items: flex-start;
-    text-align: left;
-}
-
-.surround-item {
+.split-item {
     display: flex;
     align-items: flex-start;
     gap: 1rem;
-    max-width: 250px;
 }
 
-.surround-icon {
+.split-icon {
     font-size: 1.5rem;
     background: rgba(255, 255, 255, 0.5);
     backdrop-filter: blur(5px);
@@ -248,45 +232,34 @@ section {
     flex-shrink: 0;
 }
 
-.surround-text h4 {
+.split-text h4 {
     margin: 0 0 0.25rem 0;
     font-size: 1rem;
     font-weight: 600;
     color: var(--text-primary);
 }
 
-.surround-text p {
+.split-text p {
     margin: 0;
     font-size: 0.85rem;
     color: var(--text-secondary);
     line-height: 1.4;
 }
 
-/* Responsive Stacking */
-@media (max-width: 900px) {
-    .surround-layout {
+/* Responsive */
+@media (max-width: 850px) {
+    .showcase-split {
         flex-direction: column;
-        gap: 2rem;
+        gap: 3rem;
     }
     
-    .surround-center {
-        order: -1; /* Move image to top on mobile */
-        max-width: 400px;
+    .showcase-image-col {
+        max-width: 440px;
     }
     
-    .surround-col {
+    .showcase-details-col {
         width: 100%;
-        max-width: 400px;
-        align-items: flex-start;
-        text-align: left;
-    }
-    
-    .surround-left .surround-item {
-        flex-direction: row;
-    }
-    
-    .surround-item {
-        max-width: 100%;
+        max-width: 440px;
     }
 }
 
