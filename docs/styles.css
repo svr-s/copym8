@@ -50,27 +50,19 @@ body {
 
 .logo {
     font-weight: 700;
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     color: var(--text-primary);
     text-decoration: none;
-    letter-spacing: -0.5px;
+    letter-spacing: -1px;
     display: flex;
     align-items: center;
 }
 
-/* Custom infinity badge to guarantee cross-platform consistency */
 .logo span {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    background: #A032D5; /* Apple-style emoji purple */
-    color: white;
-    border-radius: 5px;
-    font-size: 15px;
-    margin-left: 6px;
-    font-weight: 600;
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-left: 2px;
+    line-height: 1;
 }
 
 nav {
