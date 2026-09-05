@@ -163,7 +163,153 @@ section {
 }
 
 .btn-secondary:hover {
-    background-color: var(--border-color);
+    border-color: var(--border-color);
+}
+
+/* ==========================================================================
+   Anatomy of the App Showcase
+   ========================================================================== */
+
+.hero-showcase {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 3rem;
+}
+
+.anatomy-container {
+    position: relative;
+    width: 100%;
+    max-width: 440px; 
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+    /* Scale gracefully on smaller screens without dropping overlays */
+}
+
+.anatomy-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 12px;
+}
+
+/* Overlays */
+.anatomy-overlay {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 10;
+    pointer-events: none; /* Let user hover the image underneath */
+}
+
+/* The Pulsing Dot */
+.overlay-dot {
+    width: 12px;
+    height: 12px;
+    background-color: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(0, 113, 227, 0.7);
+    /* Pulse exactly twice, then stop */
+    animation: pulseDot 1.5s ease-out 2 forwards;
+}
+
+/* The Glassmorphic Label */
+.overlay-label {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(0,0,0,0.05);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateY(5px);
+    /* Fade in and out, twice */
+    animation: fadeLabel 1.5s ease-out 2 forwards;
+}
+
+/* Specific Positions for Overlays (percentages based on max-width 440px) */
+/* Search & Local */
+.overlay-search {
+    top: 14%;
+    left: -20%;
+    flex-direction: row-reverse;
+}
+
+/* Sequential Queue Mode */
+.overlay-queue {
+    top: 45%;
+    left: -15%;
+    flex-direction: row-reverse;
+}
+
+/* Pinning */
+.overlay-pin {
+    top: 73%;
+    right: -10%;
+}
+
+/* Keyboard Hotkeys (1-9) */
+.overlay-hotkey {
+    top: 60%;
+    left: -30%;
+    flex-direction: row-reverse;
+}
+
+/* Folders */
+.overlay-folder {
+    bottom: 12%;
+    right: -15%;
+}
+
+/* Rich Media */
+.overlay-media {
+    bottom: 4%;
+    left: 20%;
+    flex-direction: column;
+    align-items: flex-start;
+}
+.overlay-media .overlay-label {
+    margin-top: 6px;
+}
+
+/* Keyframes */
+@keyframes pulseDot {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(0, 113, 227, 0.7);
+    }
+    50% {
+        transform: scale(1.1);
+        box-shadow: 0 0 0 10px rgba(0, 113, 227, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(0, 113, 227, 0);
+    }
+}
+
+@keyframes fadeLabel {
+    0% { opacity: 0; transform: translateY(5px); }
+    15% { opacity: 1; transform: translateY(0); }
+    85% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(5px); }
+}
+
+/* Hide overlays completely on small screens to prevent clipping */
+@media (max-width: 768px) {
+    .anatomy-overlay {
+        display: none;
+    }
+    .anatomy-container {
+        max-width: 90%;
+    }
 }
 
 /* Mockup UI */
