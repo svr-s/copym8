@@ -189,12 +189,12 @@ section {
     grid-column: span 2;
     width: 100%;
     display: flex;
-    justify-content: flex-end; /* Align the image towards the center gap */
+    justify-content: flex-start; /* Align image to the left edge to match the grid below */
 }
 
 .anatomy-image {
     width: 100%;
-    max-width: 500px; /* Keep it constrained so it's not massively oversized, but larger than before */
+    max-width: 600px; /* Allow it to be slightly wider if needed */
     height: auto;
     display: block;
     border-radius: 12px;
