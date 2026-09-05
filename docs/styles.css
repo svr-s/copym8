@@ -179,21 +179,15 @@ section {
 }
 
 .showcase-split {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 4rem;
-    max-width: 1100px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
     width: 100%;
-    margin: 0 auto;
 }
 
 .showcase-image-col {
-    flex: 0 0 auto;
+    grid-column: span 1;
     width: 100%;
-    max-width: 440px; 
-    border-radius: 12px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.15);
 }
 
 .anatomy-image {
@@ -201,13 +195,16 @@ section {
     height: auto;
     display: block;
     border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.15);
 }
 
 .showcase-details-col {
-    display: flex;
-    flex-direction: column;
-    gap: 1.75rem;
-    flex: 1;
+    grid-column: span 2;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    align-items: start;
+    align-content: center;
 }
 
 .split-item {
@@ -249,17 +246,19 @@ section {
 /* Responsive */
 @media (max-width: 850px) {
     .showcase-split {
-        flex-direction: column;
+        grid-template-columns: 1fr;
         gap: 3rem;
     }
     
     .showcase-image-col {
-        max-width: 440px;
+        grid-column: span 1;
+        max-width: 400px;
+        margin: 0 auto;
     }
     
     .showcase-details-col {
-        width: 100%;
-        max-width: 440px;
+        grid-column: span 1;
+        grid-template-columns: 1fr;
     }
 }
 
@@ -349,7 +348,7 @@ section {
 
 .feature-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 2rem;
 }
 
