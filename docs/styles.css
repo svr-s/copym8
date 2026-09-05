@@ -167,7 +167,7 @@ section {
 }
 
 /* ==========================================================================
-   Anatomy of the App Showcase
+   Surround Layout for App Showcase
    ========================================================================== */
 
 .hero-showcase {
@@ -175,16 +175,25 @@ section {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: 3rem;
+    margin-top: 4rem;
 }
 
-.anatomy-container {
-    position: relative;
+.surround-layout {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3rem;
+    max-width: 1000px;
     width: 100%;
-    max-width: 440px; 
+    margin: 0 auto;
+}
+
+.surround-center {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 360px; 
     border-radius: 12px;
     box-shadow: 0 20px 50px rgba(0,0,0,0.15);
-    /* Scale gracefully on smaller screens without dropping overlays */
 }
 
 .anatomy-image {
@@ -194,121 +203,90 @@ section {
     border-radius: 12px;
 }
 
-/* Overlays */
-.anatomy-overlay {
-    position: absolute;
+.surround-col {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    flex: 1;
+}
+
+/* On the left side, we want text right-aligned to point towards the center image */
+.surround-left {
+    align-items: flex-end;
+    text-align: right;
+}
+.surround-left .surround-item {
+    flex-direction: row-reverse;
+}
+
+/* On the right side, left-aligned */
+.surround-right {
+    align-items: flex-start;
+    text-align: left;
+}
+
+.surround-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    max-width: 250px;
+}
+
+.surround-icon {
+    font-size: 1.5rem;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(0,0,0,0.05);
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    z-index: 10;
-    pointer-events: none; /* Let user hover the image underneath */
-}
-
-/* The Pulsing Dot */
-.overlay-dot {
-    width: 12px;
-    height: 12px;
-    background-color: var(--accent);
-    border-radius: 50%;
-    box-shadow: 0 0 0 0 rgba(0, 113, 227, 0.7);
-    /* Pulse exactly twice, then stop */
-    animation: pulseDot 1.5s ease-out 2 forwards;
-}
-
-/* The Glassmorphic Label */
-.overlay-label {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(0,0,0,0.05);
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--text-primary);
+    justify-content: center;
+    border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    white-space: nowrap;
-    opacity: 0;
-    transform: translateY(5px);
-    /* Fade in and out, twice */
-    animation: fadeLabel 1.5s ease-out 2 forwards;
+    flex-shrink: 0;
 }
 
-/* Specific Positions for Overlays (percentages based on max-width 440px) */
-/* Search & Local */
-.overlay-search {
-    top: 14%;
-    left: -20%;
-    flex-direction: row-reverse;
+.surround-text h4 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
 }
 
-/* Sequential Queue Mode */
-.overlay-queue {
-    top: 45%;
-    left: -15%;
-    flex-direction: row-reverse;
+.surround-text p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
 }
 
-/* Pinning */
-.overlay-pin {
-    top: 73%;
-    right: -10%;
-}
-
-/* Keyboard Hotkeys (1-9) */
-.overlay-hotkey {
-    top: 60%;
-    left: -30%;
-    flex-direction: row-reverse;
-}
-
-/* Folders */
-.overlay-folder {
-    bottom: 12%;
-    right: -15%;
-}
-
-/* Rich Media */
-.overlay-media {
-    bottom: 4%;
-    left: 20%;
-    flex-direction: column;
-    align-items: flex-start;
-}
-.overlay-media .overlay-label {
-    margin-top: 6px;
-}
-
-/* Keyframes */
-@keyframes pulseDot {
-    0% {
-        transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(0, 113, 227, 0.7);
+/* Responsive Stacking */
+@media (max-width: 900px) {
+    .surround-layout {
+        flex-direction: column;
+        gap: 2rem;
     }
-    50% {
-        transform: scale(1.1);
-        box-shadow: 0 0 0 10px rgba(0, 113, 227, 0);
+    
+    .surround-center {
+        order: -1; /* Move image to top on mobile */
+        max-width: 400px;
     }
-    100% {
-        transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(0, 113, 227, 0);
+    
+    .surround-col {
+        width: 100%;
+        max-width: 400px;
+        align-items: flex-start;
+        text-align: left;
     }
-}
-
-@keyframes fadeLabel {
-    0% { opacity: 0; transform: translateY(5px); }
-    15% { opacity: 1; transform: translateY(0); }
-    85% { opacity: 1; transform: translateY(0); }
-    100% { opacity: 0; transform: translateY(5px); }
-}
-
-/* Hide overlays completely on small screens to prevent clipping */
-@media (max-width: 768px) {
-    .anatomy-overlay {
-        display: none;
+    
+    .surround-left .surround-item {
+        flex-direction: row;
     }
-    .anatomy-container {
-        max-width: 90%;
+    
+    .surround-item {
+        max-width: 100%;
     }
 }
 
