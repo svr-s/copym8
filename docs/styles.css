@@ -15,6 +15,10 @@
     box-sizing: border-box;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     background-color: var(--bg-color);
@@ -47,7 +51,26 @@ body {
 .logo {
     font-weight: 700;
     font-size: 1.25rem;
+    color: var(--text-primary);
+    text-decoration: none;
     letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+}
+
+/* Custom infinity badge to guarantee cross-platform consistency */
+.logo span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    background: #A032D5; /* Apple-style emoji purple */
+    color: white;
+    border-radius: 5px;
+    font-size: 15px;
+    margin-left: 6px;
+    font-weight: 600;
 }
 
 nav {
