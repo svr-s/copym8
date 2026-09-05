@@ -186,12 +186,15 @@ section {
 }
 
 .showcase-image-col {
-    grid-column: span 1;
+    grid-column: span 2;
     width: 100%;
+    display: flex;
+    justify-content: flex-end; /* Align the image towards the center gap */
 }
 
 .anatomy-image {
     width: 100%;
+    max-width: 500px; /* Keep it constrained so it's not massively oversized, but larger than before */
     height: auto;
     display: block;
     border-radius: 12px;
@@ -199,12 +202,12 @@ section {
 }
 
 .showcase-details-col {
-    grid-column: span 2;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 2rem;
-    align-items: start;
-    align-content: center;
+    grid-column: span 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+    align-items: flex-start;
+    justify-content: center;
 }
 
 .split-item {
@@ -252,13 +255,11 @@ section {
     
     .showcase-image-col {
         grid-column: span 1;
-        max-width: 400px;
-        margin: 0 auto;
+        justify-content: center;
     }
     
     .showcase-details-col {
         grid-column: span 1;
-        grid-template-columns: 1fr;
     }
 }
 
