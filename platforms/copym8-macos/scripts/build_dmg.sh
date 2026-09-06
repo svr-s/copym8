@@ -49,9 +49,4 @@ echo "======================================"
 xcrun stapler staple build/CopyM8.dmg
 
 echo "======================================"
-echo "🚚 Copying DMG to website downloads folder..."
-echo "======================================"
-mkdir -p ../../docs/downloads/macos
-cp build/CopyM8.dmg ../../docs/downloads/macos/CopyM8.dmg
-
-echo "✅ Success! CopyM8.dmg is ready in platforms/copym8-macos/build/ and docs/downloads/macos/!"
+echo "✅ Success! CopyM8.dmg is ready in platforms/copym8-macos/build/!"
