@@ -26,6 +26,7 @@ echo "💿 Creating DMG..."
 echo "======================================"
 create-dmg \
     --volname "CopyM8" \
+    --volicon "build/ExportedApp/CopyM8.app/Contents/Resources/AppIcon.icns" \
     --window-pos 200 120 \
     --window-size 600 400 \
     --icon-size 100 \
@@ -47,4 +48,10 @@ echo "📎 Stapling Notarization Ticket..."
 echo "======================================"
 xcrun stapler staple build/CopyM8.dmg
 
-echo "✅ Success! CopyM8.dmg is ready in platforms/copym8-macos/build/!"
+echo "======================================"
+echo "🚚 Copying DMG to website downloads folder..."
+echo "======================================"
+mkdir -p ../../docs/downloads/macos
+cp build/CopyM8.dmg ../../docs/downloads/macos/CopyM8.dmg
+
+echo "✅ Success! CopyM8.dmg is ready in platforms/copym8-macos/build/ and docs/downloads/macos/!"
