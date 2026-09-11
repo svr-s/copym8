@@ -45,14 +45,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         onboardingWindow = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 450, height: 350),
-            styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
+            styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
         )
         onboardingWindow?.title = "Welcome to CopyM8"
         onboardingWindow?.isReleasedWhenClosed = false
         onboardingWindow?.center()
-        onboardingWindow?.contentView = NSHostingView(rootView: onboardingView)
+        
+        let hostingView = NSHostingView(rootView: onboardingView)
+        onboardingWindow?.contentView = hostingView
         onboardingWindow?.makeKeyAndOrderFront(nil)
         
         // Start polling for accessibility permission
@@ -284,7 +286,7 @@ struct OnboardingView: View {
                 .padding(.top, 10)
             }
         }
-        .frame(width: 450, height: 350)
+        .frame(minWidth: 450, minHeight: 350)
         .background(VisualEffectView(material: .hudWindow, blendingMode: .behindWindow).ignoresSafeArea())
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("PermissionGranted"))) { _ in
             withAnimation(.spring()) {
