@@ -27,6 +27,7 @@ extension KeyboardShortcuts.Name {
 /// `ShortcutManager` handles all global keyboard shortcuts for CopyM8.
 /// It registers listeners for `KeyboardShortcuts` and triggers state updates such as expanding the app or switching to specific tabs.
 class ShortcutManager: ObservableObject {
+    static var initialExpand: Bool = false
     @Published var isExpanded: Bool = false
     @Published var requestedTab: String? = nil
     @Published var requestedFolder: String? = nil
@@ -38,6 +39,8 @@ class ShortcutManager: ObservableObject {
     private var eventMonitor: Any?
     
     init() {
+        self.isExpanded = ShortcutManager.initialExpand
+        
         KeyboardShortcuts.onKeyUp(for: .toggleApp) { [weak self] in
             DispatchQueue.main.async {
                 self?.isExpanded.toggle()

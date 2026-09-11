@@ -509,6 +509,16 @@ struct ContentView: View {
                 }
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ForceExpand"))) { _ in
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                shortcut.isExpanded = true
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ForceCollapse"))) { _ in
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                shortcut.isExpanded = false
+            }
+        }
         .onChange(of: clipboard.selectedDevice) { _, _ in
             viewModel.selectedIndex = 0
             viewModel.selectionAnchorIndex = nil

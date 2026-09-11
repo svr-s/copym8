@@ -51,9 +51,29 @@ struct ExpandedView: View {
     var snapToEdge: () -> Void
     var pasteItem: (Int, PasteFormatType) -> Void
     
+    @State private var isAccessibilityGranted: Bool = AXIsProcessTrusted()
+    let accessibilityCheckTimer = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
+    
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
+                if !isAccessibilityGranted {
+                    Button(action: {
+                        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }) {
+                        Text("Accessibility Permission Missing. Click to fix.")
+                            .font(.caption)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 4)
+                            .background(Color.red)
+                    }
+                    .buttonStyle(.plain)
+                }
+                
                 HeaderView(
                     isHoveringClose: $isHoveringClose,
                     isEditMode: $isEditMode,
@@ -150,6 +170,9 @@ struct ExpandedView: View {
             )
         )
         .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
+        .onReceive(accessibilityCheckTimer) { _ in
+            isAccessibilityGranted = AXIsProcessTrusted()
+        }
     }
 }
 
