@@ -170,61 +170,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 }
-import SwiftUI
-
-/// Delegate that manages the lifecycle of the standalone onboarding window.
-/// Handles dismiss (click outside or ESC → window resigns key) and the explicit launch sequence.
-class OnboardingWindowController: NSObject, NSWindowDelegate {
-    /// Set to true once `PermissionGranted` notification is received during this onboarding session.
-    private var permissionGranted: Bool = false
-    private var observers: [Any] = []
-    
-    override init() {
-        super.init()
-        
-        // Track when permissions are granted so we can suppress the resign-key auto-dismiss
-        observers.append(NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("PermissionGranted"),
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            self?.permissionGranted = true
-        })
-        
-        // "Open CopyM8" button tapped — close the onboarding window and expand CopyM8
-        observers.append(NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("LaunchCopyM8"),
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            guard let self, let app = NSApp.delegate as? AppDelegate else { return }
-            self.launchCopyM8(win: app.onboardingWindow)
-        })
-    }
-    
-    deinit {
-        observers.forEach { NotificationCenter.default.removeObserver($0) }
-    }
-    
-    /// The onboarding window stays open until the user explicitly closes it (title bar close button)
-    /// or clicks "Open CopyM8". We do NOT auto-dismiss on resign-key because the user needs to
-    /// switch to System Settings to grant permission and come back — the window must stay visible.
-    /// windowDidResignKey intentionally not implemented.
-    
     /// Closes the onboarding window, shows the pill at the right edge, then expands CopyM8.
-    private func launchCopyM8(win: NSWindow?) {
-        win?.orderOut(nil)
-        // Show the pill at the right edge and activate app
-        if let app = NSApp.delegate as? AppDelegate {
-            NSApp.activate(ignoringOtherApps: true)
-            app.window?.makeKeyAndOrderFront(nil)
-        }
+    func launchCopyM8() {
+        onboardingWindow?.orderOut(nil)
+        onboardingWindow = nil
+        onboardingController = nil
+        
+        NSApp.activate(ignoringOtherApps: true)
+        window?.makeKeyAndOrderFront(nil)
+        
         // Brief pause so the pill is visible before expanding
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
             NSApp.activate(ignoringOtherApps: true)
             NotificationCenter.default.post(name: NSNotification.Name("ForceExpand"), object: nil)
         }
     }
+}
+import SwiftUI
+
+/// Delegate that manages the lifecycle of the standalone onboarding window.
+class OnboardingWindowController: NSObject, NSWindowDelegate {
 }
 
 struct OnboardingView: View {
@@ -256,7 +221,9 @@ struct OnboardingView: View {
                     .padding(.horizontal, 30)
                 
                 Button(action: {
-                    NotificationCenter.default.post(name: NSNotification.Name("LaunchCopyM8"), object: nil)
+                    if let app = NSApp.delegate as? AppDelegate {
+                        app.launchCopyM8()
+                    }
                 }) {
                     Text("Open CopyM8")
                         .font(.headline)
