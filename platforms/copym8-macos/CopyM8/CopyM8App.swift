@@ -40,6 +40,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if !hasPermission {
             showOnboardingWindow()
             startAccessibilityTimer()
+            // Hide the pill while onboarding is active — it will appear once the user clicks "Open CopyM8"
+            window.orderOut(nil)
         }
     }
     
@@ -213,10 +215,17 @@ class OnboardingWindowController: NSObject, NSWindowDelegate {
         win.orderOut(nil)
     }
     
-    /// Closes the onboarding window and expands CopyM8.
+    /// Closes the onboarding window, shows the pill at the right edge, then expands CopyM8.
     private func launchCopyM8(win: NSWindow?) {
         win?.orderOut(nil)
-        NotificationCenter.default.post(name: NSNotification.Name("ForceExpand"), object: nil)
+        // Show the pill at the right edge
+        if let app = NSApp.delegate as? AppDelegate {
+            app.window?.orderFront(nil)
+        }
+        // Brief pause so the pill is visible before expanding
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            NotificationCenter.default.post(name: NSNotification.Name("ForceExpand"), object: nil)
+        }
     }
 }
 
@@ -232,9 +241,14 @@ struct OnboardingView: View {
             
             
             if permissionGranted {
-                Text("Permission Granted!")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundColor(.green)
+                HStack(spacing: 10) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(.green)
+                    Text("Permission Granted!")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundColor(.green)
+                }
                 
                 Text("Enjoy the experience. CopyM8 is now active and waiting for your copies.")
                     .multilineTextAlignment(.center)
@@ -242,12 +256,6 @@ struct OnboardingView: View {
                     .foregroundColor(.secondary)
                     .lineSpacing(4)
                     .padding(.horizontal, 30)
-                
-                Image(systemName: "checkmark.circle.fill")
-                    .resizable()
-                    .frame(width: 40, height: 40)
-                    .foregroundColor(.green)
-                    .padding(.top, 10)
                 
                 Button(action: {
                     NotificationCenter.default.post(name: NSNotification.Name("LaunchCopyM8"), object: nil)
