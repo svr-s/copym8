@@ -179,8 +179,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
         
-        // Brief pause so the pill is visible before expanding
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+        // Dispatch asynchronously after window is ordered front so SwiftUI views mount and listen to ForceExpand
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             NSApp.activate(ignoringOtherApps: true)
             NotificationCenter.default.post(name: NSNotification.Name("ForceExpand"), object: nil)
         }
