@@ -169,7 +169,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         return true
     }
-}
+    
     /// Closes the onboarding window, shows the pill at the right edge, then expands CopyM8.
     func launchCopyM8() {
         onboardingWindow?.orderOut(nil)
