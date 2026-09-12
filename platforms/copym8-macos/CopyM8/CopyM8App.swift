@@ -32,51 +32,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             "maxBackupsCount": 3
         ])
         
-        if !checkAccessibilityPermission() {
-            showOnboardingWindow()
-        } else {
-            setupMainWindow()
+        let hasPermission = AppDelegate.checkAccessibilityPermission()
+        ShortcutManager.initialExpand = !hasPermission
+        setupMainWindow()
+        
+        if !hasPermission {
+            NSApp.activate(ignoringOtherApps: true)
+            window?.makeKeyAndOrderFront(nil)
+            startAccessibilityTimer()
         }
     }
     
-    func showOnboardingWindow() {
-        NSApp.activate(ignoringOtherApps: true)
-        let onboardingView = OnboardingView()
-        
-        onboardingWindow = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 450, height: 350),
-            styleMask: [.titled, .closable, .miniaturizable],
-            backing: .buffered,
-            defer: false
-        )
-        onboardingWindow?.title = "Welcome to CopyM8"
-        onboardingWindow?.isReleasedWhenClosed = false
-        onboardingWindow?.center()
-        
-        let hostingView = NSHostingView(rootView: onboardingView)
-        onboardingWindow?.contentView = hostingView
-        onboardingWindow?.makeKeyAndOrderFront(nil)
-        
-        // Start polling for accessibility permission
+    func startAccessibilityTimer() {
         let timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            if self?.checkAccessibilityPermission() == true {
+            if AppDelegate.checkAccessibilityPermission() {
                 DispatchQueue.main.async {
                     self?.accessibilityTimer?.invalidate()
                     self?.accessibilityTimer = nil
                     
-                    // Activate and bring to front
                     NSApp.activate(ignoringOtherApps: true)
-                    self?.onboardingWindow?.makeKeyAndOrderFront(nil)
-                    
-                    // Post notification to update UI
+                    self?.window?.makeKeyAndOrderFront(nil)
                     NotificationCenter.default.post(name: NSNotification.Name("PermissionGranted"), object: nil)
-                    
-                    // Wait 1.5s for the user to read the message, then animate the transition
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        self?.onboardingWindow?.close()
-                        self?.onboardingWindow = nil
-                        self?.setupMainWindow(animateFromCenter: true)
-                    }
                 }
             }
         }
@@ -84,8 +60,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         accessibilityTimer = timer
     }
     
-    func setupMainWindow(animateFromCenter: Bool = false) {
-        ShortcutManager.initialExpand = false
+    func setupMainWindow() {
         let contentView = ContentView()
         
         let dockEdgeString = UserDefaults.standard.string(forKey: "dockEdge") ?? "right"
@@ -93,85 +68,39 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let pillWidth: CGFloat = isTop ? 40 : 28
         let pillHeight: CGFloat = isTop ? 28 : 40
         
-        if animateFromCenter {
-            // Spawn borderless window at center of screen, size of onboarding view
-            window = CopyM8Window(
-                contentRect: NSRect(x: 0, y: 0, width: 450, height: 350),
-                styleMask: [.borderless, .nonactivatingPanel, .resizable],
-                backing: .buffered,
-                defer: false
-            )
+        var startWidth = ShortcutManager.initialExpand ? CGFloat(UserDefaults.standard.double(forKey: "windowWidth")) : pillWidth
+        var startHeight = ShortcutManager.initialExpand ? CGFloat(UserDefaults.standard.double(forKey: "windowHeight")) : pillHeight
+        if startWidth == 0 { startWidth = 320 }
+        if startHeight == 0 { startHeight = 420 }
+        
+        window = CopyM8Window(
+            contentRect: NSRect(x: 0, y: 0, width: startWidth, height: startHeight),
+            styleMask: [.borderless, .nonactivatingPanel, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.hasShadow = false
+        window.level = .floating
+        window.ignoresMouseEvents = false
+        window.acceptsMouseMovedEvents = true
+        window.isMovableByWindowBackground = false
+        
+        let hostingView = NSHostingView(rootView: contentView)
+        hostingView.layer?.backgroundColor = NSColor.clear.cgColor
+        window.contentView = hostingView
+        
+        window.orderFront(nil)
+        
+        if let screen = NSScreen.main {
+            let screenRect = screen.visibleFrame
+            let x = screenRect.maxX - 28
+            let y = screenRect.minY + (screenRect.height - 72) / 2
             
-            window.isOpaque = false
-            window.backgroundColor = .clear
-            window.hasShadow = false
-            window.level = .floating
-            window.ignoresMouseEvents = false
-            window.acceptsMouseMovedEvents = true
-            window.isMovableByWindowBackground = false
-            
-            // Set OnboardingView as the content
-            let onboardingView = OnboardingView(permissionGranted: true)
-            let hostingView = NSHostingView(rootView: onboardingView)
-            hostingView.layer?.backgroundColor = NSColor.clear.cgColor
-            window.contentView = hostingView
-            
-            window.center()
-            window.orderFront(nil)
-            
-            // Wait 1s (plus 1.5s from previous step = 2.5s total reading time), then shrink to edge
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                if let screenRect = self.window?.screen?.visibleFrame {
-                    let targetX = screenRect.maxX - 28
-                    let targetY = screenRect.minY + (screenRect.height - 72) / 2
-                    let targetFrame = NSRect(x: targetX, y: targetY, width: pillWidth, height: pillHeight)
-                    
-                    NSAnimationContext.runAnimationGroup({ context in
-                        context.duration = 0.6
-                        context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                        self.window?.animator().setFrame(targetFrame, display: true)
-                    }, completionHandler: {
-                        // Once at the edge, swap content to ContentView (which renders as a pill by default)
-                        let newHostingView = NSHostingView(rootView: contentView)
-                        newHostingView.layer?.backgroundColor = NSColor.clear.cgColor
-                        self.window?.contentView = newHostingView
-                        
-                        // Wait a tiny bit and pop open
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            NotificationCenter.default.post(name: NSNotification.Name("ForceExpand"), object: nil)
-                        }
-                    })
-                }
-            }
-        } else {
-            // Normal startup at the edge
-            window = CopyM8Window(
-                contentRect: NSRect(x: 0, y: 0, width: pillWidth, height: pillHeight),
-                styleMask: [.borderless, .nonactivatingPanel, .resizable],
-                backing: .buffered,
-                defer: false
-            )
-            
-            window.isOpaque = false
-            window.backgroundColor = .clear
-            window.hasShadow = false
-            window.level = .floating
-            window.ignoresMouseEvents = false
-            window.acceptsMouseMovedEvents = true
-            window.isMovableByWindowBackground = false
-            
-            let hostingView = NSHostingView(rootView: contentView)
-            hostingView.layer?.backgroundColor = NSColor.clear.cgColor
-            window.contentView = hostingView
-            
-            window.orderFront(nil)
-            
-            if let screen = NSScreen.main {
-                let screenRect = screen.visibleFrame
-                let x = screenRect.maxX - 28
-                let y = screenRect.minY + (screenRect.height - 72) / 2
-                window.setFrameOrigin(NSPoint(x: x, y: y))
-            }
+            // Just center it vertically on the right edge always.
+            window.setFrameOrigin(NSPoint(x: x, y: y))
         }
     }
     
@@ -184,7 +113,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
-    func checkAccessibilityPermission() -> Bool {
+    static func checkAccessibilityPermission() -> Bool {
         let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false] as CFDictionary
         return AXIsProcessTrustedWithOptions(options)
     }
@@ -195,16 +124,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        // If we don't have accessibility permissions and the onboarding window is closed, quit the app.
-        return !checkAccessibilityPermission()
+        return !AppDelegate.checkAccessibilityPermission()
     }
     
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        if !checkAccessibilityPermission() {
-            if onboardingWindow == nil {
-                showOnboardingWindow()
-            } else {
-                onboardingWindow?.makeKeyAndOrderFront(nil)
+        if !AppDelegate.checkAccessibilityPermission() {
+            window?.makeKeyAndOrderFront(nil)
+            if !ShortcutManager.initialExpand {
+                ShortcutManager.initialExpand = true
+                NotificationCenter.default.post(name: NSNotification.Name("ForceExpand"), object: nil)
             }
         }
         return true

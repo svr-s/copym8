@@ -6,9 +6,14 @@ extension ContentView {
     /// Ensures the expanded window does not exceed the available screen dimensions.
     /// - Returns: A `CGSize` representing the constrained dimensions for the expanded app window.
     func getDynamicWindowSize() -> CGSize {
-        let calculatedHeight = windowHeight
         var finalWidth = max(340, windowWidth)
-        var finalHeight = calculatedHeight
+        var finalHeight = windowHeight
+        
+        if showOnboarding {
+            finalWidth = max(450, finalWidth)
+            finalHeight = max(350, finalHeight)
+        }
+        
         if let screenRect = NSApp.windows.first(where: { $0 is CopyM8Window })?.screen?.visibleFrame {
             finalWidth = min(finalWidth, screenRect.width)
             finalHeight = min(finalHeight, screenRect.height)

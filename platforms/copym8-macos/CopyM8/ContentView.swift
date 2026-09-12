@@ -58,6 +58,8 @@ struct ContentView: View {
     @State var playFromFieldIsFocused: Bool = false
     @State var freezeFieldIsFocused: Bool = false
     
+    @State var showOnboarding: Bool = !AppDelegate.checkAccessibilityPermission()
+    
     
     @AppStorage("activeColorName") var activeColorName: String = "Glacier"
     @AppStorage("themePreference") var themePreference: String = "System"
@@ -262,7 +264,15 @@ struct ContentView: View {
     var body: some View {
         ZStack {
             if shortcut.isExpanded {
-                ExpandedView(
+                if showOnboarding {
+                    OnboardingView(permissionGranted: AppDelegate.checkAccessibilityPermission())
+                        .frame(width: max(450, windowWidth), height: max(350, windowHeight))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.2), lineWidth: 1))
+                        .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
+                        .transition(.asymmetric(insertion: .opacity, removal: .opacity.animation(.easeOut(duration: 0.1))))
+                } else {
+                    ExpandedView(
                     isHoveringClose: $isHoveringClose,
                     isEditMode: $viewModel.isEditMode,
                     selectedItemsForDeletion: $viewModel.selectedItemsForDeletion,
@@ -311,6 +321,7 @@ struct ContentView: View {
                         .shadow(color: clipboard.isQueueRecording ? Color.red.opacity(0.8) : .clear, radius: 8, x: 0, y: 0)
                 )
                 .transition(.asymmetric(insertion: .opacity, removal: .opacity.animation(.easeOut(duration: 0.1))))
+                }
             } else {
                 PillView(
                     dockEdge: dockEdge,
@@ -340,6 +351,16 @@ struct ContentView: View {
         .animation(.spring(response: 0.4, dampingFraction: 0.75), value: shortcut.isExpanded)
         .onChange(of: shortcut.isExpanded) { _, expanded in
             adjustWindowFrame(expanded: expanded, animate: true)
+            
+            if !expanded && showOnboarding {
+                showOnboarding = false
+                if AppDelegate.checkAccessibilityPermission() {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                        NotificationCenter.default.post(name: NSNotification.Name("ForceExpand"), object: nil)
+                    }
+                }
+            }
+            
             if expanded {
                 previousApp = NSWorkspace.shared.frontmostApplication
                 NSApp.activate(ignoringOtherApps: true)
