@@ -58,11 +58,6 @@ struct ContentView: View {
     @State var playFromFieldIsFocused: Bool = false
     @State var freezeFieldIsFocused: Bool = false
     
-    @State var showOnboarding: Bool = !AppDelegate.checkAccessibilityPermission()
-    /// Tracks that the user just granted permissions during this onboarding session,
-    /// so we know to auto-expand the main view after the onboarding collapses.
-    @State var onboardingJustGranted: Bool = false
-    
     
     @AppStorage("activeColorName") var activeColorName: String = "Glacier"
     @AppStorage("themePreference") var themePreference: String = "System"
@@ -267,15 +262,7 @@ struct ContentView: View {
     var body: some View {
         ZStack {
             if shortcut.isExpanded {
-                if showOnboarding {
-                    OnboardingView(permissionGranted: AppDelegate.checkAccessibilityPermission())
-                        .frame(width: max(450, windowWidth), height: max(350, windowHeight))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.2), lineWidth: 1))
-                        .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
-                        .transition(.asymmetric(insertion: .opacity, removal: .opacity.animation(.easeOut(duration: 0.1))))
-                } else {
-                    ExpandedView(
+                ExpandedView(
                     isHoveringClose: $isHoveringClose,
                     isEditMode: $viewModel.isEditMode,
                     selectedItemsForDeletion: $viewModel.selectedItemsForDeletion,
@@ -324,7 +311,6 @@ struct ContentView: View {
                         .shadow(color: clipboard.isQueueRecording ? Color.red.opacity(0.8) : .clear, radius: 8, x: 0, y: 0)
                 )
                 .transition(.asymmetric(insertion: .opacity, removal: .opacity.animation(.easeOut(duration: 0.1))))
-                }
             } else {
                 PillView(
                     dockEdge: dockEdge,
@@ -354,17 +340,6 @@ struct ContentView: View {
         .animation(.spring(response: 0.4, dampingFraction: 0.75), value: shortcut.isExpanded)
         .onChange(of: shortcut.isExpanded) { _, expanded in
             adjustWindowFrame(expanded: expanded, animate: true)
-            
-            if !expanded && showOnboarding {
-                // Coming from onboarding: hide onboarding view
-                showOnboarding = false
-                if onboardingJustGranted {
-                    // Permissions were granted during this session — auto-open CopyM8 after a brief pause
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                        NotificationCenter.default.post(name: NSNotification.Name("ForceExpand"), object: nil)
-                    }
-                }
-            }
             
             if expanded {
                 previousApp = NSWorkspace.shared.frontmostApplication
@@ -478,10 +453,7 @@ struct ContentView: View {
             clipboard.isQueueRecording.toggle()
         }
         .modifier(QueueShortcutModifier(clipboard: clipboard, shortcut: shortcut))
-        .onAppear {
-            applyTheme(themePreference)
-            adjustWindowFrame(expanded: shortcut.isExpanded, animate: false)
-        }
+        .onAppear { applyTheme(themePreference) }
         .environmentObject(clipboard)
         .environmentObject(shortcut)
         .overlay(modalsOverlay)
@@ -537,13 +509,6 @@ struct ContentView: View {
                     }
                 }
             }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("PermissionGranted"))) { _ in
-            // Mark that permissions were granted this session so the auto-expand fires after onboarding collapse
-            onboardingJustGranted = true
-            // Bring window to front so user sees the "Permission Granted!" acknowledgement
-            NSApp.activate(ignoringOtherApps: true)
-            NSApp.windows.first(where: { $0 is CopyM8Window })?.makeKeyAndOrderFront(nil)
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ForceExpand"))) { _ in
             withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {

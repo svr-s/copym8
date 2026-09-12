@@ -25,6 +25,7 @@ class CopyM8Window: NSWindow {
 class AppDelegate: NSObject, NSApplicationDelegate {
     var window: CopyM8Window!
     var onboardingWindow: NSWindow?
+    var onboardingController: OnboardingWindowController?
     var accessibilityTimer: Timer?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -33,14 +34,44 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ])
         
         let hasPermission = AppDelegate.checkAccessibilityPermission()
-        ShortcutManager.initialExpand = !hasPermission
+        ShortcutManager.initialExpand = false // Always start as pill
         setupMainWindow()
         
         if !hasPermission {
-            NSApp.activate(ignoringOtherApps: true)
-            window?.makeKeyAndOrderFront(nil)
+            showOnboardingWindow()
             startAccessibilityTimer()
         }
+    }
+    
+    /// Displays a standalone onboarding window centered on screen.
+    /// This window is completely independent from the main pill window.
+    func showOnboardingWindow() {
+        let onboardingView = OnboardingView()
+        let hosting = NSHostingView(rootView: onboardingView)
+        
+        let windowWidth: CGFloat = 480
+        let windowHeight: CGFloat = 400
+        
+        let win = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: windowWidth, height: windowHeight),
+            styleMask: [.titled, .closable, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        win.titlebarAppearsTransparent = true
+        win.titleVisibility = .hidden
+        win.isMovableByWindowBackground = true
+        win.contentView = hosting
+        win.center()
+        win.level = .floating
+        
+        let controller = OnboardingWindowController()
+        win.delegate = controller
+        onboardingController = controller
+        onboardingWindow = win
+        
+        NSApp.activate(ignoringOtherApps: true)
+        win.makeKeyAndOrderFront(nil)
     }
     
     func startAccessibilityTimer() {
@@ -50,9 +81,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     self?.accessibilityTimer?.invalidate()
                     self?.accessibilityTimer = nil
                     
-                    NSApp.activate(ignoringOtherApps: true)
-                    self?.window?.makeKeyAndOrderFront(nil)
+                    // Notify the onboarding window to show the success state
                     NotificationCenter.default.post(name: NSNotification.Name("PermissionGranted"), object: nil)
+                    // Re-focus the onboarding window so user sees the "Permission Granted!" screen
+                    NSApp.activate(ignoringOtherApps: true)
+                    self?.onboardingWindow?.makeKeyAndOrderFront(nil)
                 }
             }
         }
@@ -68,18 +101,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let pillWidth: CGFloat = isTop ? 40 : 28
         let pillHeight: CGFloat = isTop ? 28 : 40
         
-        let hasPermission = AppDelegate.checkAccessibilityPermission()
-        
-        var startWidth = ShortcutManager.initialExpand ? CGFloat(UserDefaults.standard.double(forKey: "windowWidth")) : pillWidth
-        var startHeight = ShortcutManager.initialExpand ? CGFloat(UserDefaults.standard.double(forKey: "windowHeight")) : pillHeight
-        
-        if startWidth == 0 { startWidth = 320 }
-        if startHeight == 0 { startHeight = 420 }
-        
-        if !hasPermission {
-            startWidth = max(450, startWidth)
-            startHeight = max(350, startHeight)
-        }
+        // Always start as pill — onboarding is handled by a separate window
+        let startWidth = pillWidth
+        let startHeight = pillHeight
         
         window = CopyM8Window(
             contentRect: NSRect(x: 0, y: 0, width: startWidth, height: startHeight),
@@ -104,16 +128,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         if let screen = NSScreen.main {
             let screenRect = screen.visibleFrame
-            let x: CGFloat
-            let y: CGFloat
-            if !hasPermission {
-                // Center on screen for onboarding
-                x = screenRect.minX + (screenRect.width - startWidth) / 2
-                y = screenRect.minY + (screenRect.height - startHeight) / 2
-            } else {
-                x = dockEdgeString == "left" ? screenRect.minX : screenRect.maxX - startWidth
-                y = dockEdgeString == "top" ? screenRect.maxY - startHeight : screenRect.minY + (screenRect.height - startHeight) / 2
-            }
+            let x = dockEdgeString == "left" ? screenRect.minX : screenRect.maxX - startWidth
+            let y = dockEdgeString == "top" ? screenRect.maxY - startHeight : screenRect.minY + (screenRect.height - startHeight) / 2
             window.setFrameOrigin(NSPoint(x: x, y: y))
         }
     }
@@ -154,13 +170,51 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 }
 import SwiftUI
 
-struct OnboardingView: View {
-    @Environment(\.openURL) var openURL
-    @State private var permissionGranted: Bool
+/// Delegate that manages the lifecycle of the standalone onboarding window.
+/// Handles dismiss (click outside or ESC → window resigns key) and the auto-expand sequence.
+class OnboardingWindowController: NSObject, NSWindowDelegate {
+    /// Set to true once `PermissionGranted` notification is received during this onboarding session.
+    private var permissionGranted: Bool = false
+    private var cancellable: Any?
     
-    init(permissionGranted: Bool = false) {
-        self._permissionGranted = State(initialValue: permissionGranted)
+    override init() {
+        super.init()
+        cancellable = NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("PermissionGranted"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.permissionGranted = true
+        }
     }
+    
+    deinit {
+        if let c = cancellable as? NSObjectProtocol {
+            NotificationCenter.default.removeObserver(c)
+        }
+    }
+    
+    /// Called when the user clicks outside the window or presses ESC (window loses key status).
+    func windowDidResignKey(_ notification: Notification) {
+        guard let win = notification.object as? NSWindow else { return }
+        // Only dismiss if the window is still visible (not already closing)
+        guard win.isVisible else { return }
+        closeOnboardingAndExpand(win: win)
+    }
+    
+    /// Closes the onboarding window and, if permissions were granted, auto-expands CopyM8 after a brief pause.
+    private func closeOnboardingAndExpand(win: NSWindow) {
+        win.orderOut(nil)
+        if permissionGranted {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                NotificationCenter.default.post(name: NSNotification.Name("ForceExpand"), object: nil)
+            }
+        }
+    }
+}
+
+struct OnboardingView: View {
+    @State private var permissionGranted: Bool = false
     
     var body: some View {
         VStack(spacing: 24) {
@@ -202,8 +256,10 @@ struct OnboardingView: View {
             if !permissionGranted {
                 VStack(spacing: 16) {
                     Button(action: {
-                        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
-                        let _ = AXIsProcessTrustedWithOptions(options)
+                        // Open System Settings directly — avoids the system dialog appearing behind the window
+                        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                            NSWorkspace.shared.open(url)
+                        }
                     }) {
                         Text("Grant Permission")
                             .font(.headline)
@@ -218,7 +274,7 @@ struct OnboardingView: View {
                     
                     Button("Open System Settings manually") {
                         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                            openURL(url)
+                            NSWorkspace.shared.open(url)
                         }
                     }
                     .buttonStyle(.link)
