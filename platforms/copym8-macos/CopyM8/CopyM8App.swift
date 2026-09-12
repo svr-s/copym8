@@ -104,9 +104,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         if let screen = NSScreen.main {
             let screenRect = screen.visibleFrame
-            let x = dockEdgeString == "left" ? screenRect.minX : screenRect.maxX - startWidth
-            let y = dockEdgeString == "top" ? screenRect.maxY - startHeight : screenRect.minY + (screenRect.height - startHeight) / 2
-            
+            let x: CGFloat
+            let y: CGFloat
+            if !hasPermission {
+                // Center on screen for onboarding
+                x = screenRect.minX + (screenRect.width - startWidth) / 2
+                y = screenRect.minY + (screenRect.height - startHeight) / 2
+            } else {
+                x = dockEdgeString == "left" ? screenRect.minX : screenRect.maxX - startWidth
+                y = dockEdgeString == "top" ? screenRect.maxY - startHeight : screenRect.minY + (screenRect.height - startHeight) / 2
+            }
             window.setFrameOrigin(NSPoint(x: x, y: y))
         }
     }

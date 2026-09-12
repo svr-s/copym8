@@ -59,6 +59,9 @@ struct ContentView: View {
     @State var freezeFieldIsFocused: Bool = false
     
     @State var showOnboarding: Bool = !AppDelegate.checkAccessibilityPermission()
+    /// Tracks that the user just granted permissions during this onboarding session,
+    /// so we know to auto-expand the main view after the onboarding collapses.
+    @State var onboardingJustGranted: Bool = false
     
     
     @AppStorage("activeColorName") var activeColorName: String = "Glacier"
@@ -353,8 +356,10 @@ struct ContentView: View {
             adjustWindowFrame(expanded: expanded, animate: true)
             
             if !expanded && showOnboarding {
+                // Coming from onboarding: hide onboarding view
                 showOnboarding = false
-                if AppDelegate.checkAccessibilityPermission() {
+                if onboardingJustGranted {
+                    // Permissions were granted during this session — auto-open CopyM8 after a brief pause
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                         NotificationCenter.default.post(name: NSNotification.Name("ForceExpand"), object: nil)
                     }
@@ -532,6 +537,13 @@ struct ContentView: View {
                     }
                 }
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("PermissionGranted"))) { _ in
+            // Mark that permissions were granted this session so the auto-expand fires after onboarding collapse
+            onboardingJustGranted = true
+            // Bring window to front so user sees the "Permission Granted!" acknowledgement
+            NSApp.activate(ignoringOtherApps: true)
+            NSApp.windows.first(where: { $0 is CopyM8Window })?.makeKeyAndOrderFront(nil)
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ForceExpand"))) { _ in
             withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
