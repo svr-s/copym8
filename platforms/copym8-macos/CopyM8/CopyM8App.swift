@@ -226,7 +226,7 @@ class OnboardingWindowController: NSObject, NSWindowDelegate {
 }
 
 struct OnboardingView: View {
-    @State private var permissionGranted: Bool = false
+    @State private var permissionGranted: Bool = AppDelegate.checkAccessibilityPermission()
     
     var body: some View {
         VStack(spacing: 24) {
