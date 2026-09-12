@@ -68,10 +68,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let pillWidth: CGFloat = isTop ? 40 : 28
         let pillHeight: CGFloat = isTop ? 28 : 40
         
+        let hasPermission = AppDelegate.checkAccessibilityPermission()
+        
         var startWidth = ShortcutManager.initialExpand ? CGFloat(UserDefaults.standard.double(forKey: "windowWidth")) : pillWidth
         var startHeight = ShortcutManager.initialExpand ? CGFloat(UserDefaults.standard.double(forKey: "windowHeight")) : pillHeight
+        
         if startWidth == 0 { startWidth = 320 }
         if startHeight == 0 { startHeight = 420 }
+        
+        if !hasPermission {
+            startWidth = max(450, startWidth)
+            startHeight = max(350, startHeight)
+        }
         
         window = CopyM8Window(
             contentRect: NSRect(x: 0, y: 0, width: startWidth, height: startHeight),
@@ -96,10 +104,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         if let screen = NSScreen.main {
             let screenRect = screen.visibleFrame
-            let x = screenRect.maxX - 28
-            let y = screenRect.minY + (screenRect.height - 72) / 2
+            let x = dockEdgeString == "left" ? screenRect.minX : screenRect.maxX - startWidth
+            let y = dockEdgeString == "top" ? screenRect.maxY - startHeight : screenRect.minY + (screenRect.height - startHeight) / 2
             
-            // Just center it vertically on the right edge always.
             window.setFrameOrigin(NSPoint(x: x, y: y))
         }
     }

@@ -473,7 +473,10 @@ struct ContentView: View {
             clipboard.isQueueRecording.toggle()
         }
         .modifier(QueueShortcutModifier(clipboard: clipboard, shortcut: shortcut))
-        .onAppear { applyTheme(themePreference) }
+        .onAppear {
+            applyTheme(themePreference)
+            adjustWindowFrame(expanded: shortcut.isExpanded, animate: false)
+        }
         .environmentObject(clipboard)
         .environmentObject(shortcut)
         .overlay(modalsOverlay)
