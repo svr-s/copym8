@@ -214,12 +214,14 @@ class OnboardingWindowController: NSObject, NSWindowDelegate {
     /// Closes the onboarding window, shows the pill at the right edge, then expands CopyM8.
     private func launchCopyM8(win: NSWindow?) {
         win?.orderOut(nil)
-        // Show the pill at the right edge
+        // Show the pill at the right edge and activate app
         if let app = NSApp.delegate as? AppDelegate {
-            app.window?.orderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            app.window?.makeKeyAndOrderFront(nil)
         }
         // Brief pause so the pill is visible before expanding
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            NSApp.activate(ignoringOtherApps: true)
             NotificationCenter.default.post(name: NSNotification.Name("ForceExpand"), object: nil)
         }
     }
