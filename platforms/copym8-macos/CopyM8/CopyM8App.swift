@@ -171,45 +171,52 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 import SwiftUI
 
 /// Delegate that manages the lifecycle of the standalone onboarding window.
-/// Handles dismiss (click outside or ESC → window resigns key) and the auto-expand sequence.
+/// Handles dismiss (click outside or ESC → window resigns key) and the explicit launch sequence.
 class OnboardingWindowController: NSObject, NSWindowDelegate {
     /// Set to true once `PermissionGranted` notification is received during this onboarding session.
     private var permissionGranted: Bool = false
-    private var cancellable: Any?
+    private var observers: [Any] = []
     
     override init() {
         super.init()
-        cancellable = NotificationCenter.default.addObserver(
+        
+        // Track when permissions are granted so we can suppress the resign-key auto-dismiss
+        observers.append(NotificationCenter.default.addObserver(
             forName: NSNotification.Name("PermissionGranted"),
             object: nil,
             queue: .main
         ) { [weak self] _ in
             self?.permissionGranted = true
-        }
+        })
+        
+        // "Open CopyM8" button tapped — close the onboarding window and expand CopyM8
+        observers.append(NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("LaunchCopyM8"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self, let app = NSApp.delegate as? AppDelegate else { return }
+            self.launchCopyM8(win: app.onboardingWindow)
+        })
     }
     
     deinit {
-        if let c = cancellable as? NSObjectProtocol {
-            NotificationCenter.default.removeObserver(c)
-        }
+        observers.forEach { NotificationCenter.default.removeObserver($0) }
     }
     
     /// Called when the user clicks outside the window or presses ESC (window loses key status).
+    /// After permissions are granted, we keep the window visible so the user can use the "Open CopyM8" button.
     func windowDidResignKey(_ notification: Notification) {
+        guard !permissionGranted else { return } // Success screen stays until explicit button tap
         guard let win = notification.object as? NSWindow else { return }
-        // Only dismiss if the window is still visible (not already closing)
         guard win.isVisible else { return }
-        closeOnboardingAndExpand(win: win)
+        win.orderOut(nil)
     }
     
-    /// Closes the onboarding window and, if permissions were granted, auto-expands CopyM8 after a brief pause.
-    private func closeOnboardingAndExpand(win: NSWindow) {
-        win.orderOut(nil)
-        if permissionGranted {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                NotificationCenter.default.post(name: NSNotification.Name("ForceExpand"), object: nil)
-            }
-        }
+    /// Closes the onboarding window and expands CopyM8.
+    private func launchCopyM8(win: NSWindow?) {
+        win?.orderOut(nil)
+        NotificationCenter.default.post(name: NSNotification.Name("ForceExpand"), object: nil)
     }
 }
 
@@ -241,6 +248,21 @@ struct OnboardingView: View {
                     .frame(width: 40, height: 40)
                     .foregroundColor(.green)
                     .padding(.top, 10)
+                
+                Button(action: {
+                    NotificationCenter.default.post(name: NSNotification.Name("LaunchCopyM8"), object: nil)
+                }) {
+                    Text("Open CopyM8")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 40)
+                        .background(Color.green)
+                        .cornerRadius(10)
+                        .shadow(color: Color.green.opacity(0.3), radius: 5, x: 0, y: 3)
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 8)
             } else {
                 Text("Welcome to CopyM8")
                     .font(.system(size: 28, weight: .bold, design: .rounded))
