@@ -206,14 +206,10 @@ class OnboardingWindowController: NSObject, NSWindowDelegate {
         observers.forEach { NotificationCenter.default.removeObserver($0) }
     }
     
-    /// Called when the user clicks outside the window or presses ESC (window loses key status).
-    /// After permissions are granted, we keep the window visible so the user can use the "Open CopyM8" button.
-    func windowDidResignKey(_ notification: Notification) {
-        guard !permissionGranted else { return } // Success screen stays until explicit button tap
-        guard let win = notification.object as? NSWindow else { return }
-        guard win.isVisible else { return }
-        win.orderOut(nil)
-    }
+    /// The onboarding window stays open until the user explicitly closes it (title bar close button)
+    /// or clicks "Open CopyM8". We do NOT auto-dismiss on resign-key because the user needs to
+    /// switch to System Settings to grant permission and come back — the window must stay visible.
+    /// windowDidResignKey intentionally not implemented.
     
     /// Closes the onboarding window, shows the pill at the right edge, then expands CopyM8.
     private func launchCopyM8(win: NSWindow?) {
