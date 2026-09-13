@@ -143,30 +143,35 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
     
-    /// Closes onboarding window, opens System Settings, shows pill at right edge, then expands CopyM8 after a brief pause.
+    /// Opens System Settings immediately, closes onboarding window, delays pill/homepage launch so System Settings pane is frontmost.
     func handleGrantPermissionAndLaunch() {
-        // 1. Open System Settings Accessibility pane
+        // 1. Open System Settings Accessibility pane immediately
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
             NSWorkspace.shared.open(url)
         }
         
-        // 2. Close onboarding window
+        // 2. Close onboarding window immediately
         onboardingWindow?.orderOut(nil)
         onboardingWindow = nil
         
-        // 3. Show pill at the right edge
-        window?.makeKeyAndOrderFront(nil)
-        
-        // 4. Brief pause, then open CopyM8 homepage
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            NSApp.activate(ignoringOtherApps: true)
-            NotificationCenter.default.post(name: NSNotification.Name("ForceExpand"), object: nil)
+        // 3. Delay pill appearance so user sees and acts on System Settings window first
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
+            guard let self = self else { return }
+            self.window?.makeKeyAndOrderFront(nil)
+            
+            // 4. Expand CopyM8 homepage cleanly
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                NotificationCenter.default.post(name: NSNotification.Name("ForceExpand"), object: nil)
+            }
         }
     }
 }
 import SwiftUI
 
 struct OnboardingView: View {
+    @State private var isGrantHovered: Bool = false
+    @State private var isManualHovered: Bool = false
+    
     var body: some View {
         VStack(spacing: 24) {
             Image(nsImage: NSImage(named: "AppIcon") ?? NSImage())
@@ -193,20 +198,41 @@ struct OnboardingView: View {
                         .foregroundColor(.white)
                         .padding(.vertical, 10)
                         .padding(.horizontal, 40)
-                        .background(Color.accentColor)
+                        .background(isGrantHovered ? Color.accentColor.opacity(0.85) : Color.accentColor)
                         .cornerRadius(10)
-                        .shadow(color: Color.accentColor.opacity(0.3), radius: 5, x: 0, y: 3)
+                        .scaleEffect(isGrantHovered ? 1.03 : 1.0)
+                        .shadow(color: Color.accentColor.opacity(isGrantHovered ? 0.6 : 0.3), radius: isGrantHovered ? 8 : 5, x: 0, y: isGrantHovered ? 4 : 3)
+                        .animation(.easeInOut(duration: 0.15), value: isGrantHovered)
                 }
                 .buttonStyle(.plain)
+                .onHover { hovering in
+                    isGrantHovered = hovering
+                    if hovering {
+                        NSCursor.pointingHand.push()
+                    } else {
+                        NSCursor.pop()
+                    }
+                }
                 
-                Button("Open System Settings manually") {
+                Button(action: {
                     if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
                         NSWorkspace.shared.open(url)
                     }
+                }) {
+                    Text("Open System Settings manually")
+                        .font(.footnote)
+                        .foregroundColor(isManualHovered ? .primary : .secondary)
+                        .underline(isManualHovered)
                 }
-                .buttonStyle(.link)
-                .font(.footnote)
-                .foregroundColor(.secondary)
+                .buttonStyle(.plain)
+                .onHover { hovering in
+                    isManualHovered = hovering
+                    if hovering {
+                        NSCursor.pointingHand.push()
+                    } else {
+                        NSCursor.pop()
+                    }
+                }
             }
             .padding(.top, 10)
         }
