@@ -143,7 +143,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
     
-    /// Opens System Settings immediately, closes onboarding window, delays pill/homepage launch so System Settings pane is frontmost.
+    /// Opens System Settings, closes onboarding window, shows main window pill, and expands CopyM8.
     func handleGrantPermissionAndLaunch() {
         // 1. Open System Settings Accessibility pane immediately
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
@@ -154,18 +154,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         onboardingWindow?.orderOut(nil)
         onboardingWindow = nil
         
-        // 3. Delay pill appearance so user sees and acts on System Settings window first
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
-            guard let self = self, let win = self.window else { return }
-            
-            // Show pill at the right edge
+        // 3. Show main window and expand CopyM8 cleanly
+        if let win = window {
             win.makeKeyAndOrderFront(nil)
-            
-            // 4. Expand CopyM8 homepage cleanly
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                NotificationCenter.default.post(name: NSNotification.Name("ForceExpand"), object: nil)
-                win.makeKeyAndOrderFront(nil)
-            }
+            NSApp.activate(ignoringOtherApps: true)
+            NotificationCenter.default.post(name: NSNotification.Name("ForceExpand"), object: nil)
         }
     }
 }
