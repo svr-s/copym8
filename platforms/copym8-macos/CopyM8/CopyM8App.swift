@@ -129,7 +129,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        return !AppDelegate.checkAccessibilityPermission()
+        return false
     }
     
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
@@ -143,23 +143,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
     
-    /// Opens System Settings, closes onboarding window, shows main window pill, and expands CopyM8.
+    /// Opens System Settings, closes onboarding window, and presents the pill at the right edge.
     func handleGrantPermissionAndLaunch() {
-        // 1. Open System Settings Accessibility pane immediately
+        // 1. Open System Settings Accessibility pane
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
             NSWorkspace.shared.open(url)
         }
         
-        // 2. Close onboarding window immediately
-        onboardingWindow?.orderOut(nil)
-        onboardingWindow = nil
-        
-        // 3. Show main window and expand CopyM8 cleanly
+        // 2. Show main pill window at right edge
         if let win = window {
             win.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
-            NotificationCenter.default.post(name: NSNotification.Name("ForceExpand"), object: nil)
         }
+        
+        // 3. Close onboarding window
+        onboardingWindow?.orderOut(nil)
+        onboardingWindow = nil
     }
 }
 import SwiftUI
@@ -169,10 +167,10 @@ struct OnboardingView: View {
     @State private var isManualHovered: Bool = false
     
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 20) {
             Image(nsImage: NSImage(named: "AppIcon") ?? NSImage())
                 .resizable()
-                .frame(width: 80, height: 80)
+                .frame(width: 76, height: 76)
                 .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 3)
             
             Text("Welcome to CopyM8")
@@ -185,7 +183,19 @@ struct OnboardingView: View {
                 .lineSpacing(4)
                 .padding(.horizontal, 30)
             
-            VStack(spacing: 16) {
+            HStack(spacing: 6) {
+                Image(systemName: "command")
+                    .font(.system(size: 13, weight: .semibold))
+                Text("Press **Cmd + Shift + Space** anytime to open CopyM8.")
+                    .font(.system(size: 13, weight: .regular))
+            }
+            .foregroundColor(.primary.opacity(0.85))
+            .padding(.vertical, 6)
+            .padding(.horizontal, 16)
+            .background(Color.primary.opacity(0.06))
+            .cornerRadius(8)
+            
+            VStack(spacing: 14) {
                 Button(action: {
                     AppDelegate.shared.handleGrantPermissionAndLaunch()
                 }) {
@@ -230,9 +240,9 @@ struct OnboardingView: View {
                     }
                 }
             }
-            .padding(.top, 10)
+            .padding(.top, 4)
         }
-        .frame(minWidth: 450, minHeight: 350)
+        .frame(minWidth: 460, minHeight: 380)
         .background(VisualEffectView(material: .hudWindow, blendingMode: .behindWindow).ignoresSafeArea())
     }
 }
