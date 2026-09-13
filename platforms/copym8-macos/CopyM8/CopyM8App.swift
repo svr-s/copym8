@@ -39,33 +39,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         if !hasPermission {
             showOnboardingWindow()
-            // Listen for app re-activation (e.g. returning from System Settings) to check permission event-driven
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(handleAppDidBecomeActive),
-                name: NSApplication.didBecomeActiveNotification,
-                object: nil
-            )
-            // Hide the pill while onboarding is active — it will appear once the user clicks "Open CopyM8"
+            // Hide the main window while onboarding is active
             window.orderOut(nil)
         }
     }
     
-    @objc func handleAppDidBecomeActive() {
-        if AppDelegate.checkAccessibilityPermission() {
-            NotificationCenter.default.post(name: NSNotification.Name("PermissionGranted"), object: nil)
-            onboardingWindow?.makeKeyAndOrderFront(nil)
-        }
-    }
-    
     /// Displays a standalone onboarding window centered on screen.
-    /// This window is completely independent from the main pill window.
     func showOnboardingWindow() {
         let onboardingView = OnboardingView()
         let hosting = NSHostingView(rootView: onboardingView)
         
         let windowWidth: CGFloat = 480
-        let windowHeight: CGFloat = 400
+        let windowHeight: CGFloat = 380
         
         let win = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: windowWidth, height: windowHeight),
@@ -97,7 +82,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let pillWidth: CGFloat = isTop ? 40 : 28
         let pillHeight: CGFloat = isTop ? 28 : 40
         
-        // Always start as pill — onboarding is handled by a separate window
         let startWidth = pillWidth
         let startHeight = pillHeight
         
@@ -133,8 +117,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillResignActive(_ notification: Notification) {
         let maxBackups = UserDefaults.standard.integer(forKey: "maxBackupsCount")
         if maxBackups > 0 {
-            // Note: In AppDelegate, we don't have direct access to ClipboardManager's history.
-            // Let's use NotificationCenter to tell ClipboardManager to trigger a backup.
             NotificationCenter.default.post(name: NSNotification.Name("TriggerBackup"), object: nil)
         }
     }
@@ -164,16 +146,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
     
-    /// Closes the onboarding window, shows the pill at the right edge, then expands CopyM8.
-    func launchCopyM8() {
-        NotificationCenter.default.removeObserver(self, name: NSApplication.didBecomeActiveNotification, object: nil)
+    /// Closes onboarding window, shows pill at right edge, then expands CopyM8 after a brief pause.
+    func handleGrantPermissionAndLaunch() {
+        // 1. Open System Settings Accessibility pane
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
+        
+        // 2. Close onboarding window
         onboardingWindow?.orderOut(nil)
         onboardingWindow = nil
         onboardingController = nil
         
-        NSApp.activate(ignoringOtherApps: true)
+        // 3. Show pill at the right edge
         window?.makeKeyAndOrderFront(nil)
-        NotificationCenter.default.post(name: NSNotification.Name("ForceExpand"), object: nil)
+        
+        // 4. Brief pause, then open CopyM8 homepage
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            NSApp.activate(ignoringOtherApps: true)
+            NotificationCenter.default.post(name: NSNotification.Name("ForceExpand"), object: nil)
+        }
     }
 }
 import SwiftUI
@@ -183,8 +175,6 @@ class OnboardingWindowController: NSObject, NSWindowDelegate {
 }
 
 struct OnboardingView: View {
-    @State private var permissionGranted: Bool = AppDelegate.checkAccessibilityPermission()
-    
     var body: some View {
         VStack(spacing: 24) {
             Image(nsImage: NSImage(named: "AppIcon") ?? NSImage())
@@ -192,90 +182,46 @@ struct OnboardingView: View {
                 .frame(width: 80, height: 80)
                 .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 3)
             
+            Text("Welcome to CopyM8")
+                .font(.system(size: 28, weight: .bold, design: .rounded))
             
-            if permissionGranted {
-                HStack(spacing: 10) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundColor(.green)
-                    Text("Permission Granted!")
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .foregroundColor(.green)
-                }
-                
-                Text("Enjoy the experience. CopyM8 is now active and waiting for your copies.")
-                    .multilineTextAlignment(.center)
-                    .font(.body)
-                    .foregroundColor(.secondary)
-                    .lineSpacing(4)
-                    .padding(.horizontal, 30)
-                
+            Text("CopyM8 is a keyboard-first clipboard manager.\nTo seamlessly capture your copies in the background and use global hotkeys, CopyM8 requires Accessibility permission.")
+                .multilineTextAlignment(.center)
+                .font(.body)
+                .foregroundColor(.secondary)
+                .lineSpacing(4)
+                .padding(.horizontal, 30)
+            
+            VStack(spacing: 16) {
                 Button(action: {
                     if let app = NSApp.delegate as? AppDelegate {
-                        app.launchCopyM8()
+                        app.handleGrantPermissionAndLaunch()
                     }
                 }) {
-                    Text("Open CopyM8")
+                    Text("Grant Permission")
                         .font(.headline)
                         .foregroundColor(.white)
                         .padding(.vertical, 10)
                         .padding(.horizontal, 40)
-                        .background(Color.green)
+                        .background(Color.accentColor)
                         .cornerRadius(10)
-                        .shadow(color: Color.green.opacity(0.3), radius: 5, x: 0, y: 3)
+                        .shadow(color: Color.accentColor.opacity(0.3), radius: 5, x: 0, y: 3)
                 }
                 .buttonStyle(.plain)
-                .padding(.top, 8)
-            } else {
-                Text("Welcome to CopyM8")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
                 
-                Text("CopyM8 is a keyboard-first clipboard manager.\nTo seamlessly capture your copies in the background and use global hotkeys, CopyM8 requires Accessibility permission.")
-                    .multilineTextAlignment(.center)
-                    .font(.body)
-                    .foregroundColor(.secondary)
-                    .lineSpacing(4)
-                    .padding(.horizontal, 30)
-            }
-            
-            if !permissionGranted {
-                VStack(spacing: 16) {
-                    Button(action: {
-                        // Open System Settings directly — avoids the system dialog appearing behind the window
-                        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                            NSWorkspace.shared.open(url)
-                        }
-                    }) {
-                        Text("Grant Permission")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .padding(.vertical, 10)
-                            .padding(.horizontal, 40)
-                            .background(Color.accentColor)
-                            .cornerRadius(10)
-                            .shadow(color: Color.accentColor.opacity(0.3), radius: 5, x: 0, y: 3)
+                Button("Open System Settings manually") {
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                        NSWorkspace.shared.open(url)
                     }
-                    .buttonStyle(.plain)
-                    
-                    Button("Open System Settings manually") {
-                        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                            NSWorkspace.shared.open(url)
-                        }
-                    }
-                    .buttonStyle(.link)
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
                 }
-                .padding(.top, 10)
+                .buttonStyle(.link)
+                .font(.footnote)
+                .foregroundColor(.secondary)
             }
+            .padding(.top, 10)
         }
         .frame(minWidth: 450, minHeight: 350)
         .background(VisualEffectView(material: .hudWindow, blendingMode: .behindWindow).ignoresSafeArea())
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("PermissionGranted"))) { _ in
-            withAnimation(.spring()) {
-                permissionGranted = true
-            }
-        }
     }
 }
 
