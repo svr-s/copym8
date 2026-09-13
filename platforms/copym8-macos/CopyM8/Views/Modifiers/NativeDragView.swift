@@ -27,7 +27,6 @@ class DragTrackingView: NSView {
     override var acceptsFirstResponder: Bool { true }
     
     override func mouseDown(with event: NSEvent) {
-        if event.clickCount > 1 { return }
         guard let window = self.window else { return }
         let startLocation = NSEvent.mouseLocation
         let startOrigin = window.frame.origin
