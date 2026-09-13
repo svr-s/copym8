@@ -259,6 +259,15 @@ struct ContentView: View {
         }
     }
     
+    @ViewBuilder
+    private var expansionShieldView: some View {
+        if shortcut.isAnimatingExpansion {
+            Color.clear
+                .contentShape(Rectangle())
+                .allowsHitTesting(true)
+        }
+    }
+    
     var body: some View {
         ZStack {
             if shortcut.isExpanded {
@@ -337,6 +346,7 @@ struct ContentView: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: shortcut.isExpanded ? 12 : 24))
         .background(Color.clear)
+        .overlay(expansionShieldView)
         .animation(.spring(response: 0.4, dampingFraction: 0.75), value: shortcut.isExpanded)
         .onChange(of: shortcut.isExpanded) { _, expanded in
             adjustWindowFrame(expanded: expanded, animate: true)
