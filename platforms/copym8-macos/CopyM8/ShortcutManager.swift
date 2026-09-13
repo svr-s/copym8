@@ -28,7 +28,17 @@ extension KeyboardShortcuts.Name {
 /// It registers listeners for `KeyboardShortcuts` and triggers state updates such as expanding the app or switching to specific tabs.
 class ShortcutManager: ObservableObject {
     static var initialExpand: Bool = false
-    @Published var isExpanded: Bool = false
+    @Published var isExpanded: Bool = false {
+        didSet {
+            if isExpanded {
+                isAnimatingExpansion = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
+                    self?.isAnimatingExpansion = false
+                }
+            }
+        }
+    }
+    @Published var isAnimatingExpansion: Bool = false
     @Published var requestedTab: String? = nil
     @Published var requestedFolder: String? = nil
     @Published var isPresentingModal: Bool = false
@@ -95,16 +105,17 @@ class ShortcutManager: ObservableObject {
         // Monitor global mouse clicks to dismiss the expanded view
         eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
             DispatchQueue.main.async {
-                if self?.isPresentingModal == true { return }
+                guard let self = self else { return }
+                if self.isPresentingModal == true || self.isAnimatingExpansion == true { return }
                 
-                if self?.isExpanded == true {
-                    if let window = NSApplication.shared.windows.first(where: { $0.isKeyWindow || $0.isVisible }),
+                if self.isExpanded == true {
+                    if let window = NSApplication.shared.windows.first(where: { $0 is CopyM8Window }),
                        window.frame.contains(NSEvent.mouseLocation) {
                         return
                     }
                     
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        self?.isExpanded = false
+                        self.isExpanded = false
                         SettingsWindowManager.shared.closeSettings()
                     }
                 }

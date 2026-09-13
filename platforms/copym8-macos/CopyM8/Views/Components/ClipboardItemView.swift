@@ -3,6 +3,7 @@ import AppKit
 
 struct ClipboardItemView: View {
     @EnvironmentObject var clipboard: ClipboardManager
+    @EnvironmentObject var shortcut: ShortcutManager
     let item: ClipboardItem
     let shortcutIndex: Int?
     let isSelected: Bool
@@ -87,7 +88,10 @@ struct ClipboardItemView: View {
     }
 
     var body: some View {
-        Button(action: onPaste) {
+        Button(action: {
+            if shortcut.isAnimatingExpansion { return }
+            onPaste()
+        }) {
             HStack(spacing: 12) {
                 if isEditMode {
                     Image(systemName: isChecked ? "checkmark.circle.fill" : "circle")

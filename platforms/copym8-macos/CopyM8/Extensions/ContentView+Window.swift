@@ -34,23 +34,19 @@ extension ContentView {
         
         switch dockEdge {
         case .right:
-            frame.origin.y -= (newSize.height - oldHeight) / 2
-            if !expanded, let screenRect = window.screen?.visibleFrame {
+            if let screenRect = window.screen?.visibleFrame {
                 frame.origin.x = screenRect.maxX - newSize.width
-            } else {
-                frame.origin.x -= (newSize.width - oldWidth)
+                frame.origin.y = max(screenRect.minY, min(frame.origin.y - (newSize.height - oldHeight) / 2, screenRect.maxY - newSize.height))
             }
         case .left:
-            frame.origin.y -= (newSize.height - oldHeight) / 2
-            if !expanded, let screenRect = window.screen?.visibleFrame {
+            if let screenRect = window.screen?.visibleFrame {
                 frame.origin.x = screenRect.minX
+                frame.origin.y = max(screenRect.minY, min(frame.origin.y - (newSize.height - oldHeight) / 2, screenRect.maxY - newSize.height))
             }
         case .top:
-            frame.origin.x -= (newSize.width - oldWidth) / 2
-            if !expanded, let screenRect = window.screen?.visibleFrame {
+            if let screenRect = window.screen?.visibleFrame {
                 frame.origin.y = screenRect.maxY - newSize.height
-            } else {
-                frame.origin.y -= (newSize.height - oldHeight) / 2
+                frame.origin.x = max(screenRect.minX, min(frame.origin.x - (newSize.width - oldWidth) / 2, screenRect.maxX - newSize.width))
             }
         }
         frame.size = newSize
