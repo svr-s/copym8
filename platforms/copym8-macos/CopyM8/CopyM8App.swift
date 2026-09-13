@@ -156,12 +156,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // 3. Delay pill appearance so user sees and acts on System Settings window first
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
-            guard let self = self else { return }
-            self.window?.makeKeyAndOrderFront(nil)
+            guard let self = self, let win = self.window else { return }
+            
+            // Show pill at the right edge
+            win.makeKeyAndOrderFront(nil)
             
             // 4. Expand CopyM8 homepage cleanly
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                 NotificationCenter.default.post(name: NSNotification.Name("ForceExpand"), object: nil)
+                win.makeKeyAndOrderFront(nil)
             }
         }
     }
