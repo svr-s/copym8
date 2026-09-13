@@ -23,10 +23,15 @@ class CopyM8Window: NSWindow {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    static private(set) var shared: AppDelegate!
+    
     var window: CopyM8Window!
     var onboardingWindow: NSWindow?
-    var onboardingController: OnboardingWindowController?
-    var accessibilityTimer: Timer?
+    
+    override init() {
+        super.init()
+        AppDelegate.shared = self
+    }
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         UserDefaults.standard.register(defaults: [
@@ -65,9 +70,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         win.center()
         win.level = .floating
         
-        let controller = OnboardingWindowController()
-        win.delegate = controller
-        onboardingController = controller
         onboardingWindow = win
         
         NSApp.activate(ignoringOtherApps: true)
@@ -126,11 +128,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return AXIsProcessTrustedWithOptions(options)
     }
     
-    func promptForAccessibilityPermission() {
-        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
-        let _ = AXIsProcessTrustedWithOptions(options)
-    }
-    
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return !AppDelegate.checkAccessibilityPermission()
     }
@@ -146,7 +143,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
     
-    /// Closes onboarding window, shows pill at right edge, then expands CopyM8 after a brief pause.
+    /// Closes onboarding window, opens System Settings, shows pill at right edge, then expands CopyM8 after a brief pause.
     func handleGrantPermissionAndLaunch() {
         // 1. Open System Settings Accessibility pane
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
@@ -156,7 +153,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // 2. Close onboarding window
         onboardingWindow?.orderOut(nil)
         onboardingWindow = nil
-        onboardingController = nil
         
         // 3. Show pill at the right edge
         window?.makeKeyAndOrderFront(nil)
@@ -169,10 +165,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 import SwiftUI
-
-/// Delegate that manages the lifecycle of the standalone onboarding window.
-class OnboardingWindowController: NSObject, NSWindowDelegate {
-}
 
 struct OnboardingView: View {
     var body: some View {
@@ -194,9 +186,7 @@ struct OnboardingView: View {
             
             VStack(spacing: 16) {
                 Button(action: {
-                    if let app = NSApp.delegate as? AppDelegate {
-                        app.handleGrantPermissionAndLaunch()
-                    }
+                    AppDelegate.shared.handleGrantPermissionAndLaunch()
                 }) {
                     Text("Grant Permission")
                         .font(.headline)
