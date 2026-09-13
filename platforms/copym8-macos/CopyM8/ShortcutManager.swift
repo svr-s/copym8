@@ -28,12 +28,15 @@ extension KeyboardShortcuts.Name {
 /// It registers listeners for `KeyboardShortcuts` and triggers state updates such as expanding the app or switching to specific tabs.
 class ShortcutManager: ObservableObject {
     static var initialExpand: Bool = false
+    static var isAnimatingExpansionActive: Bool = false
     @Published var isExpanded: Bool = false {
         didSet {
             if isExpanded {
                 isAnimatingExpansion = true
+                ShortcutManager.isAnimatingExpansionActive = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
                     self?.isAnimatingExpansion = false
+                    ShortcutManager.isAnimatingExpansionActive = false
                 }
             }
         }

@@ -20,6 +20,14 @@ class CopyM8Window: NSWindow {
     override var canBecomeKey: Bool {
         return true
     }
+    
+    override func mouseDown(with event: NSEvent) {
+        if event.clickCount > 1 {
+            // Swallow double-clicks to prevent AppKit native borderless window miniaturization/hiding
+            return
+        }
+        super.mouseDown(with: event)
+    }
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -41,6 +49,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let hasPermission = AppDelegate.checkAccessibilityPermission()
         ShortcutManager.initialExpand = false // Always start as pill
         setupMainWindow()
+        
+        // Local event monitor: absorbs mouse down events targeting CopyM8Window while expanding
+        NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { event in
+            if event.window is CopyM8Window && ShortcutManager.isAnimatingExpansionActive {
+                return nil
+            }
+            return event
+        }
         
         if !hasPermission {
             showOnboardingWindow()
