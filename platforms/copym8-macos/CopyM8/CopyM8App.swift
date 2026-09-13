@@ -60,7 +60,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         )
         win.titlebarAppearsTransparent = true
         win.titleVisibility = .hidden
-        win.isMovableByWindowBackground = true
+        win.isMovableByWindowBackground = false
         win.contentView = hosting
         win.center()
         win.level = .floating
