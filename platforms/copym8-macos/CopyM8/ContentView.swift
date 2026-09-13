@@ -328,8 +328,10 @@ struct ContentView: View {
                     isHovering: $viewModel.isHovering,
                     isQueueRecording: clipboard.isQueueRecording,
                     onExpanded: {
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-                            shortcut.isExpanded = true
+                        if !shortcut.isExpanded && !shortcut.isAnimatingExpansion {
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                                shortcut.isExpanded = true
+                            }
                         }
                     },
                     snapToEdge: snapToEdge
