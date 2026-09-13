@@ -39,9 +39,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         if !hasPermission {
             showOnboardingWindow()
-            startAccessibilityTimer()
+            // Listen for app re-activation (e.g. returning from System Settings) to check permission event-driven
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(handleAppDidBecomeActive),
+                name: NSApplication.didBecomeActiveNotification,
+                object: nil
+            )
             // Hide the pill while onboarding is active — it will appear once the user clicks "Open CopyM8"
             window.orderOut(nil)
+        }
+    }
+    
+    @objc func handleAppDidBecomeActive() {
+        if AppDelegate.checkAccessibilityPermission() {
+            NotificationCenter.default.post(name: NSNotification.Name("PermissionGranted"), object: nil)
+            onboardingWindow?.makeKeyAndOrderFront(nil)
         }
     }
     
@@ -74,25 +87,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         NSApp.activate(ignoringOtherApps: true)
         win.makeKeyAndOrderFront(nil)
-    }
-    
-    func startAccessibilityTimer() {
-        let timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            if AppDelegate.checkAccessibilityPermission() {
-                DispatchQueue.main.async {
-                    self?.accessibilityTimer?.invalidate()
-                    self?.accessibilityTimer = nil
-                    
-                    // Notify the onboarding window to show the success state
-                    NotificationCenter.default.post(name: NSNotification.Name("PermissionGranted"), object: nil)
-                    // Re-focus the onboarding window so user sees the "Permission Granted!" screen
-                    NSApp.activate(ignoringOtherApps: true)
-                    self?.onboardingWindow?.makeKeyAndOrderFront(nil)
-                }
-            }
-        }
-        RunLoop.main.add(timer, forMode: .common)
-        accessibilityTimer = timer
     }
     
     func setupMainWindow() {
@@ -172,18 +166,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     /// Closes the onboarding window, shows the pill at the right edge, then expands CopyM8.
     func launchCopyM8() {
+        NotificationCenter.default.removeObserver(self, name: NSApplication.didBecomeActiveNotification, object: nil)
         onboardingWindow?.orderOut(nil)
         onboardingWindow = nil
         onboardingController = nil
         
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
-        
-        // Dispatch asynchronously after window is ordered front so SwiftUI views mount and listen to ForceExpand
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            NSApp.activate(ignoringOtherApps: true)
-            NotificationCenter.default.post(name: NSNotification.Name("ForceExpand"), object: nil)
-        }
+        NotificationCenter.default.post(name: NSNotification.Name("ForceExpand"), object: nil)
     }
 }
 import SwiftUI
