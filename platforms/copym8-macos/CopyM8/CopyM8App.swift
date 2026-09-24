@@ -105,7 +105,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         window = CopyM8Window(
             contentRect: NSRect(x: 0, y: 0, width: startWidth, height: startHeight),
-            styleMask: [.borderless, .nonactivatingPanel, .resizable],
+            styleMask: [.borderless, .resizable],
             backing: .buffered,
             defer: false
         )
